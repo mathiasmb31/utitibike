@@ -41,7 +41,12 @@ Page {
         page.routeGpx = ""
         page.routeDistance = 0
         page.routeAscent = 0
-        showToast(i18n.tr("Point %1 ajouté").arg(page.waypoints.length))
+        // Coordonnées dans le toast : permet de voir si un point fantôme
+        // est ajouté à (0,0) ou à des coordonnées réelles mais lointaines.
+        showToast(i18n.tr("Point %1 ajouté (%2, %3)")
+                  .arg(page.waypoints.length)
+                  .arg(lat.toFixed(5))
+                  .arg(lon.toFixed(5)))
     }
 
     function removeWaypoint(i) {
