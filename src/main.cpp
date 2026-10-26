@@ -4,9 +4,12 @@
 #include <QUrl>
 #include <QScreen>
 #include <QQmlContext>
+#include <QQmlEngine>
 #include <QDebug>
 #include <QTranslator>
 #include <QLocale>
+#include <QDir>
+#include <QStandardPaths>
 
 #include "tilecache.h"
 #include "tilemapitem.h"
@@ -22,7 +25,6 @@
 #include "geoutils.h"
 #include "viewstate.h"
 
-#include <QQmlEngine>
 
 int main(int argc, char *argv[])
 {
@@ -33,10 +35,6 @@ int main(int argc, char *argv[])
     // évite les redflags read_path/write_path dans le click review.
     // Pas de organizationName : sinon Qt ajoute un sous-répertoire en plus.
     app.setApplicationName(QStringLiteral("mathias.utitibike"));
-    // Désactive le cache disque QML : le chemin par défaut (~/.cache/<app>/qmlcache)
-    // peut être hors des droits AppArmor par défaut sur UT. Le cache disque est
-    // un confort, pas une nécessité — les QML sont recompilés à chaque lancement.
-    qputenv("QML_DISABLE_DISK_CACHE", "1");
 
     qDebug() << "========================================";
     qDebug() << "  Utitibike v" UTITIBIKE_VERSION " — Itinéraires vélo";
@@ -74,6 +72,14 @@ int main(int argc, char *argv[])
     Favorites favorites;
     ViewState viewState;
     QQuickView view;
+    // Redirige XDG_CACHE_HOME vers ~/.cache/mathias.utitibike/ pour que le
+    // QML disk cache et le shader cache Qt soient couverts par les droits
+    // AppArmor par défaut (@{HOME}/.cache/@{APP_PKGNAME}/**). Sans ça, le
+    // QML engine utilise ~/.cache/<executable>/qmlcache/ (hors droits).
+    const QString xdgCache = QDir::home().absolutePath()
+                             + QStringLiteral("/.cache/mathias.utitibike");
+    QDir().mkpath(xdgCache);
+    qputenv("XDG_CACHE_HOME", xdgCache.toUtf8());
     AppState appState(&view);
     view.rootContext()->setContextProperty(QStringLiteral("urlOpener"), &urlOpener);
     view.rootContext()->setContextProperty(QStringLiteral("haptics"), &haptics);
