@@ -4,6 +4,7 @@
 
 #include <QQuickPaintedItem>
 #include <QVariantList>
+#include <QPainterPath>
 
 #include "tilecache.h"
 
@@ -51,6 +52,11 @@ public:
     Q_INVOKABLE void panBy(double dx, double dy);
     Q_INVOKABLE void zoomAbout(int delta, double x, double y);
     Q_INVOKABLE QVariantMap visibleExtent() const;
+    // Construit le QPainterPath de la partie visible d'une polyligne, en
+    // coupant les trous (segments anormalement longs). Statique et publique
+    // pour être testée unitairement.
+    static QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
+                                    double world, double w, double h, double margin = 32.0);
     // Ajoute un point au tracé enregistré (incrémental, O(1)) : évite de
     // re-binder la liste complète à chaque fix GPS (serait O(n) par point).
     Q_INVOKABLE void appendTrackPoint(const QVariantMap &p);
