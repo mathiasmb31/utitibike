@@ -1,5 +1,7 @@
 # Utitibike
 
+[![CI](https://github.com/mathiasmb31/utitibike/actions/workflows/ci.yml/badge.svg)](https://github.com/mathiasmb31/utitibike/actions/workflows/ci.yml)
+
 Itinéraires vélo pour Ubuntu Touch : carte OpenStreetMap (tuiles OSM, CyclOSM,
 CARTO sombre, satellite Esri), calcul d'itinéraire BRouter, enregistrement GPS,
 profil d'altitude, export/import GPX, favoris, historique, recherche Nominatim.
