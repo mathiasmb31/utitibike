@@ -13,6 +13,12 @@ namespace {
 const int kMinZoom = 3;
 const int kMaxZoom = 17;
 const double kTilePx = 256.0;
+// Seuil de coupe d'un segment de tracé, en mètres (indépendant du zoom).
+// L'espacement normal des points BRouter est < ~410 m (p99.9 ≈ 380 m) ;
+// un trou dans les données (saut BRouter, séparation <trkseg>, waypoint
+// éloigné) fait plusieurs kilomètres. 1000 m ne coupe donc aucun segment
+// légitime tout en attrapant tout trou, à tous les zooms.
+const double kMaxSegmentM = 1000.0;
 
 double worldSize(int z)
 {
@@ -56,14 +62,21 @@ double clampLat(double lat)
     return qBound(-85.0511, lat, 85.0511);
 }
 
-// Construit le QPainterPath d'une polyligne en ne gardant que les segments
-// visibles à l'écran (marge de 32 px) : un tracé de dizaines de milliers de
-// points (itinéraire BRouter, parcours enregistré) n'est plus dessiné en
-// entier à chaque frame. Quand un point est hors champ, le tracé est coupé
-// (moveTo, pas de lineTo depuis le point hors champ) : éviter une ligne
-// droite artefact vers le bord qui ressemble à une route vers un point fantôme.
-QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
-                         double world, double w, double h, double margin = 32.0)
+} // namespace
+
+// Construit le QPainterPath de la partie visible d'une polyligne (marge de
+// 32 px) : un itinéraire BRouter fait des dizaines de milliers de points,
+// on ne dessine que ce qui est à l'écran. Deux garde-fous contre les lignes
+// droites artefact vers un "point fantôme" :
+//  - un point hors champ ou NaN est ignoré (continue) et le tracé reprend
+//    par un moveTo : pas de segment depuis un point hors champ vers le bord ;
+//  - un segment entre deux points visibles mais anormalement long est coupé
+//    (moveTo) : c'est un trou dans les données (saut BRouter, séparation de
+//    <trkseg>, waypoint éloigné). Le seuil est en mètres, indépendant du
+//    zoom : à faible zoom un trou de 38 km ne fait que ~1000 px à l'écran
+//    et passerait un filtre en pixels, alors qu'il fait toujours > 1000 m.
+QPainterPath TileMapItem::visiblePath(const QVariantList &points, double ox, double oy,
+                                      double world, double w, double h, double margin)
 {
     QPainterPath path;
     const double minWX = ox - margin;
@@ -74,8 +87,10 @@ QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
     int prev = -1;
     for (int i = 0; i < n; ++i) {
         const QVariantMap m = points.at(i).toMap();
-        const double wx = lonToWorldX(m.value(QStringLiteral("lon")).toDouble(), world);
-        const double wy = latToWorldY(m.value(QStringLiteral("lat")).toDouble(), world);
+        const double lat = m.value(QStringLiteral("lat")).toDouble();
+        const double lon = m.value(QStringLiteral("lon")).toDouble();
+        const double wx = lonToWorldX(lon, world);
+        const double wy = latToWorldY(lat, world);
         // NaN passe toutes les comparaisons (< et > retournent false) :
         // sans ce filtre, un point NaN produirait une ligne artefact vers
         // un "point fantôme" invisible via QPainterPath::lineTo(QPointF(NaN,NaN)).
@@ -87,19 +102,12 @@ QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
         // i > 0 requis : pour i=0, prev=-1 et prev==i-1 serait vrai (-1==-1),
         // ce qui ferait points.at(-1) → crash.
         if (i > 0 && prev == i - 1) {
-            // Couper les segments anormalement longs à l'écran (> 2x la
-            // diagonale) = trou dans les données (séparation <trkseg>,
-            // point rejeté par parseGpx, etc.). S'adapte à tous les zooms :
-            // à faible zoom, 4 km = quelques pixels, mais un trou de 38 km
-            // fait toujours > 2x la diagonale. Évite une ligne droite artefact.
             const QVariantMap pm = points.at(i - 1).toMap();
-            const double pwx = lonToWorldX(pm.value(QStringLiteral("lon")).toDouble(), world);
-            const double pwy = latToWorldY(pm.value(QStringLiteral("lat")).toDouble(), world);
-            const double segLen = std::sqrt((wx - pwx) * (wx - pwx)
-                                          + (wy - pwy) * (wy - pwy));
-            const double maxSeg = 2.0 * std::sqrt(w * w + h * h);
-            if (segLen > maxSeg)
-                path.moveTo(pt);  // couper le segment anormalement long
+            const double segM = haversine(pm.value(QStringLiteral("lat")).toDouble(),
+                                          pm.value(QStringLiteral("lon")).toDouble(),
+                                          lat, lon);
+            if (segM > kMaxSegmentM)
+                path.moveTo(pt);  // trou dans les données : couper le segment
             else
                 path.lineTo(pt);
         } else {
@@ -112,8 +120,6 @@ QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
     }
     return path;
 }
-
-} // namespace
 
 TileMapItem::TileMapItem(QQuickItem *parent)
     : QQuickPaintedItem(parent)

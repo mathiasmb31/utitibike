@@ -1,9 +1,41 @@
 #include <QtTest>
 #include <QVariantMap>
+#include <QPainterPath>
+#include <QtMath>
+#include <cmath>
 #include "tilemapitem.h"
 
+// Miroir des helpers de projection de tilemapitem.cpp (anonymous namespace,
+// non exportés) pour pouvoir calculer ox/oy/world dans les tests de visiblePath.
+static double testWorldSize(int z) { return 256.0 * std::pow(2.0, z); }
+static double testLonToWorldX(double lon, double world)
+{
+    return (lon + 180.0) / 360.0 * world;
+}
+static double testLatToWorldY(double lat, double world)
+{
+    const double r = qDegreesToRadians(lat);
+    return (1.0 - std::log(std::tan(r) + 1.0 / std::cos(r)) / M_PI) / 2.0 * world;
+}
+static QVariantMap mkPoint(double lat, double lon)
+{
+    QVariantMap m;
+    m.insert(QStringLiteral("lat"), lat);
+    m.insert(QStringLiteral("lon"), lon);
+    return m;
+}
+// Compte les MoveToElement d'un QPainterPath = nombre de sous-chemins dessinés.
+static int moveToCount(const QPainterPath &path)
+{
+    int n = 0;
+    for (int i = 0; i < path.elementCount(); ++i)
+        if (path.elementAt(i).type == QPainterPath::MoveToElement)
+            ++n;
+    return n;
+}
+
 // Tests de TileMapItem : projection Mercator (itemToLatLon), pan, zoom,
-// wrap longitude, clamp latitude, visibleExtent.
+// wrap longitude, clamp latitude, visibleExtent, coupe des trous de visiblePath.
 // TileMapItem est un QQuickPaintedItem : QTEST_MAIN crée un QGuiApplication.
 class TestTileMapItem : public QObject
 {
@@ -18,6 +50,8 @@ private slots:
     void clampLatitude();
     void visibleExtentContainsCenter();
     void invalidWaypointNotAdded();  // ne teste pas addWaypoint (QML), mais itemToLatLon ne crash pas
+    void routeHoleIsCut();           // trou dans les données -> 2 sous-chemins, à tout zoom
+    void routeWithoutHoleIsConnected(); // pas de trou -> 1 seul sous-chemin
 };
 
 void TestTileMapItem::init()
@@ -149,6 +183,57 @@ void TestTileMapItem::invalidWaypointNotAdded()
     QVERIFY(ll.value("lat").toDouble() <= 90.0);
     QVERIFY(ll.value("lon").toDouble() >= -180.0);
     QVERIFY(ll.value("lon").toDouble() <= 180.0);
+}
+
+void TestTileMapItem::routeHoleIsCut()
+{
+    // Un trou dans les données (deux points consécutifs très éloignés, tous
+    // deux visibles à l'écran) ne doit PAS produire une ligne droite artefact
+    // vers un "point fantôme" : le segment doit être coupé (moveTo).
+    // On vérifie à zoom 12 ET 14 pour prouver que la coupe est indépendante
+    // du zoom (un filtre en pixels échouerait à faible zoom).
+    const double centerLat = 43.6, centerLon = 1.44;
+    const double w = 1080.0, h = 2340.0;
+    QVariantList pts;
+    pts << mkPoint(43.6000, 1.4400)   // ~55 m
+        << mkPoint(43.6005, 1.4400)   // ~55 m
+        << mkPoint(43.6010, 1.4400)   // ~55 m
+        << mkPoint(43.6500, 1.4400)   // ~5,4 km  <-- TROU
+        << mkPoint(43.6505, 1.4400)   // ~55 m
+        << mkPoint(43.6510, 1.4400);  // ~55 m
+    for (int zoom : {12, 14}) {
+        const double world = testWorldSize(zoom);
+        const double ox = testLonToWorldX(centerLon, world) - w / 2.0;
+        const double oy = testLatToWorldY(centerLat, world) - h / 2.0;
+        const QPainterPath path = TileMapItem::visiblePath(pts, ox, oy, world, w, h);
+        // 6 points visibles -> 6 éléments. Le trou entre l'index 2 et 3 doit
+        // être coupé : 2 sous-chemins (MoveTo en 0 et en 3), pas de LineTo
+        // traversant le trou.
+        QCOMPARE(path.elementCount(), 6);
+        QCOMPARE(moveToCount(path), 2);
+        QCOMPARE(path.elementAt(3).type, QPainterPath::MoveToElement);
+    }
+}
+
+void TestTileMapItem::routeWithoutHoleIsConnected()
+{
+    // Contrôle : sans trou, tous les points visibles sont chaînés en un seul
+    // sous-chemin (1 seul MoveTo, le premier point).
+    const double centerLat = 43.6, centerLon = 1.44;
+    const double w = 1080.0, h = 2340.0;
+    const int zoom = 12;
+    QVariantList pts;
+    pts << mkPoint(43.6000, 1.4400)
+        << mkPoint(43.6005, 1.4400)
+        << mkPoint(43.6010, 1.4400)
+        << mkPoint(43.6015, 1.4400);
+    const double world = testWorldSize(zoom);
+    const double ox = testLonToWorldX(centerLon, world) - w / 2.0;
+    const double oy = testLatToWorldY(centerLat, world) - h / 2.0;
+    const QPainterPath path = TileMapItem::visiblePath(pts, ox, oy, world, w, h);
+    QCOMPARE(path.elementCount(), 4);
+    QCOMPARE(moveToCount(path), 1);
+    QCOMPARE(path.elementAt(0).type, QPainterPath::MoveToElement);
 }
 
 QTEST_MAIN(TestTileMapItem)
