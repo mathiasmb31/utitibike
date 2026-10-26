@@ -17,5 +17,7 @@ En résumé :
 - Vérification : `../base-de-connaissances/scripts/verif-logo.sh logo.png 300 74`
 - Bump de version à chaque changement de logo
 
-**État : à faire** — seul `logo.png` 256×256 (version simple) existe aujourd'hui.
-Template à adapter : `../mail-touch/logo-vibe.svg`.
+**État : conforme (0.1.4)** — `logo.png` = badge vibe 512×512 (fond `#1278d0`,
+vélo blanc, texte circulaire), vérifié sans clipping (trou ~17° à 9h, bande
+[300, 355]), installé et confirmé sur le téléphone. Ancien logo conservé en
+`logo-old-256.png`, version simple en `logo.svg` / `logo-simple.png`.
