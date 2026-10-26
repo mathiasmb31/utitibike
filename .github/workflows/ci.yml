@@ -167,7 +167,9 @@ jobs:
 
       - name: Run unit tests
         working-directory: build-host
-        run: ctest --output-on-failure --verbose
+        env:
+          QT_QPA_PLATFORM: offscreen  # pas de display X11 sur le runner
+        run: ctest --output-on-failure --verbose --timeout 60
 
       - name: Verify translations built
         run: |
