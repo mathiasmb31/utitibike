@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Checks rapides (~30 s) ──────────────────────────────────────────
+  validate:
+    name: Validate (manifest, versions, traductions)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gettext
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq gettext
+
+      - name: Validate manifest.json (JSON valide)
+        run: python3 -c "import json; m=json.load(open('manifest.json')); print('OK:', m['name'], m['version'])"
+
+      - name: Check version coherence (CMake ↔ manifest ↔ manifest.in)
+        run: |
+          cmake_ver=$(grep -oP 'project\(utitibike VERSION \K[0-9.]+' CMakeLists.txt)
+          manifest_ver=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+          manifest_in_ver=$(grep -oP '"version": "\K[0-9.]+' manifest.json.in)
+          echo "CMakeLists.txt : $cmake_ver"
+          echo "manifest.json  : $manifest_ver"
+          echo "manifest.json.in: $manifest_in_ver"
+          [ "$cmake_ver" = "$manifest_ver" ]     || { echo "MISMATCH: CMake vs manifest.json"; exit 1; }
+          [ "$cmake_ver" = "$manifest_in_ver" ]  || { echo "MISMATCH: CMake vs manifest.json.in"; exit 1; }
+          echo "Versions cohérentes."
+
+      - name: Validate .po files (syntaxe gettext)
+        run: |
+          fail=0
+          for f in po/utitibike_??.po po/utitibike-cpp_??.po; do
+            [ -f "$f" ] || continue
+            if ! msgfmt --check -o /dev/null "$f" 2>/dev/null; then
+              echo "ERREUR: $f"
+              msgfmt --check -o /dev/null "$f" || true
+              fail=1
+            else
+              stats=$(msgfmt --statistics -o /dev/null "$f" 2>&1)
+              echo "OK: $f ($stats)"
+            fi
+          done
+          exit $fail
+
+      - name: Validate .desktop file
+        run: |
+          grep -q "^Exec=" utitibike.desktop   || { echo "Manque Exec="; exit 1; }
+          grep -q "^Icon=" utitibike.desktop   || { echo "Manque Icon="; exit 1; }
+          grep -q "^Name=" utitibike.desktop   || { echo "Manque Name="; exit 1; }
+          grep -q "^Type=Application" utitibike.desktop || { echo "Manque Type=Application"; exit 1; }
+          echo "desktop OK"
+
+      - name: Validate AppArmor profile
+        run: |
+          grep -q "name mathias.utitibike" utitibike.apparmor || { echo "Manque 'name mathias.utitibike'"; exit 1; }
+          grep -q "apparmor" utitibike.apparmor || true
+          echo "apparmor OK"
+
+      - name: Check QML files referenced in qrc exist
+        run: |
+          fail=0
+          for f in $(grep -oP '<file>\K[^<]+' qml.qrc); do
+            [ -f "$f" ] || { echo "MANQUANT: $f (référencé dans qml.qrc)"; fail=1; }
+          done
+          exit $fail
+
+      - name: Check all src/*.cpp are in CMakeLists.txt
+        run: |
+          fail=0
+          for f in src/*.cpp; do
+            grep -qF "$f" CMakeLists.txt || { echo "MANQUANT dans CMakeLists.txt: $f"; fail=1; }
+          done
+          exit $fail
+
+  # ── Build C++ host x86_64 (~3-5 min) ────────────────────────────────
+  build-host:
+    name: Build (host x86_64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt5 dev + build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            qtbase5-dev qtdeclarative5-dev qtpositioning5-dev \
+            qttools5-dev-tools gettext cmake g++ make
+
+      - name: CMake configure
+        run: |
+          mkdir -p build-host && cd build-host
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build-host -j$(nproc)
+
+      - name: Verify binary
+        run: |
+          test -f build-host/utitibike || { echo "Binaire non généré"; exit 1; }
+          file build-host/utitibike
+          echo "Build host OK"
+
+      - name: Verify translations built
+        run: |
+          ls build-host/*.mo 2>/dev/null | wc -l | xargs echo ".mo files:"
+          ls build-host/*.qm 2>/dev/null | wc -l | xargs echo ".qm files:"
+
+  # ── Build clickable ARM64 + review (~10-15 min) ─────────────────────
+  build-click:
+    name: Build click (ARM64) + review
+    runs-on: ubuntu-latest
+    container:
+      image: clickable/ci-ubuntu-24.04-arm64:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build click
+        run: clickable build
+
+      - name: Review click
+        run: clickable review build/aarch64-linux-gnu/app/mathias.utitibike_*.click
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: utitibike-click
+          path: build/aarch64-linux-gnu/app/mathias.utitibike_*.click
+          retention-days: 30
