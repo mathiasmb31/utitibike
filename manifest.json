@@ -3,7 +3,7 @@
     "title": "Utitibike",
     "description": "Itinéraires vélo : carte OpenStreetMap hors ligne, calcul BRouter et export GPX.",
     "architecture": "",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "maintainer": "Mathias Brethous <user@localhost>",
     "framework": "ubuntu-touch-24.04-1.x",
     "hooks": {
