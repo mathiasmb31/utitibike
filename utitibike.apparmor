@@ -8,16 +8,6 @@
         "content_exchange_source",
         "keep-display-on",
         "location"
-    ],
-    "read_path": [
-        "@{HOME}/.cache/utitibike/**",
-        "@{HOME}/.config/utitibike/**",
-        "@{HOME}/.local/share/utitibike/**"
-    ],
-    "write_path": [
-        "@{HOME}/.cache/utitibike/**",
-        "@{HOME}/.config/utitibike/**",
-        "@{HOME}/.local/share/utitibike/**"
     ]
 }
 
