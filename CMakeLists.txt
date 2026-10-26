@@ -54,6 +54,15 @@ target_link_libraries(utitibike Qt5::Core Qt5::Gui Qt5::Quick Qt5::Network Qt5::
 install(TARGETS utitibike DESTINATION .)
 install(FILES manifest.json utitibike.apparmor utitibike.desktop logo.png DESTINATION .)
 
+# --- Tests unitaires ---
+# OFF par défaut : le build clickable (cross-compile ARM64) ne les compile pas.
+# Le CI host passe -DBUILD_TESTING=ON pour les builder et les lancer.
+option(BUILD_TESTING "Build unit tests" OFF)
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
 # --- Internationalisation ---
 # Deux mécanismes, deux formats :
 #  - QML (i18n.tr = gettext/libintl) : po/utitibike_<lang>.po -> .mo
