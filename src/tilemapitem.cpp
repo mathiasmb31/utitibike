@@ -5,6 +5,7 @@
 #include <QPainterPath>
 #include <QVariantMap>
 #include <QtMath>
+#include <cmath>
 
 namespace {
 
@@ -73,6 +74,11 @@ QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
         const QVariantMap m = points.at(i).toMap();
         const double wx = lonToWorldX(m.value(QStringLiteral("lon")).toDouble(), world);
         const double wy = latToWorldY(m.value(QStringLiteral("lat")).toDouble(), world);
+        // NaN passe toutes les comparaisons (< et > retournent false) :
+        // sans ce filtre, un point NaN produirait une ligne artefact vers
+        // un "point fantôme" invisible via QPainterPath::lineTo(QPointF(NaN,NaN)).
+        if (!std::isfinite(wx) || !std::isfinite(wy))
+            continue;
         if (wx < minWX || wx > maxWX || wy < minWY || wy > maxWY)
             continue;
         const QPointF pt(wx - ox, wy - oy);
@@ -341,8 +347,16 @@ void TileMapItem::paint(QPainter *painter)
         int idx = 0;
         for (const QVariant &v : m_waypoints) {
             const QVariantMap m = v.toMap();
-            const QPointF pt(lonToWorldX(m.value(QStringLiteral("lon")).toDouble(), world) - ox,
-                             latToWorldY(m.value(QStringLiteral("lat")).toDouble(), world) - oy);
+            const double wlat = m.value(QStringLiteral("lat")).toDouble();
+            const double wlon = m.value(QStringLiteral("lon")).toDouble();
+            // Ne pas dessiner un waypoint invalide (NaN, hors limites) :
+            // produirait un marqueur à un endroit absurde (point fantôme).
+            if (!std::isfinite(wlat) || !std::isfinite(wlon)
+                    || wlat < -90.0 || wlat > 90.0
+                    || wlon < -180.0 || wlon > 180.0)
+                continue;
+            const QPointF pt(lonToWorldX(wlon, world) - ox,
+                             latToWorldY(wlat, world) - oy);
             QColor fill;
             if (idx == 0)
                 fill = QColor(QStringLiteral("#2e8b57"));
@@ -396,6 +410,10 @@ void TileMapItem::paint(QPainter *painter)
     if (!m_currentPosition.isEmpty()) {
         const double lat = m_currentPosition.value(QStringLiteral("lat")).toDouble();
         const double lon = m_currentPosition.value(QStringLiteral("lon")).toDouble();
+        // Ne pas dessiner si coordonnées invalides (NaN au démarrage du GPS, etc.)
+        if (std::isfinite(lat) && std::isfinite(lon)
+                && lat >= -90.0 && lat <= 90.0
+                && lon >= -180.0 && lon <= 180.0) {
         const QPointF pt(lonToWorldX(lon, world) - ox,
                          latToWorldY(lat, world) - oy);
         painter->setRenderHint(QPainter::Antialiasing, true);
@@ -408,6 +426,7 @@ void TileMapItem::paint(QPainter *painter)
         painter->setPen(QPen(Qt::white, 2.5));
         painter->drawEllipse(pt, 9.0, 9.0);
         painter->setRenderHint(QPainter::Antialiasing, false);
+        }  // fin if (coordonnées GPS valides)
     }
 
     // Lieux favoris (étoiles dorées)
