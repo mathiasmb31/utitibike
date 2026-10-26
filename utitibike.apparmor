@@ -1,0 +1,24 @@
+
+{
+    "policy_version": 2404.1,
+    "policy_groups": [
+        "networking",
+        "connectivity",
+        "content_exchange",
+        "content_exchange_source",
+        "content_exchange_destination",
+        "keep-display-on",
+        "location"
+    ],
+    "read_path": [
+        "@{HOME}/.cache/utitibike/**",
+        "@{HOME}/.config/utitibike/**",
+        "@{HOME}/.local/share/utitibike/**"
+    ],
+    "write_path": [
+        "@{HOME}/.cache/utitibike/**",
+        "@{HOME}/.config/utitibike/**",
+        "@{HOME}/.local/share/utitibike/**"
+    ]
+}
+

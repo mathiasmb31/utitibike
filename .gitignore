@@ -1,0 +1,18 @@
+# Build clickable / CMake
+/build/
+/.clickable/
+*.click
+
+# Fichiers générés par le build (hors build/) — ne devraient pas exister,
+# mais au cas où
+*.mo
+*.qm
+*.ts
+
+# manifest.json est généré par CMake (manifest.json.in) mais DOIT être commité :
+# clickable le lit avant de lancer le build.
+
+# IDE / divers
+*.swp
+*~
+.DS_Store
