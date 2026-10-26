@@ -17,3 +17,5 @@
 *.swp
 *~
 .DS_Store
+*.png
+cap.rgba
