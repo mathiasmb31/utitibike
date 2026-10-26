@@ -107,40 +107,6 @@ Page {
             page.routeAscent = ascentM
             page.routeGpx = brouter.lastGpx
             showToast(i18n.tr("Itinéraire calculé"))
-            // DEBUG temporaire : détecter un point de route loin des waypoints
-            // (> 5 km = suspect, la route devrait rester près des waypoints)
-            function haversine(lat1, lon1, lat2, lon2) {
-                var r = 6371000, dLat = (lat2 - lat1) * Math.PI / 180
-                var dLon = (lon2 - lon1) * Math.PI / 180
-                var a = Math.sin(dLat/2) * Math.sin(dLat/2)
-                      + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
-                        * Math.sin(dLon/2) * Math.sin(dLon/2)
-                return 2 * r * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-            }
-            var maxDist = 0, maxIdx = -1, maxLat = 0, maxLon = 0
-            for (var i = 0; i < points.length; i++) {
-                var p = points[i]
-                // Détecter aussi NaN (NaN > x est false en JS, donc check explicite)
-                if (isNaN(p.lat) || isNaN(p.lon) || !isFinite(p.lat) || !isFinite(p.lon)) {
-                    showToast("Route: point #" + i + " NaN/Infinity — " + p.lat + "," + p.lon)
-                    break
-                }
-                var minDist = Infinity
-                for (var j = 0; j < page.waypoints.length; j++) {
-                    var w = page.waypoints[j]
-                    var d = haversine(p.lat, p.lon, w.lat, w.lon)
-                    if (d < minDist) minDist = d
-                }
-                if (minDist > maxDist) {
-                    maxDist = minDist; maxIdx = i; maxLat = p.lat; maxLon = p.lon
-                }
-            }
-            // Afficher le point le plus éloigné même s'il est < 5 km (info)
-            if (maxIdx >= 0) {
-                showToast("Route: " + points.length + " pts, max à "
-                          + (maxDist/1000).toFixed(1) + " km (#" + maxIdx
-                          + " " + maxLat.toFixed(5) + "," + maxLon.toFixed(5) + ")")
-            }
             // Sauvegarde automatique dans l'historique
             routeHistory.addEntry("", distanceM, ascentM, page.waypoints, brouter.lastGpx)
         }
@@ -905,18 +871,7 @@ Page {
                         text: brouter.busy ? i18n.tr("Calcul…") : i18n.tr("Calculer l'itinéraire")
                         enabled: page.waypoints.length >= 2 && !brouter.busy
                         color: UbuntuColors.blue
-                        onClicked: {
-                            // DEBUG temporaire : afficher les coordonnées envoyées à BRouter
-                            var coords = []
-                            for (var i = 0; i < page.waypoints.length; i++) {
-                                var w = page.waypoints[i]
-                                coords.push((i + 1) + ":" + w.lat.toFixed(5) + "," + w.lon.toFixed(5))
-                            }
-                            showToast("BRouter ← " + coords.join(" | ")
-                                      + " [QML:" + page.waypoints.length
-                                      + " C++:" + map.waypoints.length + "]")
-                            brouter.requestRoute(page.waypoints)
-                        }
+                        onClicked: brouter.requestRoute(page.waypoints)
                     }
                     Button {
                         width: (parent.width - units.gu(1)) / 2
