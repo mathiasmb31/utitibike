@@ -56,11 +56,16 @@ jobs:
           grep -q "^Type=Application" utitibike.desktop || { echo "Manque Type=Application"; exit 1; }
           echo "desktop OK"
 
-      - name: Validate AppArmor profile
+      - name: Validate AppArmor profile (format JSON AppArmor 4)
         run: |
-          grep -q "name mathias.utitibike" utitibike.apparmor || { echo "Manque 'name mathias.utitibike'"; exit 1; }
-          grep -q "apparmor" utitibike.apparmor || true
-          echo "apparmor OK"
+          python3 -c "
+          import json
+          with open('utitibike.apparmor') as f:
+              p = json.load(f)
+          assert 'policy_version' in p, 'Manque policy_version'
+          assert 'policy_groups' in p, 'Manque policy_groups'
+          print('apparmor OK:', p['policy_version'], '-', len(p['policy_groups']), 'groups')
+          "
 
       - name: Check QML files referenced in qrc exist
         run: |
