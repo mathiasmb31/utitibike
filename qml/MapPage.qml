@@ -695,6 +695,17 @@ Page {
                     }
                 }
 
+                // Action principale, en premier choix : calculer l'itinéraire
+                // dès que deux points sont posés. Pleine largeur, en couleur
+                // primaire pour marquer le CTA.
+                Button {
+                    width: parent.width
+                    text: brouter.busy ? i18n.tr("Calcul…") : i18n.tr("Calculer l'itinéraire")
+                    enabled: page.waypoints.length >= 2 && !brouter.busy
+                    color: UbuntuColors.blue
+                    onClicked: brouter.requestRoute(page.waypoints)
+                }
+
                 Label {
                     text: i18n.tr("Profil BRouter")
                     fontSize: "small"
@@ -863,22 +874,11 @@ Page {
                     color: "#d2d2d2"
                 }
 
-                Row {
+                Button {
                     width: parent.width
-                    spacing: units.gu(1)
-                    Button {
-                        width: (parent.width - units.gu(1)) / 2
-                        text: brouter.busy ? i18n.tr("Calcul…") : i18n.tr("Calculer l'itinéraire")
-                        enabled: page.waypoints.length >= 2 && !brouter.busy
-                        color: UbuntuColors.blue
-                        onClicked: brouter.requestRoute(page.waypoints)
-                    }
-                    Button {
-                        width: (parent.width - units.gu(1)) / 2
-                        text: i18n.tr("Exporter GPX")
-                        enabled: page.routeGpx !== ""
-                        onClicked: page.exportNow()
-                    }
+                    text: i18n.tr("Exporter GPX")
+                    enabled: page.routeGpx !== ""
+                    onClicked: page.exportNow()
                 }
 
                 Button {
