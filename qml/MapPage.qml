@@ -27,13 +27,24 @@ Page {
     readonly property var profiles: ["trekking", "fastbike", "safety", "shortest"]
 
     function addWaypoint(lat, lon) {
-        // Défense : rejeter les coordonnées invalides (NaN, hors limites,
+        // Défense 1 : rejeter les coordonnées invalides (NaN, hors limites,
         // ou 0,0 qui est quasi-sûrement une erreur de conversion écran→GPS).
         if (!isFinite(lat) || !isFinite(lon)
                 || lat < -90 || lat > 90
                 || lon < -180 || lon > 180
                 || (lat === 0 && lon === 0)) {
             showToast(i18n.tr("Position invalide — point ignoré"))
+            return
+        }
+        // Défense 2 : un waypoint ajouté par appui long sur la carte doit
+        // être dans la zone visible. Si hors champ, c'est une conversion
+        // erronée (événement passé à travers un overlay, carte déplacée
+        // entre le press et le timer, etc.) → point fantôme très lointain.
+        var ext = map.visibleExtent()
+        if (ext.lat1 !== undefined
+                && (lat < ext.lat1 || lat > ext.lat2
+                    || lon < ext.lon1 || lon > ext.lon2)) {
+            showToast(i18n.tr("Point hors de la zone visible — ignoré"))
             return
         }
         page.waypoints = page.waypoints.concat([{ lat: lat, lon: lon }])
