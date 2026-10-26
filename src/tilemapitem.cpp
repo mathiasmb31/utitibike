@@ -58,8 +58,9 @@ double clampLat(double lat)
 // Construit le QPainterPath d'une polyligne en ne gardant que les segments
 // visibles à l'écran (marge de 32 px) : un tracé de dizaines de milliers de
 // points (itinéraire BRouter, parcours enregistré) n'est plus dessiné en
-// entier à chaque frame. Le voisin d'un point visible est toujours inclus,
-// même hors champ, pour que la ligne entre/sorte correctement par le bord.
+// entier à chaque frame. Quand un point est hors champ, le tracé est coupé
+// (moveTo, pas de lineTo depuis le point hors champ) : éviter une ligne
+// droite artefact vers le bord qui ressemble à une route vers un point fantôme.
 QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
                          double world, double w, double h, double margin = 32.0)
 {
@@ -84,14 +85,11 @@ QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
         const QPointF pt(wx - ox, wy - oy);
         if (prev == i - 1) {
             path.lineTo(pt);
-        } else if (i > 0) {
-            // Nouveau sous-chemin : repart du voisin précédent (peut être hors
-            // champ) pour tracer le segment jusqu'au bord.
-            const QVariantMap pm = points.at(i - 1).toMap();
-            path.moveTo(lonToWorldX(pm.value(QStringLiteral("lon")).toDouble(), world) - ox,
-                        latToWorldY(pm.value(QStringLiteral("lat")).toDouble(), world) - oy);
-            path.lineTo(pt);
         } else {
+            // Point précédent hors champ : ne PAS tracer de segment depuis ce
+            // point (créerait une ligne droite artefact vers le bord de
+            // l'écran, donnant l'impression d'une route vers un point fantôme).
+            // On démarre un nouveau sous-chemin au point visible.
             path.moveTo(pt);
         }
         prev = i;
