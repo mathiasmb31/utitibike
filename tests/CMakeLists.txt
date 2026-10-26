@@ -1,5 +1,9 @@
 find_package(Qt5 REQUIRED COMPONENTS Test)
 
+# UTITIBIKE_VERSION est injecté par le CMakeLists parent pour l'app,
+# il faut aussi le définir pour les tests (brouterclient.cpp l'utilise).
+add_compile_definitions(UTITIBIKE_VERSION="${PROJECT_VERSION}")
+
 # Sources communes testées (sans main.cpp ni les trucs dépendants du device)
 set(COMMON_SRC
     ${CMAKE_SOURCE_DIR}/src/tilemapitem.cpp
