@@ -1,0 +1,242 @@
+# Utitibike translation template.
+# Copyright (C) 2026 Mathias Brethous
+# This file is distributed under the same license as the Utitibike package.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "%1 itinéraire(s)"
+msgstr ""
+
+msgid "Activer GPS"
+msgstr ""
+
+msgid "Ajouter ma position aux favoris"
+msgstr ""
+
+msgid "Annuler"
+msgstr ""
+
+msgid "Appui long sur la carte : ajouter un point"
+msgstr ""
+
+msgid "Arrivée"
+msgstr ""
+
+msgid "Arrêter"
+msgstr ""
+
+msgid "Arrêter nav."
+msgstr ""
+
+msgid "Astuces"
+msgstr ""
+
+msgid "Aucun itinéraire dans l'historique"
+msgstr ""
+
+msgid "Aucun résultat"
+msgstr ""
+
+msgid "Calculer l'itinéraire"
+msgstr ""
+
+msgid "Calcul…"
+msgstr ""
+
+msgid "Carte hors ligne (tuiles OpenStreetMap)"
+msgstr ""
+
+msgid "Centrer GPS"
+msgstr ""
+
+msgid "Charger"
+msgstr ""
+
+msgid "Charger un GPX"
+msgstr ""
+
+msgid "Crédits"
+msgstr ""
+
+msgid "Cyclable"
+msgstr ""
+
+msgid "Difficile"
+msgstr ""
+
+msgid "Dénivelé"
+msgstr ""
+
+msgid "Départ"
+msgstr ""
+
+msgid "Effacer tracé"
+msgstr ""
+
+msgid "Enregistrer"
+msgstr ""
+
+msgid "Enregistrer le GPX"
+msgstr ""
+
+msgid "Erreur de recherche"
+msgstr ""
+
+msgid "Exporter GPX"
+msgstr ""
+
+msgid "Facile"
+msgstr ""
+
+msgid "Facile : évite les côtes (coût %1)"
+msgstr ""
+
+msgid "Favori ajouté"
+msgstr ""
+
+msgid "Favoris (%1)"
+msgstr ""
+
+msgid "GPS & Navigation"
+msgstr ""
+
+msgid "GPS actif"
+msgstr ""
+
+msgid "GPX chargé"
+msgstr ""
+
+msgid "Garmin Connect"
+msgstr ""
+
+msgid "Historique"
+msgstr ""
+
+msgid "Historique (%1)"
+msgstr ""
+
+msgid "Ignore le dénivelé dans le calcul"
+msgstr ""
+
+msgid "Itinéraire"
+msgstr ""
+
+msgid "Itinéraire — %1 point(s)"
+msgstr ""
+
+msgid "Itinéraires vélo : carte OpenStreetMap hors ligne, calcul BRouter et export GPX."
+msgstr ""
+
+msgid "Le GPX exporté contient des horodatages : Garmin Connect l'accepte (menu « Importer des données » du site)."
+msgstr ""
+
+msgid "Naviguer"
+msgstr ""
+
+msgid "Normal"
+msgstr ""
+
+msgid "Normal : pénalise légèrement les montées"
+msgstr ""
+
+msgid "Ouvrir Garmin Connect dans le navigateur"
+msgstr ""
+
+msgid "Parcours sauvegardé"
+msgstr ""
+
+msgid "Partager le GPX"
+msgstr ""
+
+msgid "Pas de profil d'altitude"
+msgstr ""
+
+msgid "Position %1"
+msgstr ""
+
+msgid "Profil BRouter"
+msgstr ""
+
+msgid "Précharger la zone affichée"
+msgstr ""
+
+msgid "Recherche indisponible (HTTP %1)"
+msgstr ""
+
+msgid "Rechercher"
+msgstr ""
+
+msgid "Rechercher un lieu…"
+msgstr ""
+
+msgid "Satellite"
+msgstr ""
+
+msgid "Sombre"
+msgstr ""
+
+msgid "Sportif : cherche les côtes (bonus D+ %1)"
+msgstr ""
+
+msgid "Standard"
+msgstr ""
+
+msgid "Suivi GPS"
+msgstr ""
+
+msgid "Supprimer"
+msgstr ""
+
+msgid "Tout effacer"
+msgstr ""
+
+msgid "Tuiles : %1 / %2"
+msgstr ""
+
+msgid "Utitibike"
+msgstr ""
+
+msgid "Version %1"
+msgstr ""
+
+msgid "dans %1 m"
+msgstr ""
+
+msgid "À propos"
+msgstr ""
+
+msgid "Échec du chargement du GPX"
+msgstr ""
+
+msgid "Étape %1"
+msgstr ""
+
+msgid "• Appui long sur la carte : ajouter un point\n• Glisse : déplacer la carte\n• Pince : zoomer\n• Bouton orange : panneau itinéraire\n• Icône recherche : trouver un lieu\n• GPS : position en temps réel + navigation"
+msgstr ""
+
+msgid "Point %1 ajouté"
+msgstr ""
+
+msgid "Échec d'écriture du GPX"
+msgstr ""
+
+msgid "Préchargement zoom %1 à %2 lancé"
+msgstr ""
+
+msgid "Itinéraire calculé"
+msgstr ""
+
+msgid "Impossible d'ouvrir le navigateur"
+msgstr ""
+
+msgid "Hors ligne"
+msgstr ""
+
+msgid "Tout effacer ?"
+msgstr ""
+
+msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
+msgstr ""

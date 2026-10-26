@@ -1,0 +1,243 @@
+# Utitibike translations — English.
+# Copyright (C) 2026 Mathias Brethous
+# This file is distributed under the same license as the Utitibike package.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+
+msgid "%1 itinéraire(s)"
+msgstr "%1 route(s)"
+
+msgid "Activer GPS"
+msgstr "Enable GPS"
+
+msgid "Ajouter ma position aux favoris"
+msgstr "Add my position to favorites"
+
+msgid "Annuler"
+msgstr "Cancel"
+
+msgid "Appui long sur la carte : ajouter un point"
+msgstr "Long press on the map: add a point"
+
+msgid "Arrivée"
+msgstr "Arrival"
+
+msgid "Arrêter"
+msgstr "Stop"
+
+msgid "Arrêter nav."
+msgstr "Stop nav."
+
+msgid "Astuces"
+msgstr "Tips"
+
+msgid "Aucun itinéraire dans l'historique"
+msgstr "No route in history"
+
+msgid "Aucun résultat"
+msgstr "No results"
+
+msgid "Calculer l'itinéraire"
+msgstr "Calculate route"
+
+msgid "Calcul…"
+msgstr "Calculating…"
+
+msgid "Carte hors ligne (tuiles OpenStreetMap)"
+msgstr "Offline map (OpenStreetMap tiles)"
+
+msgid "Centrer GPS"
+msgstr "Center GPS"
+
+msgid "Charger"
+msgstr "Load"
+
+msgid "Charger un GPX"
+msgstr "Load a GPX"
+
+msgid "Crédits"
+msgstr "Credits"
+
+msgid "Cyclable"
+msgstr "Cycle-friendly"
+
+msgid "Difficile"
+msgstr "Hard"
+
+msgid "Dénivelé"
+msgstr "Elevation"
+
+msgid "Départ"
+msgstr "Start"
+
+msgid "Effacer tracé"
+msgstr "Clear track"
+
+msgid "Enregistrer"
+msgstr "Save"
+
+msgid "Enregistrer le GPX"
+msgstr "Save GPX"
+
+msgid "Erreur de recherche"
+msgstr "Search error"
+
+msgid "Exporter GPX"
+msgstr "Export GPX"
+
+msgid "Facile"
+msgstr "Easy"
+
+msgid "Facile : évite les côtes (coût %1)"
+msgstr "Easy: avoids hills (cost %1)"
+
+msgid "Favori ajouté"
+msgstr "Favorite added"
+
+msgid "Favoris (%1)"
+msgstr "Favorites (%1)"
+
+msgid "GPS & Navigation"
+msgstr "GPS & Navigation"
+
+msgid "GPS actif"
+msgstr "GPS active"
+
+msgid "GPX chargé"
+msgstr "GPX loaded"
+
+msgid "Garmin Connect"
+msgstr "Garmin Connect"
+
+msgid "Historique"
+msgstr "History"
+
+msgid "Historique (%1)"
+msgstr "History (%1)"
+
+msgid "Ignore le dénivelé dans le calcul"
+msgstr "Ignore elevation in calculation"
+
+msgid "Itinéraire"
+msgstr "Route"
+
+msgid "Itinéraire — %1 point(s)"
+msgstr "Route — %1 point(s)"
+
+msgid "Itinéraires vélo : carte OpenStreetMap hors ligne, calcul BRouter et export GPX."
+msgstr "Cycling routes: offline OpenStreetMap, BRouter calculation and GPX export."
+
+msgid "Le GPX exporté contient des horodatages : Garmin Connect l'accepte (menu « Importer des données » du site)."
+msgstr "The exported GPX contains timestamps: Garmin Connect accepts it (site menu \"Import Data\")."
+
+msgid "Naviguer"
+msgstr "Navigate"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Normal : pénalise légèrement les montées"
+msgstr "Normal: slightly penalizes climbs"
+
+msgid "Ouvrir Garmin Connect dans le navigateur"
+msgstr "Open Garmin Connect in the browser"
+
+msgid "Parcours sauvegardé"
+msgstr "Track saved"
+
+msgid "Partager le GPX"
+msgstr "Share GPX"
+
+msgid "Pas de profil d'altitude"
+msgstr "No elevation profile"
+
+msgid "Position %1"
+msgstr "Position %1"
+
+msgid "Profil BRouter"
+msgstr "BRouter profile"
+
+msgid "Précharger la zone affichée"
+msgstr "Preload visible area"
+
+msgid "Recherche indisponible (HTTP %1)"
+msgstr "Search unavailable (HTTP %1)"
+
+msgid "Rechercher"
+msgstr "Search"
+
+msgid "Rechercher un lieu…"
+msgstr "Search for a place…"
+
+msgid "Satellite"
+msgstr "Satellite"
+
+msgid "Sombre"
+msgstr "Dark"
+
+msgid "Sportif : cherche les côtes (bonus D+ %1)"
+msgstr "Sporty: seeks hills (D+ bonus %1)"
+
+msgid "Standard"
+msgstr "Standard"
+
+msgid "Suivi GPS"
+msgstr "GPS tracking"
+
+msgid "Supprimer"
+msgstr "Delete"
+
+msgid "Tout effacer"
+msgstr "Clear all"
+
+msgid "Tuiles : %1 / %2"
+msgstr "Tiles: %1 / %2"
+
+msgid "Utitibike"
+msgstr "Utitibike"
+
+msgid "Version %1"
+msgstr "Version %1"
+
+msgid "dans %1 m"
+msgstr "in %1 m"
+
+msgid "À propos"
+msgstr "About"
+
+msgid "Échec du chargement du GPX"
+msgstr "GPX loading failed"
+
+msgid "Étape %1"
+msgstr "Step %1"
+
+msgid "• Appui long sur la carte : ajouter un point\n• Glisse : déplacer la carte\n• Pince : zoomer\n• Bouton orange : panneau itinéraire\n• Icône recherche : trouver un lieu\n• GPS : position en temps réel + navigation"
+msgstr "• Long press on the map: add a point\n• Drag: pan the map\n• Pinch: zoom\n• Orange button: route panel\n• Search icon: find a place\n• GPS: live position + navigation"
+
+msgid "Point %1 ajouté"
+msgstr "Point %1 added"
+
+msgid "Échec d'écriture du GPX"
+msgstr "Failed to write GPX"
+
+msgid "Préchargement zoom %1 à %2 lancé"
+msgstr "Preloading zoom %1 to %2 started"
+
+msgid "Itinéraire calculé"
+msgstr "Route calculated"
+
+msgid "Impossible d'ouvrir le navigateur"
+msgstr "Cannot open the browser"
+
+msgid "Hors ligne"
+msgstr "Offline"
+
+msgid "Tout effacer ?"
+msgstr "Delete all?"
+
+msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
+msgstr "Permanently delete all routes from the history?"

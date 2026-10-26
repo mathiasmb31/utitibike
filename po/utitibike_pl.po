@@ -1,0 +1,243 @@
+# Utitibike translations — Polish.
+# Copyright (C) 2026 Mathias Brethous
+# This file is distributed under the same license as the Utitibike package.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pl\n"
+
+msgid "%1 itinéraire(s)"
+msgstr "%1 tras(y)"
+
+msgid "Activer GPS"
+msgstr "Włącz GPS"
+
+msgid "Ajouter ma position aux favoris"
+msgstr "Dodaj moją pozycję do ulubionych"
+
+msgid "Annuler"
+msgstr "Anuluj"
+
+msgid "Appui long sur la carte : ajouter un point"
+msgstr "Przytrzymaj na mapie: dodaj punkt"
+
+msgid "Arrivée"
+msgstr "Meta"
+
+msgid "Arrêter"
+msgstr "Zatrzymaj"
+
+msgid "Arrêter nav."
+msgstr "Zatrzymaj nawigację"
+
+msgid "Astuces"
+msgstr "Wskazówki"
+
+msgid "Aucun itinéraire dans l'historique"
+msgstr "Brak tras w historii"
+
+msgid "Aucun résultat"
+msgstr "Brak wyników"
+
+msgid "Calculer l'itinéraire"
+msgstr "Oblicz trasę"
+
+msgid "Calcul…"
+msgstr "Obliczanie…"
+
+msgid "Carte hors ligne (tuiles OpenStreetMap)"
+msgstr "Mapa offline (kafelki OpenStreetMap)"
+
+msgid "Centrer GPS"
+msgstr "Wyśrodkuj GPS"
+
+msgid "Charger"
+msgstr "Wczytaj"
+
+msgid "Charger un GPX"
+msgstr "Wczytaj GPX"
+
+msgid "Crédits"
+msgstr "Podziękowania"
+
+msgid "Cyclable"
+msgstr "Przyjazna rowerom"
+
+msgid "Difficile"
+msgstr "Trudny"
+
+msgid "Dénivelé"
+msgstr "Przewyższenie"
+
+msgid "Départ"
+msgstr "Start"
+
+msgid "Effacer tracé"
+msgstr "Wyczyść ślad"
+
+msgid "Enregistrer"
+msgstr "Zapisz"
+
+msgid "Enregistrer le GPX"
+msgstr "Zapisz GPX"
+
+msgid "Erreur de recherche"
+msgstr "Błąd wyszukiwania"
+
+msgid "Exporter GPX"
+msgstr "Eksportuj GPX"
+
+msgid "Facile"
+msgstr "Łatwy"
+
+msgid "Facile : évite les côtes (coût %1)"
+msgstr "Łatwy: unika wzniesień (koszt %1)"
+
+msgid "Favori ajouté"
+msgstr "Dodano do ulubionych"
+
+msgid "Favoris (%1)"
+msgstr "Ulubione (%1)"
+
+msgid "GPS & Navigation"
+msgstr "GPS i nawigacja"
+
+msgid "GPS actif"
+msgstr "GPS aktywny"
+
+msgid "GPX chargé"
+msgstr "GPX wczytany"
+
+msgid "Garmin Connect"
+msgstr "Garmin Connect"
+
+msgid "Historique"
+msgstr "Historia"
+
+msgid "Historique (%1)"
+msgstr "Historia (%1)"
+
+msgid "Ignore le dénivelé dans le calcul"
+msgstr "Ignoruj przewyższenie w obliczeniach"
+
+msgid "Itinéraire"
+msgstr "Trasa"
+
+msgid "Itinéraire — %1 point(s)"
+msgstr "Trasa — punktów: %1"
+
+msgid "Itinéraires vélo : carte OpenStreetMap hors ligne, calcul BRouter et export GPX."
+msgstr "Trasy rowerowe: mapa OpenStreetMap offline, kalkulacja BRouter i eksport GPX."
+
+msgid "Le GPX exporté contient des horodatages : Garmin Connect l'accepte (menu « Importer des données » du site)."
+msgstr "Wyeksportowany GPX zawiera znaczniki czasu: Garmin Connect je akceptuje (menu «Importuj dane» na stronie)."
+
+msgid "Naviguer"
+msgstr "Nawiguj"
+
+msgid "Normal"
+msgstr "Normalny"
+
+msgid "Normal : pénalise légèrement les montées"
+msgstr "Normalny: lekko utrudnia podjazdy"
+
+msgid "Ouvrir Garmin Connect dans le navigateur"
+msgstr "Otwórz Garmin Connect w przeglądarce"
+
+msgid "Parcours sauvegardé"
+msgstr "Trasa zapisana"
+
+msgid "Partager le GPX"
+msgstr "Udostępnij GPX"
+
+msgid "Pas de profil d'altitude"
+msgstr "Brak profilu wysokości"
+
+msgid "Position %1"
+msgstr "Pozycja %1"
+
+msgid "Profil BRouter"
+msgstr "Profil BRouter"
+
+msgid "Précharger la zone affichée"
+msgstr "Wstępnie załaduj widoczny obszar"
+
+msgid "Recherche indisponible (HTTP %1)"
+msgstr "Wyszukiwanie niedostępne (HTTP %1)"
+
+msgid "Rechercher"
+msgstr "Szukaj"
+
+msgid "Rechercher un lieu…"
+msgstr "Szukaj miejsca…"
+
+msgid "Satellite"
+msgstr "Satelita"
+
+msgid "Sombre"
+msgstr "Ciemny"
+
+msgid "Sportif : cherche les côtes (bonus D+ %1)"
+msgstr "Sportowy: szuka podjazdów (bonus D+ %1)"
+
+msgid "Standard"
+msgstr "Standard"
+
+msgid "Suivi GPS"
+msgstr "Śledzenie GPS"
+
+msgid "Supprimer"
+msgstr "Usuń"
+
+msgid "Tout effacer"
+msgstr "Wyczyść wszystko"
+
+msgid "Tuiles : %1 / %2"
+msgstr "Kafelki: %1 / %2"
+
+msgid "Utitibike"
+msgstr "Utitibike"
+
+msgid "Version %1"
+msgstr "Wersja %1"
+
+msgid "dans %1 m"
+msgstr "za %1 m"
+
+msgid "À propos"
+msgstr "O aplikacji"
+
+msgid "Échec du chargement du GPX"
+msgstr "Nie udało się wczytać GPX"
+
+msgid "Étape %1"
+msgstr "Etap %1"
+
+msgid "• Appui long sur la carte : ajouter un point\n• Glisse : déplacer la carte\n• Pince : zoomer\n• Bouton orange : panneau itinéraire\n• Icône recherche : trouver un lieu\n• GPS : position en temps réel + navigation"
+msgstr "• Przytrzymaj na mapie: dodaj punkt\n• Przesuń: przesuń mapę\n• Uszczypnij: przybliż\n• Pomarańczowy przycisk: panel trasy\n• Ikona lupy: znajdź miejsce\n• GPS: pozycja na żywo + nawigacja"
+
+msgid "Point %1 ajouté"
+msgstr "Punkt %1 dodany"
+
+msgid "Échec d'écriture du GPX"
+msgstr "Nie udało się zapisać GPX"
+
+msgid "Préchargement zoom %1 à %2 lancé"
+msgstr "Rozpoczęto wstępne ładowanie zoom %1 do %2"
+
+msgid "Itinéraire calculé"
+msgstr "Trasa obliczona"
+
+msgid "Impossible d'ouvrir le navigateur"
+msgstr "Nie można otworzyć przeglądarki"
+
+msgid "Hors ligne"
+msgstr "Offline"
+
+msgid "Tout effacer ?"
+msgstr "Usunąć wszystko?"
+
+msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
+msgstr "Trwale usunąć wszystkie trasy z historii?"

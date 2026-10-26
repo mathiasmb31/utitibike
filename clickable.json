@@ -1,0 +1,8 @@
+
+{
+    "clickable_minimum_required": "8",
+    "builder": "cmake",
+    "kill": "utitibike",
+    "dependencies_host": ["gettext"]
+}
+
