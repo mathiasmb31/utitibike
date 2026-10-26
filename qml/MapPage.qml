@@ -218,6 +218,33 @@ Page {
         }
     }
 
+    // Profil d'altitude en overlay en haut de l'écran (visible quand un
+    // itinéraire est calculé). Se place sous le bandeau de navigation.
+    Rectangle {
+        id: elevationOverlay
+        z: 5
+        anchors {
+            left: parent.left
+            right: parent.right
+            leftMargin: units.gu(1)
+            rightMargin: units.gu(1)
+        }
+        y: navBanner.visible ? navBanner.height + units.gu(2) : units.gu(1)
+        height: units.gu(6)
+        color: "#f7f7f7"
+        opacity: 0.92
+        radius: units.gu(0.5)
+        visible: page.routePoints.length > 1
+        Behavior on y { NumberAnimation { duration: 250 } }
+        Behavior on opacity { NumberAnimation { duration: 150 } }
+
+        ElevationProfile {
+            anchors.fill: parent
+            anchors.margins: units.gu(0.5)
+            points: page.routePoints
+        }
+    }
+
     // Tableau de bord (overlay bas-gauche, visible si GPS actif ou enregistrement)
     Rectangle {
         id: dashboard
@@ -935,12 +962,6 @@ Page {
                     fontSize: "medium"
                     font.bold: true
                     text: "%1 km  ·  D+ %2 m".arg((page.routeDistance / 1000).toFixed(1)).arg(Math.round(page.routeAscent))
-                }
-
-                ElevationProfile {
-                    width: parent.width
-                    visible: page.routePoints.length > 1
-                    points: page.routePoints
                 }
 
                 Rectangle {
