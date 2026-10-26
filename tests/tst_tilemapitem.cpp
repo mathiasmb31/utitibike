@@ -65,13 +65,15 @@ void TestTileMapItem::panByMovesCenter()
     map.setZoom(12);
     const double latBefore = map.centerLat();
     const double lonBefore = map.centerLon();
-    // Pan de 100px vers la droite = longitude augmente (à zoom 12, ~38m/px)
+    // panBy(dx, dy) déplace le centre dans la direction opposée au doigt
+    // (le -dx/-dy est intentionnel : le contenu suit le doigt).
+    // panBy(+100, 0) → centre vers l'Ouest → longitude diminue
     map.panBy(100.0, 0.0);
-    QVERIFY(map.centerLon() != lonBefore);
+    QVERIFY(map.centerLon() < lonBefore);
     QCOMPARE(map.centerLat(), latBefore);  // pas de pan vertical
-    // Pan de 100px vers le bas = latitude diminue
+    // panBy(0, +100) → centre vers le Nord → latitude augmente
     map.panBy(0.0, 100.0);
-    QVERIFY(map.centerLat() < latBefore);
+    QVERIFY(map.centerLat() > latBefore);
 }
 
 void TestTileMapItem::zoomChangesZoom()
@@ -112,6 +114,9 @@ void TestTileMapItem::clampLatitude()
 void TestTileMapItem::visibleExtentContainsCenter()
 {
     TileMapItem map;
+    // Sans taille, visibleExtent() retourne un point (width=height=0)
+    map.setWidth(800.0);
+    map.setHeight(600.0);
     map.setCenterLat(43.6044);
     map.setCenterLon(1.4442);
     map.setZoom(12);
