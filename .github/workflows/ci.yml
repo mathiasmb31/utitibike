@@ -24,12 +24,12 @@ jobs:
         run: |
           cmake_ver=$(grep -oP 'project\(utitibike VERSION \K[0-9.]+' CMakeLists.txt)
           manifest_ver=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
-          manifest_in_ver=$(grep -oP '"version": "\K[0-9.]+' manifest.json.in)
           echo "CMakeLists.txt : $cmake_ver"
           echo "manifest.json  : $manifest_ver"
-          echo "manifest.json.in: $manifest_in_ver"
-          [ "$cmake_ver" = "$manifest_ver" ]     || { echo "MISMATCH: CMake vs manifest.json"; exit 1; }
-          [ "$cmake_ver" = "$manifest_in_ver" ]  || { echo "MISMATCH: CMake vs manifest.json.in"; exit 1; }
+          [ "$cmake_ver" = "$manifest_ver" ] || { echo "MISMATCH: CMake vs manifest.json"; exit 1; }
+          # manifest.json.in est un template CMake : la version y est @PROJECT_VERSION@
+          grep -q '"version": "@PROJECT_VERSION@"' manifest.json.in \
+            || { echo "MISMATCH: manifest.json.in n'utilise pas @PROJECT_VERSION@"; exit 1; }
           echo "Versions cohérentes."
 
       - name: Validate .po files (syntaxe gettext)
@@ -116,7 +116,7 @@ jobs:
     name: Build click (ARM64) + review
     runs-on: ubuntu-latest
     container:
-      image: clickable/ci-ubuntu-24.04-arm64:latest
+      image: clickable/ci-ut24.04-1.x-arm64:latest
     steps:
       - uses: actions/checkout@v4
 
