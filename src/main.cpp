@@ -27,8 +27,16 @@
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
-    app.setOrganizationName(QStringLiteral("utitibike"));
-    app.setApplicationName(QStringLiteral("utitibike"));
+    // Nom d'application = nom du paquet click (mathias.utitibike) pour que
+    // QStandardPaths retourne des chemins couverts par les droits par défaut
+    // du template AppArmor (@{HOME}/.local/share/@{APP_PKGNAME}/** etc.) —
+    // évite les redflags read_path/write_path dans le click review.
+    // Pas de organizationName : sinon Qt ajoute un sous-répertoire en plus.
+    app.setApplicationName(QStringLiteral("mathias.utitibike"));
+    // Désactive le cache disque QML : le chemin par défaut (~/.cache/<app>/qmlcache)
+    // peut être hors des droits AppArmor par défaut sur UT. Le cache disque est
+    // un confort, pas une nécessité — les QML sont recompilés à chaque lancement.
+    qputenv("QML_DISABLE_DISK_CACHE", "1");
 
     qDebug() << "========================================";
     qDebug() << "  Utitibike v" UTITIBIKE_VERSION " — Itinéraires vélo";
