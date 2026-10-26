@@ -470,6 +470,10 @@ Page {
                 id: addTimer
                 interval: 900
                 onTriggered: {
+                    // Sécurité : ne rien faire si le MouseArea n'est plus
+                    // pressé (événement passé à travers un overlay, etc.)
+                    if (!mapMouse.pressed)
+                        return
                     // Annuler si la carte a bougé depuis le press (GPS follow,
                     // centrage auto, etc.) : les coordonnées écran ne
                     // correspondraient plus à la bonne position.
@@ -604,6 +608,15 @@ Page {
             id: panelShift
             y: page.panelOpen ? 0 : panel.height + units.gu(1)
             Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
+        }
+
+        // Bloque les événements souris qui passent à travers le Flickable
+        // (marge de 1 gu, ou contenu non scrollable). Sans ça, un appui long
+        // sur le panneau atteint la carte en dessous → waypoint fantôme.
+        // Le Flickable est déclaré après → au-dessus → reçoit les événements
+        // en premier. Ce MouseArea n'intercepte que les événements résiduels.
+        MouseArea {
+            anchors.fill: parent
         }
 
         Flickable {
