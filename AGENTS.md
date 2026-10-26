@@ -11,6 +11,7 @@ Toujours travailler dans une branche dédiée :
 | Feature | `feature/<nom>` | Nouvelle fonctionnalité |
 | Fix | `fix/<nom>` | Correction de bug |
 | Hotfix | `hotfix/<nom>` | Correction urgente |
+| Chore | `chore/<nom>` | Tâche diverses (docs, config, CI) |
 
 ### Workflow
 
