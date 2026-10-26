@@ -6,7 +6,6 @@
         "connectivity",
         "content_exchange",
         "content_exchange_source",
-        "content_exchange_destination",
         "keep-display-on",
         "location"
     ],
