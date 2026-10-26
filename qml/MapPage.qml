@@ -1119,24 +1119,47 @@ Page {
         }
     }
 
-    // Pour charger un fichier GPX via le Content Hub (import Source).
+    // Pour charger un fichier GPX via le Content Hub (import).
+    // handler: Source = on cherche une app qui FOURNIT le fichier (file manager).
+    // contentType: All = les fichiers .gpx ne sont pas toujours reconnus "Documents".
     property var activeTransfer: null
 
     ContentPeerPicker {
         id: gpxPicker
         anchors.fill: parent
         visible: false
-        contentType: ContentType.Documents
-        handler: ContentHandler.Destination
+        contentType: ContentType.All
+        handler: ContentHandler.Source
         showTitle: false
 
         onPeerSelected: {
             var transfer = peer.request()
-            if (transfer)
+            if (transfer) {
                 page.activeTransfer = transfer
+                transferTimeout.restart()
+                // Ferme le picker immédiatement : le transfert tourne en
+                // arrière-plan, on recevra le résultat via Connections.
+                gpxPicker.visible = false
+            } else {
+                showToast(i18n.tr("Impossible de lancer le transfert"))
+                gpxPicker.visible = false
+            }
         }
         onCancelPressed: {
             gpxPicker.visible = false
+        }
+    }
+
+    // Timeout de sécurité : si le transfert ne se termine pas en 30 s,
+    // on abandonne (évite de rester bloqué avec activeTransfer non null).
+    Timer {
+        id: transferTimeout
+        interval: 30000
+        onTriggered: {
+            if (page.activeTransfer) {
+                showToast(i18n.tr("Échec du chargement du GPX"))
+                page.activeTransfer = null
+            }
         }
     }
 
@@ -1146,16 +1169,18 @@ Page {
             var t = page.activeTransfer
             if (!t) return
             if (t.state === ContentTransfer.Charged) {
+                transferTimeout.stop()
                 if (t.items.length > 0) {
                     brouter.loadGpx(t.items[0].url.toString())
                     showToast(i18n.tr("GPX chargé"))
+                } else {
+                    showToast(i18n.tr("Aucun fichier reçu"))
                 }
-                gpxPicker.visible = false
                 page.activeTransfer = null
             } else if (t.state === ContentTransfer.Aborted
                     || t.state === ContentTransfer.Error) {
+                transferTimeout.stop()
                 showToast(i18n.tr("Échec du chargement du GPX"))
-                gpxPicker.visible = false
                 page.activeTransfer = null
             }
         }
