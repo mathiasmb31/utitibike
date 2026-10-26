@@ -84,7 +84,9 @@ QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
         if (wx < minWX || wx > maxWX || wy < minWY || wy > maxWY)
             continue;
         const QPointF pt(wx - ox, wy - oy);
-        if (prev == i - 1) {
+        // i > 0 requis : pour i=0, prev=-1 et prev==i-1 serait vrai (-1==-1),
+        // ce qui ferait points.at(-1) → crash.
+        if (i > 0 && prev == i - 1) {
             // Segment entre deux points consécutifs visibles : couper si
             // trop long (> 5 km) = trou dans les données (point rejeté par
             // parseGpx, saut BRouter, etc.). Évite une ligne droite artefact.
@@ -98,10 +100,9 @@ QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
             else
                 path.lineTo(pt);
         } else {
-            // Point précédent hors champ : ne PAS tracer de segment depuis ce
-            // point (créerait une ligne droite artefact vers le bord de
-            // l'écran, donnant l'impression d'une route vers un point fantôme).
-            // On démarre un nouveau sous-chemin au point visible.
+            // Premier point visible, ou point précédent hors champ : démarrer
+            // un nouveau sous-chemin (pas de segment depuis un point hors champ,
+            // évite une ligne droite artefact vers le bord de l'écran).
             path.moveTo(pt);
         }
         prev = i;
