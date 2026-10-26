@@ -1,5 +1,6 @@
 # Build clickable / CMake
 /build/
+/build-*/
 /.clickable/
 *.click
 

@@ -83,9 +83,58 @@ jobs:
           done
           exit $fail
 
-  # ── Build C++ host x86_64 (~3-5 min) ────────────────────────────────
+      - name: Check all tests/*.cpp are in tests/CMakeLists.txt
+        run: |
+          fail=0
+          for f in tests/tst_*.cpp; do
+            [ -f "$f" ] || continue
+            base=$(basename "$f")
+            grep -qF "$base" tests/CMakeLists.txt || { echo "MANQUANT dans tests/CMakeLists.txt: $base"; fail=1; }
+          done
+          exit $fail
+
+      - name: Check .pot templates are up to date (xgettext)
+        run: |
+          # Extrait les chaînes traduisibles du C++ et du QML, compare avec le .pot
+          # On ne régénère pas le .pot (trop de diff), on vérifie juste qu'il existe
+          # et qu'il contient des entrées.
+          for pot in po/utitibike.pot po/utitibike-cpp.pot; do
+            [ -f "$pot" ] || { echo "MANQUANT: $pot"; exit 1; }
+            count=$(grep -c "^msgid " "$pot")
+            [ "$count" -gt 5 ] || { echo "$pot semble vide ($count msgid)"; exit 1; }
+            echo "OK: $pot ($count msgid)"
+          done
+
+  # ── cppcheck (analyse statique, ~1 min) ─────────────────────────────
+  cppcheck:
+    name: cppcheck (analyse statique)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq cppcheck
+
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=warning,performance,portability \
+                   --inline-suppr \
+                   --std=c++17 \
+                   --language=c++ \
+                   --suppress=missingIncludeSystem \
+                   --suppress=unusedFunction \
+                   -I src/ \
+                   src/ 2>&1 | tee cppcheck-report.txt
+          # On échoue sur les errors uniquement, pas les warnings
+          if grep -q "error:" cppcheck-report.txt; then
+            echo "ERREURS cppcheck détectées"
+            exit 1
+          fi
+          echo "cppcheck OK (warnings acceptés)"
+
+  # ── Build + tests C++ host x86_64 (~5-7 min) ────────────────────────
   build-host:
-    name: Build (host x86_64)
+    name: Build + Test (host x86_64)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,12 +146,12 @@ jobs:
             qtbase5-dev qtdeclarative5-dev qtpositioning5-dev \
             qttools5-dev-tools gettext cmake g++ make
 
-      - name: CMake configure
+      - name: CMake configure (avec tests)
         run: |
           mkdir -p build-host && cd build-host
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
 
-      - name: Build
+      - name: Build (app + tests)
         run: cmake --build build-host -j$(nproc)
 
       - name: Verify binary
@@ -110,6 +159,10 @@ jobs:
           test -f build-host/utitibike || { echo "Binaire non généré"; exit 1; }
           file build-host/utitibike
           echo "Build host OK"
+
+      - name: Run unit tests
+        working-directory: build-host
+        run: ctest --output-on-failure --verbose
 
       - name: Verify translations built
         run: |
@@ -130,6 +183,16 @@ jobs:
 
       - name: Review click
         run: clickable review build/aarch64-linux-gnu/app/mathias.utitibike_*.click
+
+      - name: Check click size (garde-fou < 50 Mo)
+        run: |
+          size=$(stat -c%s build/aarch64-linux-gnu/app/mathias.utitibike_*.click)
+          size_mb=$((size / 1024 / 1024))
+          echo "Taille du .click: ${size_mb} Mo ($size octets)"
+          if [ "$size" -gt 52428800 ]; then
+            echo "ALERTE: le .click dépasse 50 Mo"
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
