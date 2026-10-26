@@ -267,6 +267,13 @@ void BrouterClient::parseGpx(const QString &gpxText)
         if (xml.isStartElement() && xml.name() == QLatin1String("trkpt")) {
             const double lat = xml.attributes().value(QLatin1String("lat")).toDouble();
             const double lon = xml.attributes().value(QLatin1String("lon")).toDouble();
+            // Rejeter les coordonnées invalides (NaN, hors limites) : un point
+            // NaN passerait tous les filtres de visiblePath (NaN < x est faux)
+            // et produirait une ligne artefact vers un point fantôme invisible.
+            if (!qIsFinite(lat) || !qIsFinite(lon)
+                    || lat < -90.0 || lat > 90.0
+                    || lon < -180.0 || lon > 180.0)
+                continue;
             double ele = 0.0;
             bool eleOk = false;
             while (!(xml.isEndElement() && xml.name() == QLatin1String("trkpt"))) {
