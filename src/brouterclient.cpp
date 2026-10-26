@@ -138,8 +138,8 @@ void BrouterClient::setBusy(bool v)
 void BrouterClient::requestRoute(const QVariantList &waypoints)
 {
     QStringList coords;
-    for (const QVariant &v : waypoints) {
-        const QVariantMap m = v.toMap();
+    for (int i = 0; i < waypoints.size(); ++i) {
+        const QVariantMap m = waypoints.at(i).toMap();
         const double lat = m.value(QStringLiteral("lat")).toDouble();
         const double lon = m.value(QStringLiteral("lon")).toDouble();
         // Défense : un waypoint invalide (NaN, hors limites, ou 0,0) ferait
@@ -149,7 +149,8 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
                 || lat < -90.0 || lat > 90.0
                 || lon < -180.0 || lon > 180.0
                 || (lat == 0.0 && lon == 0.0)) {
-            emit routeFailed(tr("Point invalide — supprimez-le et réessayez."));
+            emit routeFailed(tr("Point %1 invalide (%2, %3) — supprimez-le et réessayez.")
+                             .arg(i + 1).arg(lat, 0, 'f', 5).arg(lon, 0, 'f', 5));
             return;
         }
         coords << QString::number(lon, 'f', 6) + QLatin1Char(',')
