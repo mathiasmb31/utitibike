@@ -142,6 +142,16 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
         const QVariantMap m = v.toMap();
         const double lat = m.value(QStringLiteral("lat")).toDouble();
         const double lon = m.value(QStringLiteral("lon")).toDouble();
+        // Défense : un waypoint invalide (NaN, hors limites, ou 0,0) ferait
+        // échouer le calcul BRouter ou produirait un itinéraire absurde
+        // passant par le Golfe de Guinée.
+        if (!qIsFinite(lat) || !qIsFinite(lon)
+                || lat < -90.0 || lat > 90.0
+                || lon < -180.0 || lon > 180.0
+                || (lat == 0.0 && lon == 0.0)) {
+            emit routeFailed(tr("Point invalide — supprimez-le et réessayez."));
+            return;
+        }
         coords << QString::number(lon, 'f', 6) + QLatin1Char(',')
                + QString::number(lat, 'f', 6);
     }

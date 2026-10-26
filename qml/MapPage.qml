@@ -27,6 +27,15 @@ Page {
     readonly property var profiles: ["trekking", "fastbike", "safety", "shortest"]
 
     function addWaypoint(lat, lon) {
+        // Défense : rejeter les coordonnées invalides (NaN, hors limites,
+        // ou 0,0 qui est quasi-sûrement une erreur de conversion écran→GPS).
+        if (!isFinite(lat) || !isFinite(lon)
+                || lat < -90 || lat > 90
+                || lon < -180 || lon > 180
+                || (lat === 0 && lon === 0)) {
+            showToast(i18n.tr("Position invalide — point ignoré"))
+            return
+        }
         page.waypoints = page.waypoints.concat([{ lat: lat, lon: lon }])
         page.routePoints = []
         page.routeGpx = ""
@@ -441,6 +450,12 @@ Page {
             property real pressX: 0
             property real pressY: 0
             property bool longPressDone: false
+            // Centre/zoom de la carte au moment du press : si la carte bouge
+            // entre-temps (GPS follow actif), le appui long est annulé pour
+            // éviter un waypoint à des coordonnées fausses (point fantôme).
+            property real pressCenterLat: 0
+            property real pressCenterLon: 0
+            property int pressZoom: 0
 
             // Manual long-press detection: onPressAndHold is erratic on touch.
             // A first buzz at 500 ms warns that the press is being held; the
@@ -455,6 +470,14 @@ Page {
                 id: addTimer
                 interval: 900
                 onTriggered: {
+                    // Annuler si la carte a bougé depuis le press (GPS follow,
+                    // centrage auto, etc.) : les coordonnées écran ne
+                    // correspondraient plus à la bonne position.
+                    if (map.centerLat !== mapMouse.pressCenterLat
+                            || map.centerLon !== mapMouse.pressCenterLon
+                            || map.zoom !== mapMouse.pressZoom) {
+                        return
+                    }
                     mapMouse.longPressDone = true
                     var ll = map.itemToLatLon(mapMouse.pressX, mapMouse.pressY)
                     page.addWaypoint(ll.lat, ll.lon)
@@ -468,6 +491,9 @@ Page {
                 lastX = mouse.x
                 lastY = mouse.y
                 longPressDone = false
+                pressCenterLat = map.centerLat
+                pressCenterLon = map.centerLon
+                pressZoom = map.zoom
                 warnTimer.restart()
                 addTimer.restart()
             }
