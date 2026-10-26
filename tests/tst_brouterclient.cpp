@@ -15,6 +15,7 @@ private slots:
     void loadGpxInvalidXml();
     void loadGpxEmpty();
     void loadGpxNoTrackPoints();
+    void loadGpxMultipleTrkSeg();
     void requestRouteRejectsZeroZero();
     void requestRouteRejectsNaN();
     void requestRouteRejectsOutOfRange();
@@ -87,6 +88,47 @@ void TestBrouterClient::loadGpxNoTrackPoints()
         "<?xml version=\"1.0\"?><gpx version=\"1.1\"><trk><trkseg></trkseg></trk></gpx>");
     client.loadGpxData(gpx);
     QCOMPARE(failSpy.count(), 1);
+}
+
+void TestBrouterClient::loadGpxMultipleTrkSeg()
+{
+    // BRouter peut couper un itinéraire en plusieurs <trkseg> (ferry, tunnel).
+    // parseGpx doit insérer un point NaN entre les segments pour que
+    // visiblePath coupe proprement la ligne (évite une ligne droite artefact).
+    BrouterClient client;
+    QSignalSpy readySpy(&client, &BrouterClient::routeReady);
+    QSignalSpy failSpy(&client, &BrouterClient::routeFailed);
+
+    const QString gpx = QStringLiteral(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<gpx version=\"1.1\" creator=\"test\">"
+        "<trk><name>Test</name>"
+        "<trkseg>"
+        "<trkpt lat=\"43.6044\" lon=\"1.4442\"><ele>150</ele></trkpt>"
+        "<trkpt lat=\"43.6100\" lon=\"1.4500\"><ele>160</ele></trkpt>"
+        "</trkseg>"
+        "<trkseg>"
+        "<trkpt lat=\"43.7000\" lon=\"1.5000\"><ele>200</ele></trkpt>"
+        "<trkpt lat=\"43.7100\" lon=\"1.5100\"><ele>210</ele></trkpt>"
+        "</trkseg>"
+        "</trk></gpx>");
+
+    client.loadGpxData(gpx);
+
+    QCOMPARE(failSpy.count(), 0);
+    QCOMPARE(readySpy.count(), 1);
+    const QVariantList points = readySpy.at(0).at(0).toList();
+    // 2 points segment 1 + 1 séparateur NaN + 2 points segment 2 = 5
+    QCOMPARE(points.size(), 5);
+    // Le point à l'index 2 doit être le séparateur NaN
+    const QVariantMap sep = points.at(2).toMap();
+    QVERIFY(!qIsFinite(sep.value("lat").toDouble()));
+    QVERIFY(!qIsFinite(sep.value("lon").toDouble()));
+    // Les vrais points sont aux index 0, 1, 3, 4
+    QCOMPARE(points.at(0).toMap().value("lat").toDouble(), 43.6044);
+    QCOMPARE(points.at(1).toMap().value("lat").toDouble(), 43.6100);
+    QCOMPARE(points.at(3).toMap().value("lat").toDouble(), 43.7000);
+    QCOMPARE(points.at(4).toMap().value("lat").toDouble(), 43.7100);
 }
 
 void TestBrouterClient::requestRouteRejectsZeroZero()

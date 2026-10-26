@@ -87,16 +87,19 @@ QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
         // i > 0 requis : pour i=0, prev=-1 et prev==i-1 serait vrai (-1==-1),
         // ce qui ferait points.at(-1) → crash.
         if (i > 0 && prev == i - 1) {
-            // Segment entre deux points consécutifs visibles : couper si
-            // trop long (> 5 km) = trou dans les données (point rejeté par
-            // parseGpx, saut BRouter, etc.). Évite une ligne droite artefact.
+            // Couper les segments anormalement longs à l'écran (> 2x la
+            // diagonale) = trou dans les données (séparation <trkseg>,
+            // point rejeté par parseGpx, etc.). S'adapte à tous les zooms :
+            // à faible zoom, 4 km = quelques pixels, mais un trou de 38 km
+            // fait toujours > 2x la diagonale. Évite une ligne droite artefact.
             const QVariantMap pm = points.at(i - 1).toMap();
-            const double plat = pm.value(QStringLiteral("lat")).toDouble();
-            const double plon = pm.value(QStringLiteral("lon")).toDouble();
-            const double mlat = m.value(QStringLiteral("lat")).toDouble();
-            const double mlon = m.value(QStringLiteral("lon")).toDouble();
-            if (haversine(mlat, mlon, plat, plon) > 5000.0)
-                path.moveTo(pt);  // couper le segment trop long
+            const double pwx = lonToWorldX(pm.value(QStringLiteral("lon")).toDouble(), world);
+            const double pwy = latToWorldY(pm.value(QStringLiteral("lat")).toDouble(), world);
+            const double segLen = std::sqrt((wx - pwx) * (wx - pwx)
+                                          + (wy - pwy) * (wy - pwy));
+            const double maxSeg = 2.0 * std::sqrt(w * w + h * h);
+            if (segLen > maxSeg)
+                path.moveTo(pt);  // couper le segment anormalement long
             else
                 path.lineTo(pt);
         } else {
