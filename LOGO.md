@@ -1,23 +1,29 @@
-# Logo — convention « Vibe coded / Human Tested / Human verified »
+# Logo — Utitibike
 
-Ce projet doit suivre la **convention logo transverse** :
-`../base-de-connaissances/convention-logo-vibe.md`
+L'icône de l'application est le **dessin original** du projet :
+`logo.png` (256×256), référencé par `Icon=logo.png` dans `utitibike.desktop`
+et installé à la racine du click par `CMakeLists.txt`.
 
-En résumé :
+## Historique
 
-- Créer `logo-vibe.svg` : cercle fond **couleur primaire d'Utitibike**, glyphe blanc
-  central (symbole vélo / carte), texte circulaire blanc gras
-  « VIBE CODED • HUMAN TESTED • HUMAN VERIFIED • » en rotation (SMIL 20 s),
-  une seule répétition, font-size nominal ~74, path r=300
-- `logo.png` (icône installée, 512×512, `Icon=logo.png` dans `utitibike.desktop`,
-  installé par CMakeLists.txt) = rendu **librsvg** de `logo-vibe.svg`
-  (`convert -density 150 ... -resize 512x512`), jamais Inkscape
-- Conserver l'ancien logo en `logo-old-*.png`, la version simple en
-  `logo.svg` / `logo-simple.png`
-- Vérification : `../base-de-connaissances/scripts/verif-logo.sh logo.png 300 74`
-- Bump de version à chaque changement de logo
+- En 0.1.4, le logo avait été remplacé par le badge « Vibe coded / Human
+  Tested / Human verified » (convention transverse
+  `base-de-connaissances/convention-logo-vibe.md`, voir `logo-vibe.svg`).
+- **Décision du mainteneur (0.1.5)** : cette convention badge n'est **pas**
+  appliquée à Utitibike — ce n'est pas le design souhaité. Le dessin original
+  est restauré comme icône : `logo.png` = `logo-old-256.png`, identique au
+  `logo.png` de la v0.1.3 (commit `e1b864c`), 256×256.
 
-**État : conforme (0.1.4)** — `logo.png` = badge vibe 512×512 (fond `#1278d0`,
-vélo blanc, texte circulaire), vérifié sans clipping (trou ~17° à 9h, bande
-[300, 355]), installé et confirmé sur le téléphone. Ancien logo conservé en
-`logo-old-256.png`, version simple en `logo.svg` / `logo-simple.png`.
+## Fichiers
+
+| Fichier | Rôle |
+|---|---|
+| `logo.png` | Icône installée — **dessin original** (256×256). |
+| `logo-old-256.png` | Copie locale du dessin original (non suivi, `*.png`). |
+| `logo-simple.svg` / `logo-simple.png` | Version simple (vélo blanc sur fond bleu, sans texte) — alternative, non utilisée comme icône. |
+| `logo-vibe.svg` / `logo-vibe.png` | Badge « Vibe coded / Human Tested / Human verified » — alternative, **non utilisée** comme icône. |
+
+## Note
+
+La convention transverse « badge vibe » existe dans la base de connaissances
+mais n'est **pas** appliquée à ce projet, sur décision du mainteneur.
