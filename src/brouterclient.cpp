@@ -15,6 +15,7 @@
 #include <QDateTime>
 #include <QtMath>
 #include <QTimer>
+#include <limits>
 
 namespace {
 
@@ -226,12 +227,31 @@ void BrouterClient::parseGpx(const QString &gpxText)
     double prevEle = 0.0;
     bool havePrev = false;
     bool haveEle = false;
+    // BRouter peut couper un itinéraire en plusieurs <trkseg> (ferry, tunnel,
+    // zone sans données). On insère un point NaN entre les segments pour que
+    // visiblePath coupe proprement la ligne (un NaN est filtré par isfinite).
+    bool inFirstTrkSeg = true;
 
     while (!xml.atEnd()) {
         xml.readNext();
         if (xml.hasError()) {
             emit routeFailed(tr("GPX illisible."));
             return;
+        }
+        // Détecter le début d'un nouveau <trkseg> (après le premier)
+        if (xml.isStartElement() && xml.name() == QLatin1String("trkseg")) {
+            if (!inFirstTrkSeg && !points.isEmpty()) {
+                // Marqueur de séparation : NaN sera filtré par visiblePath
+                QVariantMap sep;
+                sep.insert(QStringLiteral("lat"),
+                           std::numeric_limits<double>::quiet_NaN());
+                sep.insert(QStringLiteral("lon"),
+                           std::numeric_limits<double>::quiet_NaN());
+                points.append(sep);
+                havePrev = false;  // reset : pas de distance à travers le trou
+            }
+            inFirstTrkSeg = false;
+            continue;
         }
         // Capture les <rtept> (turn instructions) avant le <trk>
         if (xml.isStartElement() && xml.name() == QLatin1String("rtept")) {
