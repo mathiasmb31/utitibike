@@ -1,0 +1,29 @@
+[Desktop Entry]
+Name=Utitibike
+Name[fr]=Utitibike
+Name[en]=Utitibike
+Name[es]=Utitibike
+Name[de]=Utitibike
+Name[it]=Utitibike
+Name[pt]=Utitibike
+Name[nl]=Utitibike
+Name[pl]=Utitibike
+Name[sv]=Utitibike
+Name[da]=Utitibike
+Comment=Itinéraires vélo et export GPX
+Comment[fr]=Itinéraires vélo et export GPX
+Comment[en]=Bike routes and GPX export
+Comment[es]=Rutas en bici y exportación GPX
+Comment[de]=Radtouren und GPX-Export
+Comment[it]=Percorsi in bici ed esportazione GPX
+Comment[pt]=Rotas de bicicleta e exportação GPX
+Comment[nl]=Fietsroutes en GPX-export
+Comment[pl]=Trasy rowerowe i eksport GPX
+Comment[sv]=Cykelrutter och GPX-export
+Comment[da]=Cykelruter og GPX-eksport
+Exec=env QT_QPA_PLATFORM=ubuntumirclient utitibike
+Icon=logo.png
+Terminal=false
+Type=Application
+X-Ubuntu-Touch=true
+X-Ubuntu-Splash-Color=#f7f7f7

@@ -1,0 +1,13 @@
+
+<RCC>
+    <qresource prefix="/">
+        <file>qml/Main.qml</file>
+        <file>qml/MapPage.qml</file>
+        <file>qml/ExportPage.qml</file>
+        <file>qml/ElevationProfile.qml</file>
+        <file>qml/HistoryPage.qml</file>
+        <file>qml/AboutPage.qml</file>
+        <file>logo.png</file>
+    </qresource>
+</RCC>
+

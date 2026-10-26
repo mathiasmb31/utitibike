@@ -1,0 +1,62 @@
+# Utitibike translations (C++/Qt) — C++.
+# Copyright (C) 2026 Mathias Brethous
+# This file is distributed under the same license as the Utitibike package.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: \n"
+
+msgctxt "BrouterClient"
+msgid "Ajoutez au moins deux points (appui long sur la carte)."
+msgstr ""
+
+msgctxt "BrouterClient"
+msgid "Délai dépassé — réessayez."
+msgstr ""
+
+msgctxt "BrouterClient"
+msgid "Réseau : %1"
+msgstr ""
+
+msgctxt "BrouterClient"
+msgid "Réponse vide de BRouter."
+msgstr ""
+
+msgctxt "BrouterClient"
+msgid "GPX illisible."
+msgstr ""
+
+msgctxt "BrouterClient"
+msgid "Aucun itinéraire dans la réponse BRouter."
+msgstr ""
+
+msgctxt "BrouterClient"
+msgid "Impossible d'ouvrir le fichier GPX."
+msgstr ""
+
+msgctxt "BrouterClient"
+msgid "Arrivée"
+msgstr ""
+
+msgctxt "GpsTracker"
+msgid "GPS inactif"
+msgstr ""
+
+msgctxt "GpsTracker"
+msgid "GPS arrêté"
+msgstr ""
+
+msgctxt "GpsTracker"
+msgid "Recherche du signal GPS…"
+msgstr ""
+
+msgctxt "GpsTracker"
+msgid "GPS actif"
+msgstr ""
+
+msgctxt "RouteHistory"
+msgid "Itinéraire %1"
+msgstr ""
+

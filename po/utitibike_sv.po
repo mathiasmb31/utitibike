@@ -1,0 +1,243 @@
+# Utitibike translations — Swedish.
+# Copyright (C) 2026 Mathias Brethous
+# This file is distributed under the same license as the Utitibike package.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: sv\n"
+
+msgid "%1 itinéraire(s)"
+msgstr "%1 rutt(er)"
+
+msgid "Activer GPS"
+msgstr "Aktivera GPS"
+
+msgid "Ajouter ma position aux favoris"
+msgstr "Lägg till min position i favoriter"
+
+msgid "Annuler"
+msgstr "Avbryt"
+
+msgid "Appui long sur la carte : ajouter un point"
+msgstr "Långtryck på kartan: lägg till en punkt"
+
+msgid "Arrivée"
+msgstr "Mål"
+
+msgid "Arrêter"
+msgstr "Stoppa"
+
+msgid "Arrêter nav."
+msgstr "Stoppa nav."
+
+msgid "Astuces"
+msgstr "Tips"
+
+msgid "Aucun itinéraire dans l'historique"
+msgstr "Ingen rutt i historiken"
+
+msgid "Aucun résultat"
+msgstr "Inga resultat"
+
+msgid "Calculer l'itinéraire"
+msgstr "Beräkna rutt"
+
+msgid "Calcul…"
+msgstr "Beräknar…"
+
+msgid "Carte hors ligne (tuiles OpenStreetMap)"
+msgstr "Offlinekarta (OpenStreetMap)"
+
+msgid "Centrer GPS"
+msgstr "Centrera GPS"
+
+msgid "Charger"
+msgstr "Ladda"
+
+msgid "Charger un GPX"
+msgstr "Ladda en GPX"
+
+msgid "Crédits"
+msgstr "Tack till"
+
+msgid "Cyclable"
+msgstr "Cykelvänlig"
+
+msgid "Difficile"
+msgstr "Svår"
+
+msgid "Dénivelé"
+msgstr "Höjdskillnad"
+
+msgid "Départ"
+msgstr "Start"
+
+msgid "Effacer tracé"
+msgstr "Rensa spår"
+
+msgid "Enregistrer"
+msgstr "Spara"
+
+msgid "Enregistrer le GPX"
+msgstr "Spara GPX"
+
+msgid "Erreur de recherche"
+msgstr "Sökfel"
+
+msgid "Exporter GPX"
+msgstr "Exportera GPX"
+
+msgid "Facile"
+msgstr "Lätt"
+
+msgid "Facile : évite les côtes (coût %1)"
+msgstr "Lätt: undviker backar (kostnad %1)"
+
+msgid "Favori ajouté"
+msgstr "Favorit tillagd"
+
+msgid "Favoris (%1)"
+msgstr "Favoriter (%1)"
+
+msgid "GPS & Navigation"
+msgstr "GPS & Navigation"
+
+msgid "GPS actif"
+msgstr "GPS aktiv"
+
+msgid "GPX chargé"
+msgstr "GPX inläst"
+
+msgid "Garmin Connect"
+msgstr "Garmin Connect"
+
+msgid "Historique"
+msgstr "Historik"
+
+msgid "Historique (%1)"
+msgstr "Historik (%1)"
+
+msgid "Ignore le dénivelé dans le calcul"
+msgstr "Ignorera höjdskillnad i beräkningen"
+
+msgid "Itinéraire"
+msgstr "Rutt"
+
+msgid "Itinéraire — %1 point(s)"
+msgstr "Rutt — %1 punkt(er)"
+
+msgid "Itinéraires vélo : carte OpenStreetMap hors ligne, calcul BRouter et export GPX."
+msgstr "Cykelrutter: offline OpenStreetMap, BRouter-beräkning och GPX-export."
+
+msgid "Le GPX exporté contient des horodatages : Garmin Connect l'accepte (menu « Importer des données » du site)."
+msgstr "Den exporterade GPX-filen innehåller tidsstämplar: Garmin Connect accepterar den (sidmeny «Importera data»)."
+
+msgid "Naviguer"
+msgstr "Navigera"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Normal : pénalise légèrement les montées"
+msgstr "Normal: missgynnar backar något"
+
+msgid "Ouvrir Garmin Connect dans le navigateur"
+msgstr "Öppna Garmin Connect i webbläsaren"
+
+msgid "Parcours sauvegardé"
+msgstr "Spår sparat"
+
+msgid "Partager le GPX"
+msgstr "Dela GPX"
+
+msgid "Pas de profil d'altitude"
+msgstr "Ingen höjdprofil"
+
+msgid "Position %1"
+msgstr "Position %1"
+
+msgid "Profil BRouter"
+msgstr "BRouter-profil"
+
+msgid "Précharger la zone affichée"
+msgstr "Förladda synligt område"
+
+msgid "Recherche indisponible (HTTP %1)"
+msgstr "Sökning otillgänglig (HTTP %1)"
+
+msgid "Rechercher"
+msgstr "Sök"
+
+msgid "Rechercher un lieu…"
+msgstr "Sök efter en plats…"
+
+msgid "Satellite"
+msgstr "Satellit"
+
+msgid "Sombre"
+msgstr "Mörk"
+
+msgid "Sportif : cherche les côtes (bonus D+ %1)"
+msgstr "Sportig: söker backar (D+ bonus %1)"
+
+msgid "Standard"
+msgstr "Standard"
+
+msgid "Suivi GPS"
+msgstr "GPS-spårning"
+
+msgid "Supprimer"
+msgstr "Ta bort"
+
+msgid "Tout effacer"
+msgstr "Rensa alla"
+
+msgid "Tuiles : %1 / %2"
+msgstr "Kartblad: %1 / %2"
+
+msgid "Utitibike"
+msgstr "Utitibike"
+
+msgid "Version %1"
+msgstr "Version %1"
+
+msgid "dans %1 m"
+msgstr "om %1 m"
+
+msgid "À propos"
+msgstr "Om"
+
+msgid "Échec du chargement du GPX"
+msgstr "Det gick inte att läsa in GPX"
+
+msgid "Étape %1"
+msgstr "Etapp %1"
+
+msgid "• Appui long sur la carte : ajouter un point\n• Glisse : déplacer la carte\n• Pince : zoomer\n• Bouton orange : panneau itinéraire\n• Icône recherche : trouver un lieu\n• GPS : position en temps réel + navigation"
+msgstr "• Långtryck på kartan: lägg till en punkt\n• Dra: panorera kartan\n• Nyp: zooma\n• Orange knapp: ruttpanel\n• Sökikon: hitta en plats\n• GPS: liveposition + navigation"
+
+msgid "Point %1 ajouté"
+msgstr "Punkt %1 tillagd"
+
+msgid "Échec d'écriture du GPX"
+msgstr "Det gick inte att skriva GPX"
+
+msgid "Préchargement zoom %1 à %2 lancé"
+msgstr "Förladdning zoom %1 till %2 startad"
+
+msgid "Itinéraire calculé"
+msgstr "Rutt beräknad"
+
+msgid "Impossible d'ouvrir le navigateur"
+msgstr "Kan inte öppna webbläsaren"
+
+msgid "Hors ligne"
+msgstr "Offline"
+
+msgid "Tout effacer ?"
+msgstr "Radera alla?"
+
+msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
+msgstr "Radera alla rutter från historiken permanent?"

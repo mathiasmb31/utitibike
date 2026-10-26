@@ -1,0 +1,62 @@
+# Utitibike translations (C++/Qt) — pl.
+# Copyright (C) 2026 Mathias Brethous
+# This file is distributed under the same license as the Utitibike package.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pl\n"
+
+msgctxt "BrouterClient"
+msgid "Ajoutez au moins deux points (appui long sur la carte)."
+msgstr "Dodaj co najmniej dwa punkty (przytrzymaj na mapie)."
+
+msgctxt "BrouterClient"
+msgid "Délai dépassé — réessayez."
+msgstr "Przekroczono czas — spróbuj ponownie."
+
+msgctxt "BrouterClient"
+msgid "Réseau : %1"
+msgstr "Sieć: %1"
+
+msgctxt "BrouterClient"
+msgid "Réponse vide de BRouter."
+msgstr "Pusta odpowiedź BRouter."
+
+msgctxt "BrouterClient"
+msgid "GPX illisible."
+msgstr "Nieczytelny GPX."
+
+msgctxt "BrouterClient"
+msgid "Aucun itinéraire dans la réponse BRouter."
+msgstr "Brak trasy w odpowiedzi BRouter."
+
+msgctxt "BrouterClient"
+msgid "Impossible d'ouvrir le fichier GPX."
+msgstr "Nie można otworzyć pliku GPX."
+
+msgctxt "BrouterClient"
+msgid "Arrivée"
+msgstr "Meta"
+
+msgctxt "GpsTracker"
+msgid "GPS inactif"
+msgstr "GPS nieaktywny"
+
+msgctxt "GpsTracker"
+msgid "GPS arrêté"
+msgstr "GPS zatrzymany"
+
+msgctxt "GpsTracker"
+msgid "Recherche du signal GPS…"
+msgstr "Szukanie sygnału GPS…"
+
+msgctxt "GpsTracker"
+msgid "GPS actif"
+msgstr "GPS aktywny"
+
+msgctxt "RouteHistory"
+msgid "Itinéraire %1"
+msgstr "Trasa %1"
+

@@ -1,0 +1,243 @@
+# Utitibike translations — Dutch.
+# Copyright (C) 2026 Mathias Brethous
+# This file is distributed under the same license as the Utitibike package.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: nl\n"
+
+msgid "%1 itinéraire(s)"
+msgstr "%1 route(s)"
+
+msgid "Activer GPS"
+msgstr "GPS inschakelen"
+
+msgid "Ajouter ma position aux favoris"
+msgstr "Mijn positie toevoegen aan favorieten"
+
+msgid "Annuler"
+msgstr "Annuleren"
+
+msgid "Appui long sur la carte : ajouter un point"
+msgstr "Lang indrukken op de kaart: punt toevoegen"
+
+msgid "Arrivée"
+msgstr "Aankomst"
+
+msgid "Arrêter"
+msgstr "Stoppen"
+
+msgid "Arrêter nav."
+msgstr "Nav. stoppen"
+
+msgid "Astuces"
+msgstr "Tips"
+
+msgid "Aucun itinéraire dans l'historique"
+msgstr "Geen route in geschiedenis"
+
+msgid "Aucun résultat"
+msgstr "Geen resultaten"
+
+msgid "Calculer l'itinéraire"
+msgstr "Route berekenen"
+
+msgid "Calcul…"
+msgstr "Berekenen…"
+
+msgid "Carte hors ligne (tuiles OpenStreetMap)"
+msgstr "Offline kaart (OpenStreetMap-tegels)"
+
+msgid "Centrer GPS"
+msgstr "GPS centreren"
+
+msgid "Charger"
+msgstr "Laden"
+
+msgid "Charger un GPX"
+msgstr "GPX laden"
+
+msgid "Crédits"
+msgstr "Vermeldingen"
+
+msgid "Cyclable"
+msgstr "Fietsvriendelijk"
+
+msgid "Difficile"
+msgstr "Moeilijk"
+
+msgid "Dénivelé"
+msgstr "Hoogteverschil"
+
+msgid "Départ"
+msgstr "Start"
+
+msgid "Effacer tracé"
+msgstr "Spoor wissen"
+
+msgid "Enregistrer"
+msgstr "Opslaan"
+
+msgid "Enregistrer le GPX"
+msgstr "GPX opslaan"
+
+msgid "Erreur de recherche"
+msgstr "Zoekfout"
+
+msgid "Exporter GPX"
+msgstr "GPX exporteren"
+
+msgid "Facile"
+msgstr "Makkelijk"
+
+msgid "Facile : évite les côtes (coût %1)"
+msgstr "Makkelijk: vermijdt hellingen (kosten %1)"
+
+msgid "Favori ajouté"
+msgstr "Favoriet toegevoegd"
+
+msgid "Favoris (%1)"
+msgstr "Favorieten (%1)"
+
+msgid "GPS & Navigation"
+msgstr "GPS & Navigatie"
+
+msgid "GPS actif"
+msgstr "GPS actief"
+
+msgid "GPX chargé"
+msgstr "GPX geladen"
+
+msgid "Garmin Connect"
+msgstr "Garmin Connect"
+
+msgid "Historique"
+msgstr "Geschiedenis"
+
+msgid "Historique (%1)"
+msgstr "Geschiedenis (%1)"
+
+msgid "Ignore le dénivelé dans le calcul"
+msgstr "Hoogteverschil negeren in de berekening"
+
+msgid "Itinéraire"
+msgstr "Route"
+
+msgid "Itinéraire — %1 point(s)"
+msgstr "Route — %1 punt(en)"
+
+msgid "Itinéraires vélo : carte OpenStreetMap hors ligne, calcul BRouter et export GPX."
+msgstr "Fietsroutes: offline OpenStreetMap, BRouter-berekening en GPX-export."
+
+msgid "Le GPX exporté contient des horodatages : Garmin Connect l'accepte (menu « Importer des données » du site)."
+msgstr "De geëxporteerde GPX bevat tijdstempels: Garmin Connect accepteert deze (sitemenu «Gegevens importeren»)."
+
+msgid "Naviguer"
+msgstr "Navigeren"
+
+msgid "Normal"
+msgstr "Normaal"
+
+msgid "Normal : pénalise légèrement les montées"
+msgstr "Normaal: hellingen licht bestraffen"
+
+msgid "Ouvrir Garmin Connect dans le navigateur"
+msgstr "Garmin Connect openen in de browser"
+
+msgid "Parcours sauvegardé"
+msgstr "Route opgeslagen"
+
+msgid "Partager le GPX"
+msgstr "GPX delen"
+
+msgid "Pas de profil d'altitude"
+msgstr "Geen hoogteprofiel"
+
+msgid "Position %1"
+msgstr "Positie %1"
+
+msgid "Profil BRouter"
+msgstr "BRouter-profiel"
+
+msgid "Précharger la zone affichée"
+msgstr "Zichtbaar gebied voorladen"
+
+msgid "Recherche indisponible (HTTP %1)"
+msgstr "Zoeken niet beschikbaar (HTTP %1)"
+
+msgid "Rechercher"
+msgstr "Zoeken"
+
+msgid "Rechercher un lieu…"
+msgstr "Zoek een plaats…"
+
+msgid "Satellite"
+msgstr "Satelliet"
+
+msgid "Sombre"
+msgstr "Donker"
+
+msgid "Sportif : cherche les côtes (bonus D+ %1)"
+msgstr "Sportief: zoekt hellingen (D+ bonus %1)"
+
+msgid "Standard"
+msgstr "Standaard"
+
+msgid "Suivi GPS"
+msgstr "GPS-tracking"
+
+msgid "Supprimer"
+msgstr "Verwijderen"
+
+msgid "Tout effacer"
+msgstr "Alles wissen"
+
+msgid "Tuiles : %1 / %2"
+msgstr "Tegels: %1 / %2"
+
+msgid "Utitibike"
+msgstr "Utitibike"
+
+msgid "Version %1"
+msgstr "Versie %1"
+
+msgid "dans %1 m"
+msgstr "over %1 m"
+
+msgid "À propos"
+msgstr "Over"
+
+msgid "Échec du chargement du GPX"
+msgstr "GPX laden mislukt"
+
+msgid "Étape %1"
+msgstr "Stap %1"
+
+msgid "• Appui long sur la carte : ajouter un point\n• Glisse : déplacer la carte\n• Pince : zoomer\n• Bouton orange : panneau itinéraire\n• Icône recherche : trouver un lieu\n• GPS : position en temps réel + navigation"
+msgstr "• Lang indrukken op de kaart: punt toevoegen\n• Verslepen: kaart bewegen\n• Knijpen: zoomen\n• Oranje knop: routepaneel\n• Zoekpictogram: vind een plaats\n• GPS: live positie + navigatie"
+
+msgid "Point %1 ajouté"
+msgstr "Punt %1 toegevoegd"
+
+msgid "Échec d'écriture du GPX"
+msgstr "GPX schrijven mislukt"
+
+msgid "Préchargement zoom %1 à %2 lancé"
+msgstr "Voorladen zoom %1 tot %2 gestart"
+
+msgid "Itinéraire calculé"
+msgstr "Route berekend"
+
+msgid "Impossible d'ouvrir le navigateur"
+msgstr "Kan browser niet openen"
+
+msgid "Hors ligne"
+msgstr "Offline"
+
+msgid "Tout effacer ?"
+msgstr "Alles verwijderen?"
+
+msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
+msgstr "Alle routes definitief uit de geschiedenis verwijderen?"
