@@ -902,7 +902,9 @@ Page {
                                 var w = page.waypoints[i]
                                 coords.push((i + 1) + ":" + w.lat.toFixed(5) + "," + w.lon.toFixed(5))
                             }
-                            showToast("BRouter ← " + coords.join(" | "))
+                            showToast("BRouter ← " + coords.join(" | ")
+                                      + " [QML:" + page.waypoints.length
+                                      + " C++:" + map.waypoints.length + "]")
                             brouter.requestRoute(page.waypoints)
                         }
                     }
