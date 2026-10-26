@@ -1,5 +1,6 @@
 
 #include "tilemapitem.h"
+#include "geo.h"
 
 #include <QPainter>
 #include <QPainterPath>
@@ -84,7 +85,18 @@ QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
             continue;
         const QPointF pt(wx - ox, wy - oy);
         if (prev == i - 1) {
-            path.lineTo(pt);
+            // Segment entre deux points consécutifs visibles : couper si
+            // trop long (> 5 km) = trou dans les données (point rejeté par
+            // parseGpx, saut BRouter, etc.). Évite une ligne droite artefact.
+            const QVariantMap pm = points.at(i - 1).toMap();
+            const double plat = pm.value(QStringLiteral("lat")).toDouble();
+            const double plon = pm.value(QStringLiteral("lon")).toDouble();
+            const double mlat = m.value(QStringLiteral("lat")).toDouble();
+            const double mlon = m.value(QStringLiteral("lon")).toDouble();
+            if (haversine(mlat, mlon, plat, plon) > 5000.0)
+                path.moveTo(pt);  // couper le segment trop long
+            else
+                path.lineTo(pt);
         } else {
             // Point précédent hors champ : ne PAS tracer de segment depuis ce
             // point (créerait une ligne droite artefact vers le bord de
