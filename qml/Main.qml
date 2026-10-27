@@ -29,35 +29,51 @@ MainView {
         color: "#f7f7f7"   // même couleur que X-Ubuntu-Splash-Color
         z: 100
 
-        Column {
+        // Positionnement explicite (x/y + bindings) — les anchors sur ids
+        // siblings échouent à la création du composant (parent/id null).
+        Item {
             id: splashContent
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: -units.gu(5)
-            spacing: units.gu(2)
+            anchors.fill: parent
+
+            property real logoSize: Math.min(splash.width * 0.65, 768)
+            property real cx: width / 2
+            property real cy: height / 2 - units.gu(5)
 
             Image {
                 id: splashLogo
                 source: "qrc:/logo.png"
-                width: Math.min(splash.width * 0.65, 768)
+                x: splashContent.cx - width / 2
+                y: splashContent.cy - height / 2
+                width: splashContent.logoSize
                 height: width
                 fillMode: Image.PreserveAspectFit
                 smooth: true
-                anchors.horizontalCenter: parent.horizontalCenter
+
+                // Rotation du texte circulaire — même vitesse que le SVG (20s/tour)
+                RotationAnimation on rotation {
+                    from: 0
+                    to: 360
+                    duration: 20000
+                    loops: Animation.Infinite
+                    running: splash.visible
+                }
             }
 
             Label {
+                x: splashContent.cx - width / 2
+                y: splashLogo.y + splashLogo.height + units.gu(2)
                 text: "Utitibike"
                 fontSize: "x-large"
                 font.weight: Font.Bold
                 color: "#1278d0"
-                anchors.horizontalCenter: parent.horizontalCenter
             }
 
             Label {
+                x: splashContent.cx - width / 2
+                y: splashLogo.y + splashLogo.height + units.gu(6.5)
                 text: i18n.tr("Version %1").arg(appVersion)
                 fontSize: "medium"
                 color: "#888888"
-                anchors.horizontalCenter: parent.horizontalCenter
             }
         }
 
