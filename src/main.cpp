@@ -24,22 +24,32 @@
 #include "displaykeeper.h"
 #include "geoutils.h"
 #include "viewstate.h"
-
+#include "appdata.h"
 
 int main(int argc, char *argv[])
 {
-    QGuiApplication app(argc, argv);
     // Nom d'application = nom du paquet click (mathias.utitibike) pour que
     // QStandardPaths retourne des chemins couverts par les droits par défaut
     // du template AppArmor (@{HOME}/.local/share/@{APP_PKGNAME}/** etc.) —
     // évite les redflags read_path/write_path dans le click review.
     // Pas de organizationName : sinon Qt ajoute un sous-répertoire en plus.
-    app.setApplicationName(QStringLiteral("mathias.utitibike"));
+    // IMPORTANT : setApplicationName AVANT le constructeur QGuiApplication,
+    // sinon le constructeur initialise applicationName depuis argv[0]
+    // ("utitibike") et QStandardPaths cache ce chemin — AppDataLocation
+    // retournerait ~/.local/share/utitibike (hors AppArmor) au lieu de
+    // ~/.local/share/mathias.utitibike (couvert par le template par défaut).
+    QCoreApplication::setApplicationName(QStringLiteral("mathias.utitibike"));
+    QCoreApplication::setOrganizationName(QStringLiteral(""));
+
+    QGuiApplication app(argc, argv);
 
     qDebug() << "========================================";
     qDebug() << "  Utitibike v" UTITIBIKE_VERSION " — Itinéraires vélo";
     qDebug() << "  Carte OSM · BRouter · GPS · Export GPX";
     qDebug() << "========================================";
+    // Sauvegarder le chemin AVANT que le plugin QPA ne change applicationName
+    g_appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    qDebug() << "appDataDir:" << g_appDataDir;
 
     // Internationalisation : charge utitibike_<locale>.qm selon la langue du
     // système (ex. fr_FR -> essaie utitibike_fr_FR.qm puis utitibike_fr.qm).

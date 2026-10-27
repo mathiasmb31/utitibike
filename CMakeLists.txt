@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16.3)
 #  - manifest.json est généré depuis manifest.json.in (clickable le lit à la racine)
 #  - UTITIBIKE_VERSION est injecté en C++ (target_compile_definitions)
 #  - le QML la récupère via le context property "appVersion" (main.cpp)
-project(utitibike VERSION 0.1.6 LANGUAGES CXX)
+project(utitibike VERSION 0.1.10 LANGUAGES CXX)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/manifest.json.in
                ${CMAKE_CURRENT_SOURCE_DIR}/manifest.json @ONLY)
@@ -18,6 +18,8 @@ find_package(Qt5 5.12 REQUIRED COMPONENTS Core Gui Quick Network DBus Positionin
 
 set(SRC
     src/main.cpp
+    src/appdata.h
+    src/appdata.cpp
     src/tilecache.h
     src/tilecache.cpp
     src/tilemapitem.h
