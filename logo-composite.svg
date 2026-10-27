@@ -10,13 +10,13 @@
     <!-- Circular text path for rotating text -->
     <path id="circle-text-path" d="
       M 400,400
-      m -327,0
-      a 327,327 0 1,1 654,0
-      a 327,327 0 1,1 -654,0
+      m -320,0
+      a 320,320 0 1,1 640,0
+      a 320,320 0 1,1 -640,0
     " fill="none"/>
 
     <!-- Reusable text on path -->
-    <text id="circle-text" font-family="Ubuntu, Cantarell, sans-serif" font-size="80" font-weight="700" letter-spacing="0" fill="#ffffff" opacity="1.0">
+    <text id="circle-text" font-family="Liberation Sans Narrow, Ubuntu Condensed, Ubuntu, sans-serif" font-size="95" font-weight="700" letter-spacing="0" fill="#ffffff" opacity="1.0">
       <textPath href="#circle-text-path" startOffset="0%">VIBE CODED &#x2022; HUMAN TESTED &#x2022; HUMAN VERIFIED &#x2022;&#160;</textPath>
     </text>
   </defs>
