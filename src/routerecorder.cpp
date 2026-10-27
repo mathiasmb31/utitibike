@@ -1,3 +1,4 @@
+#include "appdata.h"
 #include "routerecorder.h"
 #include "gpstracker.h"
 #include "geo.h"
@@ -131,7 +132,7 @@ QString RouteRecorder::saveGpx(const QString &fileName) const
     if (m_points.size() < 2)
         return QString();
 
-    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+    const QString dir = appDataDir()
                         + QStringLiteral("/tracks");
     QDir().mkpath(dir);
     const QString name = fileName;

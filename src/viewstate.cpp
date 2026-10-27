@@ -1,3 +1,4 @@
+#include "appdata.h"
 #include "viewstate.h"
 
 #include <QSaveFile>
@@ -15,7 +16,7 @@ ViewState::ViewState(QObject *parent)
     m_saveTimer.setSingleShot(true);
     m_saveTimer.setInterval(1000);
     connect(&m_saveTimer, &QTimer::timeout, this, [this]() {
-        const QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        const QString base = appDataDir();
         QDir().mkpath(base);
         QSaveFile f(base + QStringLiteral("/view.json"));
         if (!f.open(QIODevice::WriteOnly))
@@ -64,7 +65,7 @@ void ViewState::scheduleSave()
 
 void ViewState::load()
 {
-    const QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+    const QString path = appDataDir()
                          + QStringLiteral("/view.json");
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly))
