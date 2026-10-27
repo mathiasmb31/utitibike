@@ -1,5 +1,6 @@
 
 #include "tilecache.h"
+#include "appdata.h"
 
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -12,6 +13,7 @@
 #include <QTimer>
 #include <QFileInfoList>
 #include <QDateTime>
+#include <QCoreApplication>
 #include <algorithm>
 
 namespace {
@@ -60,7 +62,7 @@ TileCache::TileCache(QObject *parent)
     : QObject(parent)
     , m_mem(100)   // ~100 tuiles de 256x256 (~25 Mo) : assez pour la vue courante
 {
-    const QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    const QString base = appDataDir();
     m_dir = QDir(base + QStringLiteral("/tiles/") + m_tileServer);
     m_dir.mkpath(QStringLiteral("."));
     qWarning() << "tilecache base" << base << "dir" << m_dir.path();
@@ -148,7 +150,7 @@ void TileCache::setTileServer(const QString &s)
     // Chaque serveur a son propre sous-répertoire pour ne pas mélanger les tuiles.
     // Le mkpath (I/O disque) est fait hors mutex ; seules les assignations
     // de membres sont protégées (tile() les lit depuis le thread de rendu).
-    const QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    const QString base = appDataDir();
     QDir newDir(base + QStringLiteral("/tiles/") + s);
     newDir.mkpath(QStringLiteral("."));
     {
@@ -370,8 +372,7 @@ void TileCache::purgeDiskCache()
     // supprimées jusqu'à 150 Mo — LRU approximé, exécuté au démarrage.
     const qint64 kMaxBytes = 200LL * 1024 * 1024;
     const qint64 kTargetBytes = 150LL * 1024 * 1024;
-    const QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-                         + QStringLiteral("/tiles");
+    const QString base = appDataDir() + QStringLiteral("/tiles");
     const QDir root(base);
     const QStringList servers = root.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 
