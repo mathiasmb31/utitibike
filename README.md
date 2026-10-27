@@ -42,8 +42,8 @@ src/
 qml/
   Main.qml          MainView + domaine i18n (gettext)
   MapPage.qml       carte + panneau itinéraire + recherche + enregistrement
+                    + favoris (panneau latéral)
   HistoryPage.qml   historique
-  FavoritesPage.qml favoris
   AboutPage.qml     à propos
   ExportPage.qml    export GPX via le Content Hub
   ElevationProfile.qml  profil d'altitude (Canvas)
