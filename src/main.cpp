@@ -26,10 +26,6 @@
 #include "viewstate.h"
 #include "appdata.h"
 
-// Chemin de données correct — peuplé dans main() avant que le plugin QPA
-// ubuntumirclient n'écrase applicationName (voir appdata.h).
-QString g_appDataDir;
-
 int main(int argc, char *argv[])
 {
     // Nom d'application = nom du paquet click (mathias.utitibike) pour que

@@ -18,6 +18,8 @@ find_package(Qt5 5.12 REQUIRED COMPONENTS Core Gui Quick Network DBus Positionin
 
 set(SRC
     src/main.cpp
+    src/appdata.h
+    src/appdata.cpp
     src/tilecache.h
     src/tilecache.cpp
     src/tilemapitem.h
