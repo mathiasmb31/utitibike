@@ -6,6 +6,7 @@ add_compile_definitions(UTITIBIKE_VERSION="${PROJECT_VERSION}")
 
 # Sources communes testées (sans main.cpp ni les trucs dépendants du device)
 set(COMMON_SRC
+    ${CMAKE_SOURCE_DIR}/src/appdata.cpp
     ${CMAKE_SOURCE_DIR}/src/tilemapitem.cpp
     ${CMAKE_SOURCE_DIR}/src/brouterclient.cpp
     ${CMAKE_SOURCE_DIR}/src/favorites.cpp
@@ -38,6 +39,7 @@ add_test(NAME brouterclient COMMAND tst_brouterclient)
 
 # Persistance (Favorites, RouteHistory, ViewState)
 add_executable(tst_persistence tst_persistence.cpp
+    ${CMAKE_SOURCE_DIR}/src/appdata.cpp
     ${CMAKE_SOURCE_DIR}/src/favorites.cpp
     ${CMAKE_SOURCE_DIR}/src/routehistory.cpp
     ${CMAKE_SOURCE_DIR}/src/viewstate.cpp
