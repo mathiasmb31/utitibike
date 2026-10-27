@@ -25,6 +25,13 @@ projet au centre, entouré du **texte circulaire** « VIBE CODED • HUMAN TESTE
   points cardinaux (r=384) sont **supprimés** : plus de place entre la bande
   de texte et le bord du disque (filet bleu résiduel ~5 unités).
   Disque de fond r=390 inchangé.
+- **0.1.9** : police condensée **Liberation Sans Narrow Bold** — le texte
+  est 18,75 % plus grand (F=80 → 95) sans dépasser le disque. Path R=325 →
+  R=320 (bande [320,389], dans le disque r=390). Gains de lisibilité mesurés
+  (`verif-logo.sh logo.png 320 95`) : 128 px = 1707 (+34 %), 96 px = 949
+  (+46 %), 64 px = **528 (+73 %)** — taille d'affichage tiroir d'apps.
+  Trou secteur 11 = 522 (pas de clipping). Police de fallback :
+  `Ubuntu Condensed` puis `Ubuntu` puis `sans-serif`.
 
 ## Fichiers
 
