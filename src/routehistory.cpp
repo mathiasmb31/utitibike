@@ -1,3 +1,4 @@
+#include "appdata.h"
 #include "routehistory.h"
 
 #include <QFile>
@@ -19,7 +20,7 @@ RouteHistory::RouteHistory(QObject *parent)
 
 QString RouteHistory::writeGpxFile(const QString &gpx)
 {
-    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+    const QString dir = appDataDir()
                         + QStringLiteral("/history");
     QDir().mkpath(dir);
     const QString fileName = QUuid::createUuid().toString(QUuid::WithoutBraces)
@@ -37,7 +38,7 @@ QString RouteHistory::writeGpxFile(const QString &gpx)
 
 QString RouteHistory::gpxFilePath(const QString &fileName) const
 {
-    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+    return appDataDir()
            + QStringLiteral("/history/") + fileName;
 }
 
@@ -122,7 +123,7 @@ QVariantList RouteHistory::waypointsAt(int index) const
 
 void RouteHistory::load()
 {
-    const QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+    const QString path = appDataDir()
                          + QStringLiteral("/history.json");
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly))
@@ -155,9 +156,9 @@ void RouteHistory::load()
 
 void RouteHistory::save()
 {
-    const QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+    const QString path = appDataDir()
                          + QStringLiteral("/history.json");
-    QDir().mkpath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+    QDir().mkpath(appDataDir());
     QJsonArray arr;
     for (const QVariant &v : m_entries)
         arr.append(QJsonObject::fromVariantMap(v.toMap()));

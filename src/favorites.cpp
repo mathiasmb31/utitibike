@@ -1,3 +1,4 @@
+#include "appdata.h"
 #include "favorites.h"
 #include "geo.h"
 
@@ -62,7 +63,7 @@ bool Favorites::isFavorite(double lat, double lon) const
 
 void Favorites::load()
 {
-    const QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+    const QString path = appDataDir()
                          + QStringLiteral("/favorites.json");
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly))
@@ -78,9 +79,9 @@ void Favorites::load()
 
 void Favorites::save()
 {
-    const QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+    const QString path = appDataDir()
                          + QStringLiteral("/favorites.json");
-    QDir().mkpath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
+    QDir().mkpath(appDataDir());
     QJsonArray arr;
     for (const QVariant &v : m_entries)
         arr.append(QJsonObject::fromVariantMap(v.toMap()));
