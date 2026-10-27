@@ -2,6 +2,7 @@
 /build/
 /build-*/
 /.clickable/
+/.ccache
 *.click
 
 # Fichiers générés par le build (hors build/) — ne devraient pas exister,
