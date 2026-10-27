@@ -1,8 +1,13 @@
-
 {
     "clickable_minimum_required": "8",
     "builder": "cmake",
     "kill": "utitibike",
-    "dependencies_host": ["gettext"]
+    "dependencies_host": ["gettext", "ccache"],
+    "build_args": [
+        "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache",
+        "-DCMAKE_C_COMPILER_LAUNCHER=ccache"
+    ],
+    "env_vars": {
+        "CCACHE_DIR": "/mnt/five/vibeworkspace/velo-touch/.ccache"
+    }
 }
-

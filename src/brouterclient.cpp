@@ -15,6 +15,7 @@
 #include <QDateTime>
 #include <QtMath>
 #include <QTimer>
+#include <QDebug>
 #include <limits>
 
 namespace {
@@ -138,11 +139,13 @@ void BrouterClient::setBusy(bool v)
 
 void BrouterClient::requestRoute(const QVariantList &waypoints)
 {
+    qWarning() << "brouter requestRoute:" << waypoints.size() << "waypoints";
     QStringList coords;
     for (int i = 0; i < waypoints.size(); ++i) {
         const QVariantMap m = waypoints.at(i).toMap();
         const double lat = m.value(QStringLiteral("lat")).toDouble();
         const double lon = m.value(QStringLiteral("lon")).toDouble();
+        qWarning() << "brouter waypoint" << i + 1 << ":" << lat << "," << lon;
         // Défense : un waypoint invalide (NaN, hors limites, ou 0,0) ferait
         // échouer le calcul BRouter ou produirait un itinéraire absurde
         // passant par le Golfe de Guinée.
@@ -150,15 +153,19 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
                 || lat < -90.0 || lat > 90.0
                 || lon < -180.0 || lon > 180.0
                 || (lat == 0.0 && lon == 0.0)) {
-            emit routeFailed(tr("Point %1 invalide (%2, %3) — supprimez-le et réessayez.")
-                             .arg(i + 1).arg(lat, 0, 'f', 5).arg(lon, 0, 'f', 5));
+            const QString msg = tr("Point %1 invalide (%2, %3) — supprimez-le et réessayez.")
+                             .arg(i + 1).arg(lat, 0, 'f', 5).arg(lon, 0, 'f', 5);
+            qWarning() << "brouter FAILED:" << msg;
+            emit routeFailed(msg);
             return;
         }
         coords << QString::number(lon, 'f', 6) + QLatin1Char(',')
                + QString::number(lat, 'f', 6);
     }
     if (coords.size() < 2) {
-        emit routeFailed(tr("Ajoutez au moins deux points (appui long sur la carte)."));
+        const QString msg = tr("Ajoutez au moins deux points (appui long sur la carte).");
+        qWarning() << "brouter FAILED:" << msg;
+        emit routeFailed(msg);
         return;
     }
     if (m_reply) {
@@ -181,6 +188,7 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
     // Pass uphill cost so the user can prefer flat or hilly routes.
     q.addQueryItem(QStringLiteral("uphillcost"), QString::number(m_uphillCost));
     url.setQuery(q);
+    qWarning() << "brouter URL:" << url.toString();
 
     QNetworkRequest req(url);
     req.setHeader(QNetworkRequest::UserAgentHeader,
@@ -188,8 +196,10 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
     m_reply = m_nam->get(req);
 
     QTimer::singleShot(90000, m_reply, [this]() {
-        if (m_reply && m_reply->isRunning())
+        if (m_reply && m_reply->isRunning()) {
+            qWarning() << "brouter TIMEOUT after 90s — aborting";
             m_reply->abort();
+        }
     });
 
     connect(m_reply, &QNetworkReply::finished, this, [this]() {
@@ -197,23 +207,32 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
         m_reply = nullptr;
         r->deleteLater();
         setBusy(false);
+        const int httpStatus = r->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        qWarning() << "brouter reply finished: HTTP" << httpStatus
+                   << "error" << r->error() << "-" << r->errorString();
         if (r->error() != QNetworkReply::NoError) {
             const QString msg = (r->error() == QNetworkReply::OperationCanceledError)
                   ? tr("Délai dépassé — réessayez.")
                   : tr("Réseau : %1").arg(r->errorString());
+            qWarning() << "brouter FAILED:" << msg;
             emit routeFailed(msg);
             return;
         }
-        parseGpx(QString::fromUtf8(r->readAll()));
+        const QByteArray body = r->readAll();
+        qWarning() << "brouter response:" << body.size() << "bytes";
+        parseGpx(QString::fromUtf8(body));
     });
 }
 
 void BrouterClient::parseGpx(const QString &gpxText)
 {
+    qWarning() << "brouter parseGpx:" << gpxText.size() << "chars";
     const QString trimmed = gpxText.trimmed();
     if (!trimmed.startsWith(QLatin1Char('<'))) {
-        emit routeFailed(trimmed.isEmpty() ? tr("Réponse vide de BRouter.")
-                                           : trimmed.left(200));
+        const QString msg = trimmed.isEmpty() ? tr("Réponse vide de BRouter.")
+                                               : trimmed.left(200);
+        qWarning() << "brouter FAILED: non-XML response:" << msg;
+        emit routeFailed(msg);
         return;
     }
 
@@ -235,7 +254,10 @@ void BrouterClient::parseGpx(const QString &gpxText)
     while (!xml.atEnd()) {
         xml.readNext();
         if (xml.hasError()) {
-            emit routeFailed(tr("GPX illisible."));
+            const QString msg = tr("GPX illisible.");
+            qWarning() << "brouter FAILED: XML parse error:" << xml.errorString()
+                       << "at line" << xml.lineNumber();
+            emit routeFailed(msg);
             return;
         }
         // Détecter le début d'un nouveau <trkseg> (après le premier)
@@ -268,7 +290,9 @@ void BrouterClient::parseGpx(const QString &gpxText)
                     cmt = xml.readElementText();
             }
             if (xml.hasError()) {
-                emit routeFailed(tr("GPX illisible."));
+                const QString msg = tr("GPX illisible.");
+                qWarning() << "brouter FAILED: XML error in rtept:" << xml.errorString();
+                emit routeFailed(msg);
                 return;
             }
             if (!desc.isEmpty()) {
@@ -306,7 +330,9 @@ void BrouterClient::parseGpx(const QString &gpxText)
                 }
             }
             if (xml.hasError()) {
-                emit routeFailed(tr("GPX illisible."));
+                const QString msg = tr("GPX illisible.");
+                qWarning() << "brouter FAILED: XML error in trkpt:" << xml.errorString();
+                emit routeFailed(msg);
                 return;
             }
             QVariantMap p;
@@ -333,10 +359,15 @@ void BrouterClient::parseGpx(const QString &gpxText)
     }
 
     if (points.size() < 2) {
-        emit routeFailed(tr("Aucun itinéraire dans la réponse BRouter."));
+        const QString msg = tr("Aucun itinéraire dans la réponse BRouter.");
+        qWarning() << "brouter FAILED:" << msg << "(only" << points.size() << "points)";
+        emit routeFailed(msg);
         return;
     }
 
+    qWarning() << "brouter OK:" << points.size() << "points,"
+               << qRound(dist) << "m," << qRound(ascent) << "m D+,"
+               << turnPoints.size() << "turns";
     m_lastGpx = gpxText;
     m_routePoints = points;
     m_turnPoints = turnPoints;
