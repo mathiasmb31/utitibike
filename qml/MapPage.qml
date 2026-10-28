@@ -23,8 +23,17 @@ Page {
     property bool searchOpen: false
     property var searchResults: []
     property bool searchBusy: false
+    property bool loadingFromHistory: false  // vrai pendant le chargement d'un GPX depuis l'historique
 
     readonly property var profiles: ["trekking", "fastbike", "safety", "shortest"]
+
+    // Appelé depuis HistoryPage (qui n'a pas accès à l'id local « brouter »)
+    // pour charger un GPX sauvegardé. Le flag loadingFromHistory empêche
+    // le re-sauvegarde automatique dans onRouteReady.
+    function loadGpxFromHistory(gpxContent) {
+        loadingFromHistory = true
+        brouter.loadGpxData(gpxContent)
+    }
 
     function addWaypoint(lat, lon) {
         // Défense 1 : rejeter les coordonnées invalides (NaN, hors limites,
@@ -106,9 +115,15 @@ Page {
             page.routeDistance = distanceM
             page.routeAscent = ascentM
             page.routeGpx = brouter.lastGpx
-            showToast(i18n.tr("Itinéraire calculé"))
-            // Sauvegarde automatique dans l'historique
-            routeHistory.addEntry("", distanceM, ascentM, page.waypoints, brouter.lastGpx)
+            // Sauvegarde automatique dans l'historique (sauf si on
+            // charge un itinéraire depuis l'historique — sinon doublon)
+            if (!page.loadingFromHistory) {
+                showToast(i18n.tr("Itinéraire calculé"))
+                routeHistory.addEntry("", distanceM, ascentM, page.waypoints, brouter.lastGpx)
+            } else {
+                page.loadingFromHistory = false
+                showToast(i18n.tr("Itinéraire chargé"))
+            }
         }
         onRouteFailed: {
             page.routePoints = []
@@ -408,39 +423,28 @@ Page {
         }
     }
 
+    // Recherche via SearchClient (C++/QNetworkAccessManager) — le
+    // XMLHttpRequest QML ne pose pas le User-Agent correctement sur
+    // Ubuntu Touch, Nominatim renvoie HTTP 403.
     function doSearch(query) {
         if (query.length < 3) return
         page.searchBusy = true
         page.searchResults = []
-        var xhr = new XMLHttpRequest()
-        // Recherche mondiale (pas de countrycodes=fr en dur : l'app n'est pas
-        // limitée à la France).
-        var url = "https://nominatim.openstreetmap.org/search?format=json&limit=8&q="
-                  + encodeURIComponent(query)
-        xhr.open("GET", url)
-        // Nominatim exige un User-Agent identifiable (sinon HTTP 403)
-        xhr.setRequestHeader("User-Agent", "utitibike/" + appVersion + " (Ubuntu Touch; contact: user@localhost)")
-        xhr.setRequestHeader("Accept", "application/json")
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                page.searchBusy = false
-                if (xhr.status === 200) {
-                    try {
-                        var results = JSON.parse(xhr.responseText)
-                        page.searchResults = results.map(function(r) {
-                            return { lat: parseFloat(r.lat), lon: parseFloat(r.lon), display_name: r.display_name }
-                        })
-                        if (page.searchResults.length === 0)
-                            showToast(i18n.tr("Aucun résultat"))
-                    } catch (e) {
-                        showToast(i18n.tr("Erreur de recherche"))
-                    }
-                } else {
-                    showToast(i18n.tr("Recherche indisponible (HTTP %1)").arg(xhr.status))
-                }
-            }
+        searchClient.search(query)
+    }
+
+    Connections {
+        target: searchClient
+        function onSearchFinished(results) {
+            page.searchBusy = false
+            page.searchResults = results
+            if (results.length === 0)
+                showToast(i18n.tr("Aucun résultat"))
         }
-        xhr.send()
+        function onSearchFailed(message) {
+            page.searchBusy = false
+            showToast(message)
+        }
     }
 
     PinchArea {
@@ -752,13 +756,30 @@ Page {
                         onClicked: brouter.uphillCost = -100
                     }
                 }
+                // Slider difficulté : gauche = Facile (évite les côtes, coût élevé),
+                // droite = Sportif (cherche les côtes, coût négatif).
+                // minimumValue > maximumValue est volontaire : le Slider QML
+                // positionne la poignée à (value - min) / (max - min), donc
+                // value=500 (facile) → position 0 (gauche), value=-200 (sportif)
+                // → position 1 (droite). Cohérent avec l'ordre des boutons
+                // Facile | Normal | Difficile au-dessus.
                 Slider {
+                    id: difficultySlider
                     width: parent.width
-                    minimumValue: -200
-                    maximumValue: 500
+                    minimumValue: 500
+                    maximumValue: -200
                     stepSize: 10
-                    value: brouter.uphillCost
+                    Component.onCompleted: value = brouter.uphillCost
                     onValueChanged: brouter.uphillCost = Math.round(value)
+                }
+                // Le Slider Ubuntu.Components ne rafraîchit pas sa poignée
+                // quand la propriété C++ change via un binding — on pousse
+                // la valeur explicitement.
+                Connections {
+                    target: brouter
+                    function onUphillCostChanged() {
+                        difficultySlider.value = brouter.uphillCost
+                    }
                 }
                 Label {
                     fontSize: "small"

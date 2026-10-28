@@ -43,6 +43,8 @@ set(SRC
     src/geoutils.cpp
     src/viewstate.h
     src/viewstate.cpp
+    src/searchclient.h
+    src/searchclient.cpp
 )
 
 qt5_add_resources(QRC_SOURCES qml.qrc)
