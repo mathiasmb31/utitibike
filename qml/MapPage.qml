@@ -23,7 +23,6 @@ Page {
     property bool searchOpen: false
     property var searchResults: []
     property bool searchBusy: false
-    property bool loadingFromHistory: false  // vrai pendant le chargement d'un GPX depuis l'historique
     property real userWeightKg: 70  // poids pour l'estimation des calories
 
     readonly property var profiles: ["trekking", "fastbike", "safety", "shortest"]
@@ -65,14 +64,6 @@ Page {
         var durationH = distKm / speed
         var met = Math.min(6 + mPerKm * 0.15, 10)
         return Math.round(met * page.userWeightKg * durationH * 1.05)
-    }
-
-    // Appelé depuis HistoryPage (qui n'a pas accès à l'id local « brouter »)
-    // pour charger un GPX sauvegardé. Le flag loadingFromHistory empêche
-    // le re-sauvegarde automatique dans onRouteReady.
-    function loadGpxFromHistory(gpxContent) {
-        loadingFromHistory = true
-        brouter.loadGpxData(gpxContent)
     }
 
     function addWaypoint(lat, lon) {
@@ -147,35 +138,46 @@ Page {
     // l'appli ne dépense pratiquement rien en arrière-plan.
     TileCache { id: cache; paused: !appState.foreground }
 
-    BrouterClient {
-        id: brouter
-        profile: page.profiles[page.profileIndex]
-        onRouteReady: {
+    // brouter est une context property (définie dans main.cpp) pour que
+    // HistoryPage puisse appeler loadGpxData() directement.
+    // Le profil est bindé ici ; les signaux sont gérés via Connections.
+    Connections {
+        target: brouter
+        function onRouteReady(points, distanceM, ascentM) {
             page.routePoints = points
             page.routeDistance = distanceM
             page.routeAscent = ascentM
             page.routeGpx = brouter.lastGpx
+            // Toast avec difficulté + calories (visible immédiatement)
+            var diff = page.difficultyLevel(distanceM, ascentM)
+            var kcal = page.estimatedCalories(distanceM, ascentM)
             // Sauvegarde automatique dans l'historique (sauf si on
             // charge un itinéraire depuis l'historique — sinon doublon)
-            if (!page.loadingFromHistory) {
-                showToast(i18n.tr("Itinéraire calculé"))
+            if (!brouter.loadingFromHistory) {
+                showToast(i18n.tr("Itinéraire calculé — %1 · ≈ %2 kcal").arg(diff).arg(kcal))
                 routeHistory.addEntry("", distanceM, ascentM, page.waypoints, brouter.lastGpx)
             } else {
-                page.loadingFromHistory = false
-                showToast(i18n.tr("Itinéraire chargé"))
+                brouter.loadingFromHistory = false
+                showToast(i18n.tr("Itinéraire chargé — %1 · ≈ %2 kcal").arg(diff).arg(kcal))
             }
         }
-        onRouteFailed: {
+        function onRouteFailed(message) {
             page.routePoints = []
             page.routeGpx = ""
             showToast(message)
         }
         // Alertes virage : vibration à 200m, 100m, 50m
-        onTurnAlert: {
+        function onTurnAlert(severity) {
             if (severity === 0) haptics.vibrate(30)
             else if (severity === 1) haptics.vibrate(60)
             else haptics.vibrate(100)
         }
+    }
+    // Binding du profil BRouter (le context property n'a pas de binding QML)
+    Binding {
+        target: brouter
+        property: "profile"
+        value: page.profiles[page.profileIndex]
     }
 
     TileMapItem {

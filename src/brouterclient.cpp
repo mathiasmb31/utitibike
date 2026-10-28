@@ -129,6 +129,14 @@ void BrouterClient::setUphillCost(int v)
     emit uphillCostChanged();
 }
 
+void BrouterClient::setLoadingFromHistory(bool v)
+{
+    if (m_loadingFromHistory == v)
+        return;
+    m_loadingFromHistory = v;
+    emit loadingFromHistoryChanged();
+}
+
 void BrouterClient::setBusy(bool v)
 {
     if (m_busy == v)

@@ -22,6 +22,9 @@ class BrouterClient : public QObject
     // Prochaine instruction de virage (ex: "Dans 200 m, tourner à gauche")
     Q_PROPERTY(QString nextInstruction READ nextInstruction NOTIFY nextInstructionChanged)
     Q_PROPERTY(double nextInstructionDistance READ nextInstructionDistance NOTIFY nextInstructionChanged)
+    // Vrai pendant le chargement d'un GPX depuis l'historique
+    // (évite le re-sauvegarde automatique dans l'historique)
+    Q_PROPERTY(bool loadingFromHistory READ loadingFromHistory WRITE setLoadingFromHistory NOTIFY loadingFromHistoryChanged)
 
 public:
     explicit BrouterClient(QObject *parent = nullptr);
@@ -35,6 +38,8 @@ public:
     bool navigation() const { return m_navigation; }
     QString nextInstruction() const { return m_nextInstruction; }
     double nextInstructionDistance() const { return m_nextInstructionDistance; }
+    bool loadingFromHistory() const { return m_loadingFromHistory; }
+    void setLoadingFromHistory(bool v);
 
     Q_INVOKABLE void startNavigation();
     Q_INVOKABLE void stopNavigation();
@@ -59,6 +64,7 @@ signals:
     void routeFinished();
     // Émis quand on approche d'un virage : severity 0=200m, 1=100m, 2=50m
     void turnAlert(int severity);
+    void loadingFromHistoryChanged();
 
 private:
     void parseGpx(const QString &gpx);
@@ -77,6 +83,7 @@ private:
     QVariantList m_turnPoints;        // points de virage avec instructions
     QString m_nextInstruction;
     double m_nextInstructionDistance = 0.0;
+    bool m_loadingFromHistory = false;
     // Seuils d'alerte virage déjà atteints (évite les vibrations répétées)
     bool m_alert200 = false;
     bool m_alert100 = false;
