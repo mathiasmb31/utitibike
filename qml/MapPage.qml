@@ -586,6 +586,75 @@ Page {
         }
     }
 
+    // Bandeau permanent difficulté + calories (toujours visible quand
+    // un itinéraire est calculé, se met à jour automatiquement à chaque
+    // nouveau parcours via les bindings QML sur routeDistance/routeAscent)
+    Rectangle {
+        id: routeInfoBanner
+        z: 18
+        visible: page.routeDistance > 0
+        anchors {
+            left: parent.left
+            right: parent.right
+            margins: units.gu(1)
+        }
+        y: page.searchOpen ? searchBar.y + searchBar.height + units.gu(0.5) : units.gu(1)
+        height: units.gu(4)
+        radius: units.gu(0.6)
+        color: page.difficultyColor(page.routeDistance, page.routeAscent)
+        Behavior on y { NumberAnimation { duration: 250 } }
+        Behavior on color { ColorAnimation { duration: 300 } }
+
+        Row {
+            anchors.centerIn: parent
+            spacing: units.gu(1.2)
+
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: page.difficultyLevel(page.routeDistance, page.routeAscent)
+                color: "white"
+                fontSize: "small"
+                font.bold: true
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "·"
+                color: "rgba(255,255,255,0.55)"
+                fontSize: "small"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "≈ " + page.estimatedCalories(page.routeDistance, page.routeAscent) + " kcal"
+                color: "white"
+                fontSize: "small"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "·"
+                color: "rgba(255,255,255,0.55)"
+                fontSize: "small"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: (page.routeDistance / 1000).toFixed(1) + " km"
+                color: "white"
+                fontSize: "small"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "·"
+                color: "rgba(255,255,255,0.55)"
+                fontSize: "small"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "+" + Math.round(page.routeAscent) + " m"
+                color: "white"
+                fontSize: "small"
+            }
+        }
+    }
+
     Column {
         id: zoomCol
         anchors {
