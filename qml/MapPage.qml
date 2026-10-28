@@ -619,7 +619,7 @@ Page {
             Label {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "·"
-                color: "rgba(255,255,255,0.55)"
+                color: "#8cffffff"
                 fontSize: "small"
             }
             Label {
@@ -631,7 +631,7 @@ Page {
             Label {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "·"
-                color: "rgba(255,255,255,0.55)"
+                color: "#8cffffff"
                 fontSize: "small"
             }
             Label {
@@ -643,7 +643,7 @@ Page {
             Label {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "·"
-                color: "rgba(255,255,255,0.55)"
+                color: "#8cffffff"
                 fontSize: "small"
             }
             Label {
