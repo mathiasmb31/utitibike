@@ -24,8 +24,48 @@ Page {
     property var searchResults: []
     property bool searchBusy: false
     property bool loadingFromHistory: false  // vrai pendant le chargement d'un GPX depuis l'historique
+    property real userWeightKg: 70  // poids pour l'estimation des calories
 
     readonly property var profiles: ["trekking", "fastbike", "safety", "shortest"]
+
+    // ── Estimation difficulté & calories ────────────────────────────
+    // Difficulté basée sur le D+ par km (m/km de dénivelé) :
+    //   < 5 m/km  → Plat      (vert)
+    //   < 10 m/km → Vallonné  (vert clair)
+    //   < 20 m/km → Sportif   (orange)
+    //   ≥ 20 m/km → Montagne  (rouge)
+    function difficultyLevel(distanceM, ascentM) {
+        if (distanceM <= 0) return ""
+        var mPerKm = ascentM / (distanceM / 1000)
+        if (mPerKm < 5)  return i18n.tr("Plat")
+        if (mPerKm < 10) return i18n.tr("Vallonné")
+        if (mPerKm < 20) return i18n.tr("Sportif")
+        return i18n.tr("Montagne")
+    }
+
+    function difficultyColor(distanceM, ascentM) {
+        if (distanceM <= 0) return "#999"
+        var mPerKm = ascentM / (distanceM / 1000)
+        if (mPerKm < 5)  return UbuntuColors.green
+        if (mPerKm < 10) return "#8bc34a"
+        if (mPerKm < 20) return UbuntuColors.orange
+        return UbuntuColors.red
+    }
+
+    // Calories estimées — formule MET (ACSM) :
+    //   kcal = MET × 3.5 × poids(kg) × durée(h) × 60 / 200
+    //        = MET × poids × durée × 1.05
+    // Vitesse estimée : 18 km/h sur le plat, réduite de 0,8 km/h par
+    // tranche de 10 m/km de D+. MET : 6 (modéré) à 10 (intense).
+    function estimatedCalories(distanceM, ascentM) {
+        if (distanceM <= 0) return 0
+        var distKm = distanceM / 1000
+        var mPerKm = ascentM / distKm
+        var speed = Math.max(18 - mPerKm * 0.8, 8)  // km/h
+        var durationH = distKm / speed
+        var met = Math.min(6 + mPerKm * 0.15, 10)
+        return Math.round(met * page.userWeightKg * durationH * 1.05)
+    }
 
     // Appelé depuis HistoryPage (qui n'a pas accès à l'id local « brouter »)
     // pour charger un GPX sauvegardé. Le flag loadingFromHistory empêche
@@ -710,10 +750,31 @@ Page {
                     onClicked: brouter.requestRoute(page.waypoints)
                 }
 
-                Label {
-                    text: i18n.tr("Profil BRouter")
-                    fontSize: "small"
-                    font.bold: true
+                Row {
+                    width: parent.width
+                    Label {
+                        text: i18n.tr("Profil BRouter")
+                        fontSize: "small"
+                        font.bold: true
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    // Badge difficulté estimé (visible si itinéraire calculé)
+                    Rectangle {
+                        visible: page.routeDistance > 0
+                        color: page.difficultyColor(page.routeDistance, page.routeAscent)
+                        radius: units.gu(0.5)
+                        height: units.gu(2.5)
+                        width: badgeLabel.width + units.gu(1)
+                        anchors.verticalCenter: parent.verticalCenter
+                        Label {
+                            id: badgeLabel
+                            anchors.centerIn: parent
+                            text: page.difficultyLevel(page.routeDistance, page.routeAscent)
+                            fontSize: "x-small"
+                            font.bold: true
+                            color: "white"
+                        }
+                    }
                 }
                 Row {
                     width: parent.width
@@ -792,6 +853,32 @@ Page {
                             : brouter.uphillCost < 100
                               ? i18n.tr("Normal : pénalise légèrement les montées")
                               : i18n.tr("Facile : évite les côtes (coût %1)").arg(brouter.uphillCost)
+                }
+
+                // Poids pour l'estimation des calories
+                Row {
+                    width: parent.width
+                    spacing: units.gu(1)
+                    Label {
+                        text: i18n.tr("Poids")
+                        fontSize: "small"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    TextField {
+                        width: units.gu(8)
+                        inputMethodHints: Qt.ImhDigitsOnly
+                        text: page.userWeightKg
+                        onTextChanged: {
+                            var w = parseFloat(text)
+                            if (!isNaN(w) && w >= 30 && w <= 200)
+                                page.userWeightKg = w
+                        }
+                    }
+                    Label {
+                        text: "kg"
+                        fontSize: "small"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                 }
 
                 Rectangle {
@@ -1038,6 +1125,23 @@ Page {
                     fontSize: "medium"
                     font.bold: true
                     text: "%1 km  ·  D+ %2 m".arg((page.routeDistance / 1000).toFixed(1)).arg(Math.round(page.routeAscent))
+                }
+
+                // Difficulté estimée + calories (apparaît avec l'itinéraire)
+                Label {
+                    visible: page.routeDistance > 0
+                    fontSize: "small"
+                    font.bold: true
+                    color: page.difficultyColor(page.routeDistance, page.routeAscent)
+                    text: i18n.tr("Difficulté : %1").arg(page.difficultyLevel(page.routeDistance, page.routeAscent))
+                }
+                Label {
+                    visible: page.routeDistance > 0
+                    fontSize: "small"
+                    color: "#666"
+                    text: i18n.tr("≈ %1 kcal (estimation pour %2 kg)")
+                          .arg(page.estimatedCalories(page.routeDistance, page.routeAscent))
+                          .arg(page.userWeightKg)
                 }
 
                 Rectangle {
