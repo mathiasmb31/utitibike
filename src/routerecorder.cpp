@@ -119,30 +119,13 @@ void RouteRecorder::clear()
     emit statsChanged();
 }
 
-QString RouteRecorder::saveGpx() const
-{
-    const QString name = QStringLiteral("parcours-")
-                         + m_startTime.toString(QStringLiteral("yyyyMMdd-HHmmss"))
-                         + QStringLiteral(".gpx");
-    return saveGpx(name);
-}
-
-QString RouteRecorder::saveGpx(const QString &fileName) const
+QString RouteRecorder::gpxContent() const
 {
     if (m_points.size() < 2)
         return QString();
 
-    const QString dir = appDataDir()
-                        + QStringLiteral("/tracks");
-    QDir().mkpath(dir);
-    const QString name = fileName;
-    const QString path = dir + QLatin1Char('/') + name;
-
-    QSaveFile f(path);
-    if (!f.open(QIODevice::WriteOnly))
-        return QString();
-
-    QXmlStreamWriter w(&f);
+    QString gpx;
+    QXmlStreamWriter w(&gpx);
     w.setAutoFormatting(true);
     w.writeStartDocument();
     w.writeStartElement(QStringLiteral("gpx"));
@@ -150,7 +133,8 @@ QString RouteRecorder::saveGpx(const QString &fileName) const
     w.writeAttribute(QStringLiteral("creator"), QStringLiteral("utitibike"));
     w.writeDefaultNamespace(QStringLiteral("http://www.topografix.com/GPX/1/1"));
     w.writeStartElement(QStringLiteral("trk"));
-    w.writeTextElement(QStringLiteral("name"), name);
+    w.writeTextElement(QStringLiteral("name"),
+                       m_startTime.toString(QStringLiteral("yyyyMMdd-HHmmss")));
     w.writeStartElement(QStringLiteral("trkseg"));
     for (const QVariant &v : m_points) {
         const QVariantMap m = v.toMap();
@@ -167,6 +151,33 @@ QString RouteRecorder::saveGpx(const QString &fileName) const
     w.writeEndElement(); // trk
     w.writeEndElement(); // gpx
     w.writeEndDocument();
+    return gpx;
+}
+
+QString RouteRecorder::saveGpx() const
+{
+    const QString name = QStringLiteral("parcours-")
+                         + m_startTime.toString(QStringLiteral("yyyyMMdd-HHmmss"))
+                         + QStringLiteral(".gpx");
+    return saveGpx(name);
+}
+
+QString RouteRecorder::saveGpx(const QString &fileName) const
+{
+    const QString gpx = gpxContent();
+    if (gpx.isEmpty())
+        return QString();
+
+    const QString dir = appDataDir()
+                        + QStringLiteral("/tracks");
+    QDir().mkpath(dir);
+    const QString path = dir + QLatin1Char('/') + fileName;
+
+    QSaveFile f(path);
+    if (!f.open(QIODevice::WriteOnly))
+        return QString();
+
+    f.write(gpx.toUtf8());
     if (!f.commit()) {
         qWarning() << "RouteRecorder save FAIL" << path;
         return QString();

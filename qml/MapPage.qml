@@ -311,7 +311,8 @@ Page {
             leftMargin: units.gu(1)
             rightMargin: units.gu(1)
         }
-        y: navBanner.visible ? navBanner.height + units.gu(2) : units.gu(1)
+        y: (navBanner.visible ? navBanner.height + units.gu(2) : units.gu(1))
+           + (routeInfoBanner.visible ? routeInfoBanner.height + units.gu(0.5) : 0)
         height: units.gu(6)
         color: "#f7f7f7"
         opacity: 0.92
@@ -1026,8 +1027,21 @@ Page {
                             if (routeRecorder.recording) {
                                 routeRecorder.stop()
                                 var url = routeRecorder.saveGpx()
-                                if (url !== "")
+                                if (url !== "") {
                                     showToast(i18n.tr("Parcours sauvegardé"))
+                                    // Ajouter à l'historique (avant clear qui efface les stats)
+                                    var gpxContent = routeRecorder.gpxContent()
+                                    var distM = routeRecorder.distanceM
+                                    var ascM = routeRecorder.ascentM
+                                    if (!gpxContent.isEmpty()) {
+                                        var name = i18n.tr("Trajet %1 · %2 km")
+                                                   .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
+                                                   .arg((distM / 1000).toFixed(1))
+                                        routeHistory.addEntry(name, distM, ascM, [], gpxContent)
+                                    }
+                                } else {
+                                    showToast(i18n.tr("Aucun point enregistré"))
+                                }
                                 routeRecorder.clear()
                             } else {
                                 routeRecorder.clear()
