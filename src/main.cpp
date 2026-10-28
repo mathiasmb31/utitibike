@@ -25,6 +25,7 @@
 #include "geoutils.h"
 #include "viewstate.h"
 #include "appdata.h"
+#include "searchclient.h"
 
 int main(int argc, char *argv[])
 {
@@ -81,6 +82,7 @@ int main(int argc, char *argv[])
     RouteHistory routeHistory;
     Favorites favorites;
     ViewState viewState;
+    SearchClient searchClient;
     QQuickView view;
     // Redirige XDG_CACHE_HOME vers ~/.cache/mathias.utitibike/ pour que le
     // QML disk cache et le shader cache Qt soient couverts par les droits
@@ -99,6 +101,7 @@ int main(int argc, char *argv[])
     view.rootContext()->setContextProperty(QStringLiteral("routeHistory"), &routeHistory);
     view.rootContext()->setContextProperty(QStringLiteral("favorites"), &favorites);
     view.rootContext()->setContextProperty(QStringLiteral("viewState"), &viewState);
+    view.rootContext()->setContextProperty(QStringLiteral("searchClient"), &searchClient);
     // Version de l'app (définie dans CMakeLists.txt) pour le QML
     view.rootContext()->setContextProperty(QStringLiteral("appVersion"),
                                            QStringLiteral(UTITIBIKE_VERSION));
