@@ -86,8 +86,12 @@ Page {
                         color: UbuntuColors.blue
                         onClicked: {
                             var gpx = routeHistory.gpxAt(index)
-                            if (gpx !== "") {
-                                brouter.loadGpxData(gpx)
+                            if (gpx !== "" && gpx.length > 100) {
+                                // pageStack.get(0) = MapPage (bas de la pile).
+                                // « brouter » est un id local de MapPage.qml,
+                                // inaccessible depuis HistoryPage.qml — on
+                                // passe par une fonction publique de MapPage.
+                                pageStack.get(0).loadGpxFromHistory(gpx)
                                 pageStack.pop()
                             }
                         }
