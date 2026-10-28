@@ -41,6 +41,8 @@ public:
     Q_INVOKABLE QString saveGpx() const;  // retourne l'URL du fichier, vide si échec
     // Écrit le GPX sous un nom imposé (auto-sauvegarde périodique).
     QString saveGpx(const QString &fileName) const;
+    // Génère le contenu GPX en mémoire (pour l'historique, sans écrire de fichier).
+    Q_INVOKABLE QString gpxContent() const;
 
 signals:
     void recordingChanged();
