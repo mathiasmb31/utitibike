@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt5 5.12 REQUIRED COMPONENTS Core Gui Quick Network DBus Positioning)
+find_package(Qt5 5.12 REQUIRED COMPONENTS Core Gui Quick Network DBus Positioning Multimedia)
 
 set(SRC
     src/main.cpp
@@ -45,6 +45,8 @@ set(SRC
     src/viewstate.cpp
     src/searchclient.h
     src/searchclient.cpp
+    src/daemoncontroller.h
+    src/daemoncontroller.cpp
 )
 
 qt5_add_resources(QRC_SOURCES qml.qrc)
@@ -53,10 +55,32 @@ add_executable(utitibike ${SRC} ${QRC_SOURCES})
 
 target_compile_definitions(utitibike PRIVATE UTITIBIKE_VERSION="${PROJECT_VERSION}")
 
-target_link_libraries(utitibike Qt5::Core Qt5::Gui Qt5::Quick Qt5::Network Qt5::DBus Qt5::Positioning)
+target_link_libraries(utitibike Qt5::Core Qt5::Gui Qt5::Quick Qt5::Network Qt5::DBus Qt5::Positioning Qt5::Multimedia)
 
-install(TARGETS utitibike DESTINATION .)
+# --- Daemon GPS détaché ---
+# Exécutable secondaire dans le même click. Lancé par l'app QML via
+# QProcess::startDetached() — échappe au SIGSTOP de Lomiri.
+# Enregistre le GPS sans UI, écrit les stats en JSON, beep toutes les 10 s.
+set(GPSD_SRC
+    src/gpsdaemon/main.cpp
+    src/gpsdaemon/gpsdaemon.h
+    src/gpsdaemon/gpsdaemon.cpp
+    src/geo.h
+    src/appdata.h
+    src/appdata.cpp
+)
+
+add_executable(utitibike-gpsd ${GPSD_SRC})
+
+target_include_directories(utitibike-gpsd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+target_link_libraries(utitibike-gpsd Qt5::Core Qt5::Positioning Qt5::Multimedia)
+
+install(TARGETS utitibike utitibike-gpsd DESTINATION .)
 install(FILES manifest.json utitibike.apparmor utitibike.desktop logo.png DESTINATION .)
+# beep.wav installé comme fichier séparé (pas dans le qrc) pour que le daemon
+# puisse y accéder via applicationDirPath()/sounds/beep.wav.
+install(FILES sounds/beep.wav DESTINATION sounds/)
 
 # --- Tests unitaires ---
 # OFF par défaut : le build clickable (cross-compile ARM64) ne les compile pas.
