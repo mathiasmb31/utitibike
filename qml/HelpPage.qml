@@ -1,11 +1,19 @@
 import QtQuick 2.12
 import Ubuntu.Components 1.3
+import "components"
 
 // Page d'aide complète — décrit le fonctionnement global de l'app
 // et l'enregistrement GPS avec le daemon.
 Page {
     id: helpPage
     title: i18n.tr("Aide")
+
+    // Fond sombre (la Page a un fond blanc par défaut)
+    Rectangle {
+        anchors.fill: parent
+        color: Theme.bgPage
+        z: -10
+    }
 
     Flickable {
         anchors.fill: parent
@@ -25,14 +33,14 @@ Page {
                 text: "Utitibike"
                 fontSize: "x-large"
                 font.bold: true
-                color: "#1278d0"
+                color: Theme.accentOrange
             }
             Label {
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
                 text: i18n.tr("Guide d'utilisation")
                 fontSize: "medium"
-                color: "#666"
+                color: Theme.textSecondary
             }
 
             // ── C'est quoi ? ─────────────────────────────────────
@@ -99,11 +107,12 @@ Page {
                 text: i18n.tr("Comment ça marche ?")
                 fontSize: "medium"
                 font.bold: true
+                color: Theme.textPrimary
             }
             Rectangle {
                 width: parent.width
                 height: diagramCol.height + units.gu(2)
-                color: "#f5f5f5"
+                color: Theme.bgCard
                 radius: units.gu(1)
 
                 Column {
@@ -118,6 +127,7 @@ Page {
                         fontSize: "x-small"
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
+                        color: Theme.textPrimary
                         text: "┌──────────────┐     ┌──────────────────────┐"
                     }
                     Label {
@@ -126,6 +136,7 @@ Page {
                         fontSize: "x-small"
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
+                        color: Theme.textPrimary
                         text: "│  Utitibike   │────▶│  Daemon GPS          │"
                     }
                     Label {
@@ -134,6 +145,7 @@ Page {
                         fontSize: "x-small"
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
+                        color: Theme.textPrimary
                         text: "│  (l'appli)   │     │  (en arrière-plan)   │"
                     }
                     Label {
@@ -142,6 +154,7 @@ Page {
                         fontSize: "x-small"
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
+                        color: Theme.textPrimary
                         text: "│              │     │                      │"
                     }
                     Label {
@@ -150,6 +163,7 @@ Page {
                         fontSize: "x-small"
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
+                        color: Theme.textPrimary
                         text: "│ Bouton       │     │ • note la position   │"
                     }
                     Label {
@@ -158,6 +172,7 @@ Page {
                         fontSize: "x-small"
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
+                        color: Theme.textPrimary
                         text: "│ Enregistrer  │     │ • bip toutes les 10s │"
                     }
                     Label {
@@ -166,6 +181,7 @@ Page {
                         fontSize: "x-small"
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
+                        color: Theme.textPrimary
                         text: "│ Bouton       │     │ • sauvegarde le      │"
                     }
                     Label {
@@ -174,6 +190,7 @@ Page {
                         fontSize: "x-small"
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
+                        color: Theme.textPrimary
                         text: "│ Arrêter      │     │ • s'arrête tout seul  │"
                     }
                     Label {
@@ -182,6 +199,7 @@ Page {
                         fontSize: "x-small"
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
+                        color: Theme.textPrimary
                         text: "└──────────────┘     └──────────────────────┘"
                     }
                 }
@@ -257,11 +275,12 @@ Page {
             }
 
             // ── Lien vers À propos ───────────────────────────────
-            Rectangle { width: parent.width; height: units.gu(0.1); color: "#d2d2d2" }
+            Rectangle { width: parent.width; height: units.gu(0.1); color: Theme.bgCardBorder }
 
             Button {
                 width: parent.width
                 text: i18n.tr("À propos d'Utitibike")
+                color: Theme.bgSection
                 onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
             }
         }

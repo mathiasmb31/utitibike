@@ -2,10 +2,18 @@ import QtQuick 2.12
 import Ubuntu.Components 1.3
 import Ubuntu.Components.Popups 1.3
 import Utitibike 1.0
+import "components"
 
 Page {
     id: historyPage
     title: i18n.tr("Historique")
+
+    // Fond sombre (la Page a un fond blanc par défaut)
+    Rectangle {
+        anchors.fill: parent
+        color: Theme.bgPage
+        z: -10
+    }
 
     // Confirmation avant « Tout effacer » (suppression définitive).
     // Ubuntu.Components.Popups 1.3 : les types s'utilisent sans préfixe.
@@ -15,7 +23,7 @@ Page {
         text: i18n.tr("Supprimer définitivement tous les itinéraires de l'historique ?")
         Button {
             text: i18n.tr("Tout effacer")
-            color: UbuntuColors.red
+            color: Theme.accentRed
             onClicked: {
                 routeHistory.clear()
                 PopupUtils.close(clearDialog)
@@ -34,29 +42,28 @@ Page {
         header: Rectangle {
             width: parent.width
             height: headerCol.height + units.gu(2)
-            color: "#f7f7f7"
+            color: Theme.bgCard
             Column {
                 id: headerCol
                 anchors.centerIn: parent
                 Label {
                     text: i18n.tr("%1 itinéraire(s)").arg(routeHistory.entries.length)
                     fontSize: "small"
+                    color: Theme.textPrimary
                 }
                 Button {
                     text: i18n.tr("Tout effacer")
-                    color: UbuntuColors.red
+                    color: Theme.accentRed
                     visible: routeHistory.entries.length > 0
                     onClicked: PopupUtils.open(clearDialog)
                 }
             }
         }
-        delegate: Rectangle {
+        delegate: SportCard {
             width: parent.width - units.gu(2)
             height: entryCol.height + units.gu(2)
             anchors.horizontalCenter: parent.horizontalCenter
-            color: "white"
-            radius: units.gu(0.5)
-            border.color: "#e0e0e0"
+            padding: units.gu(1)
 
             Column {
                 id: entryCol
@@ -64,17 +71,17 @@ Page {
                     left: parent.left
                     right: parent.right
                     top: parent.top
-                    margins: units.gu(1)
                 }
                 spacing: units.gu(0.3)
                 Label {
                     text: modelData.name
                     fontSize: "medium"
                     font.bold: true
+                    color: Theme.textPrimary
                 }
                 Label {
                     fontSize: "small"
-                    color: "#666"
+                    color: Theme.textSecondary
                     text: new Date(modelData.date).toLocaleDateString()
                           + "  ·  " + (modelData.distanceM / 1000).toFixed(1) + " km"
                           + "  ·  D+ " + Math.round(modelData.ascentM) + " m"
@@ -83,7 +90,7 @@ Page {
                     spacing: units.gu(0.5)
                     Button {
                         text: i18n.tr("Charger")
-                        color: UbuntuColors.blue
+                        color: Theme.accentBlue
                         onClicked: {
                             var gpx = routeHistory.gpxAt(index)
                             if (gpx !== "" && gpx.length > 100) {
@@ -97,7 +104,7 @@ Page {
                     }
                     Button {
                         text: i18n.tr("Supprimer")
-                        color: UbuntuColors.red
+                        color: Theme.accentRed
                         onClicked: routeHistory.removeEntry(index)
                     }
                 }
@@ -109,6 +116,6 @@ Page {
         anchors.centerIn: parent
         visible: routeHistory.entries.length === 0
         text: i18n.tr("Aucun itinéraire dans l'historique")
-        color: "#999"
+        color: Theme.textMuted
     }
 }
