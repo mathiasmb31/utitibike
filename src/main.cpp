@@ -26,6 +26,7 @@
 #include "viewstate.h"
 #include "appdata.h"
 #include "searchclient.h"
+#include "daemoncontroller.h"
 
 int main(int argc, char *argv[])
 {
@@ -79,6 +80,7 @@ int main(int argc, char *argv[])
     DisplayKeeper displayKeeper;
     GpsTracker gpsTracker;
     RouteRecorder routeRecorder(&gpsTracker);
+    DaemonController daemonController;
     RouteHistory routeHistory;
     Favorites favorites;
     ViewState viewState;
@@ -99,6 +101,7 @@ int main(int argc, char *argv[])
     view.rootContext()->setContextProperty(QStringLiteral("appState"), &appState);
     view.rootContext()->setContextProperty(QStringLiteral("gpsTracker"), &gpsTracker);
     view.rootContext()->setContextProperty(QStringLiteral("routeRecorder"), &routeRecorder);
+    view.rootContext()->setContextProperty(QStringLiteral("daemonController"), &daemonController);
     view.rootContext()->setContextProperty(QStringLiteral("routeHistory"), &routeHistory);
     view.rootContext()->setContextProperty(QStringLiteral("favorites"), &favorites);
     view.rootContext()->setContextProperty(QStringLiteral("viewState"), &viewState);
