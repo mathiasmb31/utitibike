@@ -3,6 +3,7 @@ import QtQuick 2.12
 import Ubuntu.Components 1.3
 import Ubuntu.Content 1.3
 import Utitibike 1.0
+import "components"
 
 Page {
     id: page
@@ -43,12 +44,12 @@ Page {
     }
 
     function difficultyColor(distanceM, ascentM) {
-        if (distanceM <= 0) return "#999"
+        if (distanceM <= 0) return Theme.textMuted
         var mPerKm = ascentM / (distanceM / 1000)
-        if (mPerKm < 5)  return UbuntuColors.green
-        if (mPerKm < 10) return "#8bc34a"
-        if (mPerKm < 20) return UbuntuColors.orange
-        return UbuntuColors.red
+        if (mPerKm < 5)  return Theme.diffFlat
+        if (mPerKm < 10) return Theme.diffRolling
+        if (mPerKm < 20) return Theme.diffSporty
+        return Theme.diffMountain
     }
 
     // Calories estimées — formule MET (ACSM) :
@@ -134,6 +135,17 @@ Page {
         toastTimer.restart()
     }
 
+    // Fond de page sombre (la carte recouvre tout, mais évite le flash
+    // blanc au chargement / entre les tuiles)
+    Rectangle {
+        anchors.fill: parent
+        color: Theme.bgPage
+        z: -10
+    }
+
+    // Le beep toutes les 10 s est géré par le daemon GPS (utitibike-gpsd),
+    // pas par l'app QML — il continue même quand l'app est gelée (SIGSTOP).
+
     // En second plan, plus aucun téléchargement de tuile :
     // l'appli ne dépense pratiquement rien en arrière-plan.
     TileCache { id: cache; paused: !appState.foreground }
@@ -141,6 +153,29 @@ Page {
     // brouter est une context property (définie dans main.cpp) pour que
     // HistoryPage puisse appeler loadGpxData() directement.
     // Le profil est bindé ici ; les signaux sont gérés via Connections.
+    // Daemon GPS : resynchronise au démarrage (si un enregistrement était
+    // en cours avant un redémarrage de l'app), importe le résultat final
+    // dans l'historique après l'arrêt.
+    Connections {
+        target: daemonController
+        function onDoneReceived() {
+            var gpxContent = daemonController.lastGpxContent
+            var distM = daemonController.distanceM
+            var ascM = daemonController.ascentM
+            if (!gpxContent.isEmpty()) {
+                var name = i18n.tr("Trajet %1 · %2 km")
+                           .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
+                           .arg((distM / 1000).toFixed(1))
+                routeHistory.addEntry(name, distM, ascM, [], gpxContent)
+                showToast(i18n.tr("Parcours sauvegardé"))
+            }
+        }
+    }
+    Component.onCompleted: {
+        // Vérifie si un enregistrement daemon était en cours (app redémarrée)
+        daemonController.checkExistingRecording()
+    }
+
     Connections {
         target: brouter
         function onRouteReady(points, distanceM, ascentM) {
@@ -226,14 +261,15 @@ Page {
         text: "Utitibike v" + appVersion
         fontSize: "x-small"
         font.bold: true
-        color: "#666"
+        // Texte clair + outline sombre : lisible sur tuiles claires ou sombres
+        color: Theme.textPrimary
         style: Text.Outline
-        styleColor: "white"
+        styleColor: "#000000"
     }
 
     // Indicateur hors ligne (auto-détection réseau dans TileCache : 3 échecs
     // réseau consécutifs -> hors ligne, sonde toutes les 30 s pour le retour)
-    Rectangle {
+    SportCard {
         z: 15
         anchors {
             top: parent.top
@@ -242,31 +278,36 @@ Page {
             topMargin: units.gu(8)
         }
         visible: !cache.online
-        color: "#c0392b"
-        radius: units.gu(0.5)
+        padding: units.gu(0.5)
+        radius: Theme.radiusChip
+        border.color: Theme.accentRed
         width: offlineLabel.width + units.gu(2)
         height: offlineLabel.height + units.gu(1)
         Label {
             id: offlineLabel
             anchors.centerIn: parent
             text: i18n.tr("Hors ligne")
-            color: "white"
+            color: Theme.textOnAccent
             fontSize: "x-small"
             font.bold: true
         }
     }
 
-    // Bandeau de navigation turn-by-turn (visible en navigation)
-    Rectangle {
+    // Bandeau de navigation turn-by-turn (visible en navigation) :
+    // pilule bleue centrée (max 85 % de large), style « instruction de nav »
+    SportCard {
         id: navBanner
         z: 10
         anchors {
             top: parent.top
-            left: parent.left
-            right: parent.right
+            topMargin: units.gu(1)
+            horizontalCenter: parent.horizontalCenter
         }
+        width: Math.min(parent.width - units.gu(4), parent.width * 0.85)
         height: navCol.height + units.gu(1.5)
-        color: "#1278d0"
+        padding: units.gu(0.75)
+        color: Theme.accentBlue
+        border.color: "transparent"
         visible: brouter.navigation
         transform: Translate {
             y: brouter.navigation ? 0 : -navBanner.height - units.gu(1)
@@ -279,19 +320,18 @@ Page {
                 left: parent.left
                 right: parent.right
                 top: parent.top
-                margins: units.gu(1)
             }
             spacing: units.gu(0.3)
             Label {
                 width: parent.width
-                color: "white"
+                color: Theme.textOnAccent
                 fontSize: "medium"
                 font.bold: true
                 wrapMode: Text.Wrap
                 text: brouter.nextInstruction || "…"
             }
             Label {
-                color: "#c0dcff"
+                color: "#ccffffff"
                 fontSize: "small"
                 text: brouter.nextInstructionDistance > 0
                       ? i18n.tr("dans %1 m").arg(Math.round(brouter.nextInstructionDistance))
@@ -302,7 +342,7 @@ Page {
 
     // Profil d'altitude en overlay en haut de l'écran (visible quand un
     // itinéraire est calculé). Se place sous le bandeau de navigation.
-    Rectangle {
+    SportCard {
         id: elevationOverlay
         z: 5
         anchors {
@@ -311,33 +351,30 @@ Page {
             leftMargin: units.gu(1)
             rightMargin: units.gu(1)
         }
-        y: navBanner.visible ? navBanner.height + units.gu(2) : units.gu(1)
+        y: (navBanner.visible ? navBanner.height + units.gu(2) : units.gu(1))
+           + (routeInfoBanner.visible ? routeInfoBanner.height + units.gu(0.5) : 0)
         height: units.gu(6)
-        color: "#f7f7f7"
-        opacity: 0.92
-        radius: units.gu(0.5)
+        padding: units.gu(0.5)
         visible: page.routePoints.length > 1
         Behavior on y { NumberAnimation { duration: 250 } }
-        Behavior on opacity { NumberAnimation { duration: 150 } }
 
         ElevationProfile {
             anchors.fill: parent
-            anchors.margins: units.gu(0.5)
             points: page.routePoints
         }
     }
 
     // Tableau de bord (overlay bas-gauche, visible si GPS actif ou enregistrement)
-    Rectangle {
+    // Gros chiffres vitesse, unité km/h en cyan électrique
+    SportCard {
         id: dashboard
         z: 10
         x: units.gu(1)
         y: parent.height - height - (page.panelOpen ? panel.height + units.gu(2) : units.gu(2))
         width: dashCol.width + units.gu(2)
         height: dashCol.height + units.gu(1)
-        radius: units.gu(0.8)
-        color: "#e6262626"
-        visible: gpsTracker.active || routeRecorder.recording
+        padding: units.gu(1)
+        visible: gpsTracker.active || daemonController.recording
         Behavior on y { NumberAnimation { duration: 200 } }
 
         Column {
@@ -347,28 +384,28 @@ Page {
             Row {
                 spacing: units.gu(1.5)
                 Label {
-                    color: "white"
-                    fontSize: "medium"
+                    color: Theme.textPrimary
+                    fontSize: "x-large"
                     font.bold: true
                     text: gpsTracker.hasFix ? gpsTracker.speedKmh.toFixed(1) : "--"
                 }
                 Label {
-                    color: "#aaa"
+                    color: Theme.accentCyan
                     fontSize: "small"
                     text: "km/h"
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
             Label {
-                color: "#ddd"
+                color: Theme.textPrimary
                 fontSize: "small"
-                visible: routeRecorder.recording
-                text: (routeRecorder.distanceM / 1000).toFixed(2) + " km"
-                    + "  ·  D+ " + Math.round(routeRecorder.ascentM) + " m"
-                    + "  ·  " + formatDuration(routeRecorder.elapsedSec)
+                visible: daemonController.recording
+                text: (daemonController.distanceM / 1000).toFixed(2) + " km"
+                    + "  ·  D+ " + Math.round(daemonController.ascentM) + " m"
+                    + "  ·  " + formatDuration(daemonController.elapsedSec)
             }
             Label {
-                color: "#aaa"
+                color: Theme.textSecondary
                 fontSize: "x-small"
                 text: gpsTracker.statusText
             }
@@ -383,7 +420,7 @@ Page {
     }
 
     // Barre de recherche Nominatim
-    Rectangle {
+    SportCard {
         id: searchBar
         z: 20
         anchors {
@@ -393,9 +430,7 @@ Page {
         }
         y: navBanner.visible ? navBanner.height + units.gu(1.5) : units.gu(1)
         height: searchCol.height + units.gu(1)
-        radius: units.gu(0.6)
-        color: "#f7f7f7"
-        border.color: "#d2d2d2"
+        padding: units.gu(0.5)
         visible: page.searchOpen
         Behavior on y { NumberAnimation { duration: 250 } }
 
@@ -410,7 +445,8 @@ Page {
                 spacing: units.gu(0.5)
                 TextField {
                     id: searchField
-                    width: parent.width - units.gu(5)
+                    width: parent.width - units.gu(6)
+                    height: units.gu(5)
                     placeholderText: i18n.tr("Rechercher un lieu…")
                     inputMethodHints: Qt.ImhNoPredictiveText
                     onAccepted: page.doSearch(text)
@@ -418,10 +454,10 @@ Page {
                     Keys.onEnterPressed: page.doSearch(text)
                 }
                 Button {
-                    width: units.gu(4)
-                    height: units.gu(4)
+                    width: units.gu(5)
+                    height: units.gu(5)
                     text: "→"
-                    color: UbuntuColors.blue
+                    color: Theme.accentBlue
                     enabled: searchField.text.length > 2 && !page.searchBusy
                     onClicked: page.doSearch(searchField.text)
                 }
@@ -437,7 +473,7 @@ Page {
                 delegate: Rectangle {
                     width: parent.width
                     height: units.gu(4.5)
-                    color: index % 2 === 0 ? "#ffffff" : "#f0f0f0"
+                    color: index % 2 === 0 ? Theme.bgSection : Theme.bgInput
                     Label {
                         anchors {
                             left: parent.left
@@ -446,6 +482,7 @@ Page {
                             margins: units.gu(0.5)
                         }
                         fontSize: "small"
+                        color: Theme.textPrimary
                         elide: Text.ElideRight
                         text: modelData.display_name
                     }
@@ -586,6 +623,83 @@ Page {
         }
     }
 
+    // Bandeau permanent difficulté + calories (toujours visible quand
+    // un itinéraire est calculé, se met à jour automatiquement à chaque
+    // nouveau parcours via les bindings QML sur routeDistance/routeAscent)
+    // Chip flottant « badge sportif » : pastille difficulté + kcal + km + D+
+    SportCard {
+        id: routeInfoBanner
+        z: 18
+        visible: page.routeDistance > 0
+        anchors {
+            left: parent.left
+            right: parent.right
+            margins: units.gu(1)
+        }
+        y: page.searchOpen ? searchBar.y + searchBar.height + units.gu(0.5) : units.gu(1)
+        height: units.gu(4)
+        padding: units.gu(0.75)
+        radius: height / 2
+        Behavior on y { NumberAnimation { duration: 250 } }
+
+        Row {
+            anchors.centerIn: parent
+            spacing: units.gu(1.2)
+
+            Rectangle {
+                width: units.gu(1.2)
+                height: units.gu(1.2)
+                radius: width / 2
+                color: page.difficultyColor(page.routeDistance, page.routeAscent)
+                anchors.verticalCenter: parent.verticalCenter
+                Behavior on color { ColorAnimation { duration: 300 } }
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: page.difficultyLevel(page.routeDistance, page.routeAscent)
+                color: Theme.textPrimary
+                fontSize: "small"
+                font.bold: true
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "·"
+                color: Theme.textSecondary
+                fontSize: "small"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "≈ " + page.estimatedCalories(page.routeDistance, page.routeAscent) + " kcal"
+                color: Theme.textPrimary
+                fontSize: "small"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "·"
+                color: Theme.textSecondary
+                fontSize: "small"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: (page.routeDistance / 1000).toFixed(1) + " km"
+                color: Theme.textPrimary
+                fontSize: "small"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "·"
+                color: Theme.textSecondary
+                fontSize: "small"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "+" + Math.round(page.routeAscent) + " m"
+                color: Theme.textPrimary
+                fontSize: "small"
+            }
+        }
+    }
+
     Column {
         id: zoomCol
         anchors {
@@ -594,17 +708,39 @@ Page {
             verticalCenter: parent.verticalCenter
         }
         spacing: units.gu(1)
-        Button {
-            width: units.gu(5)
-            height: units.gu(5)
-            text: "+"
-            onClicked: map.zoomAbout(1, map.width / 2, map.height / 2)
+        SportCard {
+            width: units.gu(6)
+            height: units.gu(6)
+            radius: width / 2
+            padding: 0
+            Label {
+                anchors.centerIn: parent
+                text: "+"
+                color: Theme.textPrimary
+                fontSize: "large"
+                font.bold: true
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: map.zoomAbout(1, map.width / 2, map.height / 2)
+            }
         }
-        Button {
-            width: units.gu(5)
-            height: units.gu(5)
-            text: "–"
-            onClicked: map.zoomAbout(-1, map.width / 2, map.height / 2)
+        SportCard {
+            width: units.gu(6)
+            height: units.gu(6)
+            radius: width / 2
+            padding: 0
+            Label {
+                anchors.centerIn: parent
+                text: "–"
+                color: Theme.textPrimary
+                fontSize: "large"
+                font.bold: true
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: map.zoomAbout(-1, map.width / 2, map.height / 2)
+            }
         }
     }
 
@@ -614,20 +750,28 @@ Page {
         visible: brouter.busy
     }
 
-    Label {
-        id: hint
+    SportCard {
+        z: 15
         anchors {
             top: parent.top
             topMargin: units.gu(8)
             horizontalCenter: parent.horizontalCenter
         }
-        text: i18n.tr("Appui long sur la carte : ajouter un point")
+        width: hintLabel.width + units.gu(2)
+        height: hintLabel.height + units.gu(1)
+        padding: units.gu(0.5)
+        radius: height / 2
         visible: page.waypoints.length === 0
-        color: "#444444"
-        fontSize: "small"
+        Label {
+            id: hintLabel
+            anchors.centerIn: parent
+            text: i18n.tr("Appui long sur la carte : ajouter un point")
+            color: Theme.textSecondary
+            fontSize: "small"
+        }
     }
 
-    Rectangle {
+    SportCard {
         id: toastRect
         anchors {
             horizontalCenter: parent.horizontalCenter
@@ -636,14 +780,14 @@ Page {
         anchors.bottomMargin: page.panelOpen ? panel.height + units.gu(2) : units.gu(2)
         width: Math.min(parent.width - units.gu(4), toastLabel.width + units.gu(2))
         height: toastLabel.height + units.gu(1)
-        radius: units.gu(0.5)
-        color: "#262626"
+        padding: units.gu(0.5)
+        radius: Theme.radiusChip
         opacity: 0
         Behavior on opacity { NumberAnimation { duration: 150 } }
         Label {
             id: toastLabel
             anchors.centerIn: parent
-            color: "white"
+            color: Theme.textPrimary
             fontSize: "small"
             wrapMode: Text.Wrap
             width: Math.min(page.width - units.gu(10), toastLabel.implicitWidth)
@@ -665,7 +809,8 @@ Page {
             bottom: parent.bottom
         }
         height: Math.min(units.gu(44), panelCol.height + units.gu(2))
-        color: "#f7f7f7"
+        color: Theme.bgPage
+        radius: Theme.radiusCard
         transform: Translate {
             id: panelShift
             y: page.panelOpen ? 0 : panel.height + units.gu(1)
@@ -696,19 +841,17 @@ Page {
                     text: i18n.tr("Itinéraire — %1 point(s)").arg(page.waypoints.length)
                     fontSize: "medium"
                     font.bold: true
+                    color: Theme.textPrimary
                 }
 
-                Rectangle {
+                SportCard {
                     width: parent.width
                     height: Math.min(units.gu(16), units.gu(3.4) * page.waypoints.length + units.gu(1))
-                    color: "white"
-                    radius: units.gu(0.4)
-                    border.color: "#d2d2d2"
+                    padding: units.gu(0.5)
                     visible: page.waypoints.length > 0
                     ListView {
                         id: wpList
                         anchors.fill: parent
-                        anchors.margins: units.gu(0.5)
                         clip: true
                         spacing: units.gu(0.2)
                         model: page.waypoints
@@ -720,6 +863,7 @@ Page {
                                 width: parent.width - units.gu(6.5)
                                 anchors.verticalCenter: parent.verticalCenter
                                 fontSize: "small"
+                                color: Theme.textPrimary
                                 text: (index === 0 ? i18n.tr("Départ") : (index === page.waypoints.length - 1 ? i18n.tr("Arrivée") : i18n.tr("Étape %1").arg(index)))
                                       + "  ·  %1, %2".arg(modelData.lat.toFixed(5)).arg(modelData.lon.toFixed(5))
                             }
@@ -727,29 +871,43 @@ Page {
                                 width: units.gu(5)
                                 height: units.gu(5)
                                 anchors.verticalCenter: parent.verticalCenter
-                                color: UbuntuColors.red
+                                color: Theme.accentRed
                                 onClicked: page.removeWaypoint(index)
                                 Icon {
                                     anchors.centerIn: parent
                                     name: "delete"
                                     width: units.gu(2.5)
                                     height: units.gu(2.5)
-                                    color: "white"
+                                    color: Theme.textOnAccent
                                 }
                             }
                         }
                     }
                 }
 
-                // Action principale, en premier choix : calculer l'itinéraire
-                // dès que deux points sont posés. Pleine largeur, en couleur
-                // primaire pour marquer le CTA.
-                Button {
+                // CTA principal : calculer l'itinéraire dès que deux points
+                // sont posés. Pleine largeur, dégradé orange→ambre, plus grand.
+                Rectangle {
                     width: parent.width
-                    text: brouter.busy ? i18n.tr("Calcul…") : i18n.tr("Calculer l'itinéraire")
-                    enabled: page.waypoints.length >= 2 && !brouter.busy
-                    color: UbuntuColors.blue
-                    onClicked: brouter.requestRoute(page.waypoints)
+                    height: units.gu(6)
+                    radius: Theme.radiusButton
+                    opacity: page.waypoints.length >= 2 && !brouter.busy ? 1.0 : 0.45
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Theme.accentOrange }
+                        GradientStop { position: 1.0; color: Theme.accentAmber }
+                    }
+                    Label {
+                        anchors.centerIn: parent
+                        text: brouter.busy ? i18n.tr("Calcul…") : i18n.tr("Calculer l'itinéraire")
+                        color: Theme.textOnAccent
+                        fontSize: "medium"
+                        font.bold: true
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        enabled: page.waypoints.length >= 2 && !brouter.busy
+                        onClicked: brouter.requestRoute(page.waypoints)
+                    }
                 }
 
                 Row {
@@ -758,6 +916,7 @@ Page {
                         text: i18n.tr("Profil BRouter")
                         fontSize: "small"
                         font.bold: true
+                        color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     // Badge difficulté estimé (visible si itinéraire calculé)
@@ -774,50 +933,38 @@ Page {
                             text: page.difficultyLevel(page.routeDistance, page.routeAscent)
                             fontSize: "x-small"
                             font.bold: true
-                            color: "white"
+                            color: Theme.textOnAccent
                         }
                     }
                 }
-                Row {
+                SegmentedControl {
                     width: parent.width
-                    spacing: units.gu(0.5)
-                    Repeater {
-                        model: page.profiles
-                        Button {
-                            width: (parent.width - units.gu(1.5)) / 4
-                            text: modelData
-                            color: page.profileIndex === index ? UbuntuColors.orange : "#dcdcdc"
-                            onClicked: page.profileIndex = index
-                        }
-                    }
+                    model: [
+                        { label: i18n.tr("Rando"), value: "trekking" },
+                        { label: i18n.tr("Rapide"), value: "fastbike" },
+                        { label: i18n.tr("Sécurisé"), value: "safety" },
+                        { label: i18n.tr("Court"), value: "shortest" }
+                    ]
+                    currentIndex: page.profileIndex
+                    onSelected: page.profileIndex = index
                 }
 
                 Label {
                     text: i18n.tr("Dénivelé")
                     fontSize: "small"
                     font.bold: true
+                    color: Theme.textPrimary
                 }
-                Row {
+                SegmentedControl {
                     width: parent.width
-                    spacing: units.gu(0.5)
-                    Button {
-                        width: (parent.width - units.gu(1)) / 3
-                        text: i18n.tr("Facile")
-                        color: brouter.uphillCost >= 300 ? UbuntuColors.green : "#dcdcdc"
-                        onClicked: brouter.uphillCost = 500
-                    }
-                    Button {
-                        width: (parent.width - units.gu(1)) / 3
-                        text: i18n.tr("Normal")
-                        color: brouter.uphillCost >= 0 && brouter.uphillCost < 300 ? UbuntuColors.orange : "#dcdcdc"
-                        onClicked: brouter.uphillCost = 50
-                    }
-                    Button {
-                        width: (parent.width - units.gu(1)) / 3
-                        text: i18n.tr("Difficile")
-                        color: brouter.uphillCost < 0 ? UbuntuColors.red : "#dcdcdc"
-                        onClicked: brouter.uphillCost = -100
-                    }
+                    activeColor: Theme.accentAmber
+                    model: [
+                        { label: i18n.tr("Facile"), value: 500 },
+                        { label: i18n.tr("Normal"), value: 50 },
+                        { label: i18n.tr("Difficile"), value: -100 }
+                    ]
+                    currentIndex: brouter.uphillCost >= 300 ? 0 : (brouter.uphillCost < 0 ? 2 : 1)
+                    onSelected: brouter.uphillCost = value
                 }
                 // Slider difficulté : gauche = Facile (évite les côtes, coût élevé),
                 // droite = Sportif (cherche les côtes, coût négatif).
@@ -848,6 +995,7 @@ Page {
                     fontSize: "small"
                     width: parent.width
                     wrapMode: Text.Wrap
+                    color: Theme.textPrimary
                     text: brouter.uphillCost < 0
                           ? i18n.tr("Sportif : cherche les côtes (bonus D+ %1)").arg(-brouter.uphillCost)
                           : brouter.uphillCost === 0
@@ -864,6 +1012,7 @@ Page {
                     Label {
                         text: i18n.tr("Poids")
                         fontSize: "small"
+                        color: Theme.textPrimary
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     TextField {
@@ -879,6 +1028,7 @@ Page {
                     Label {
                         text: "kg"
                         fontSize: "small"
+                        color: Theme.textSecondary
                         anchors.verticalCenter: parent.verticalCenter
                     }
                 }
@@ -886,21 +1036,23 @@ Page {
                 Rectangle {
                     width: parent.width
                     height: units.gu(0.1)
-                    color: "#d2d2d2"
+                    color: Theme.bgCardBorder
                 }
 
                 Label {
                     text: i18n.tr("GPS & Navigation")
                     fontSize: "small"
                     font.bold: true
+                    color: Theme.textPrimary
                 }
                 Row {
                     width: parent.width
                     spacing: units.gu(0.5)
                     Button {
                         width: (parent.width - units.gu(1.5)) / 3
+                        height: units.gu(6)
                         text: gpsTracker.active ? i18n.tr("GPS actif") : i18n.tr("Activer GPS")
-                        color: gpsTracker.active ? UbuntuColors.green : "#dcdcdc"
+                        color: gpsTracker.active ? Theme.accentGreen : Theme.bgSection
                         onClicked: {
                             if (gpsTracker.active) gpsTracker.stop()
                             else gpsTracker.start()
@@ -908,9 +1060,10 @@ Page {
                     }
                     Button {
                         width: (parent.width - units.gu(1.5)) / 3
+                        height: units.gu(6)
                         text: page.followGps ? i18n.tr("Suivi GPS") : i18n.tr("Centrer GPS")
                         enabled: gpsTracker.hasFix
-                        color: page.followGps ? UbuntuColors.blue : "#dcdcdc"
+                        color: page.followGps ? Theme.accentBlue : Theme.bgSection
                         onClicked: {
                             page.followGps = !page.followGps
                             if (page.followGps && gpsTracker.hasFix) {
@@ -921,13 +1074,17 @@ Page {
                     }
                     Button {
                         width: (parent.width - units.gu(1.5)) / 3
+                        height: units.gu(6)
                         text: brouter.navigation ? i18n.tr("Arrêter nav.") : i18n.tr("Naviguer")
                         enabled: page.routePoints.length > 1
-                        color: brouter.navigation ? UbuntuColors.red : UbuntuColors.blue
+                        color: brouter.navigation ? Theme.accentRed : Theme.accentBlue
                         onClicked: {
                             if (brouter.navigation) {
                                 brouter.stopNavigation()
-                                displayKeeper.release()
+                                // Ne relâche l'écran que si l'enregistrement
+                                // GPS daemon n'est pas aussi en cours.
+                                if (!daemonController.recording)
+                                    displayKeeper.release()
                             } else {
                                 brouter.startNavigation()
                                 gpsTracker.start()
@@ -942,38 +1099,37 @@ Page {
                     }
                 }
 
-                // Sémantique : « Enregistrer » démarre, « Arrêter » stoppe ET
-                // sauvegarde le parcours (auto-sauvegarde toutes les 60 s en
-                // plus), « Effacer tracé » efface sans sauvegarder. Pas de
-                // bouton « Sauvegarder » séparé (redondant avec « Arrêter »).
+                // Sémantique : « Enregistrer » démarre le daemon GPS détaché
+                // (utitibike-gpsd), « Arrêter » le stoppe et sauvegarde le
+                // parcours. Le daemon tourne sans UI et sans keep-display-on :
+                // économie batterie maximale. Il meurt automatiquement si
+                // l'app crash (PR_SET_PDEATHSIG + vérification PID).
                 Row {
                     width: parent.width
                     spacing: units.gu(0.5)
                     Button {
                         width: (parent.width - units.gu(0.5)) / 2
-                        text: routeRecorder.recording ? i18n.tr("Arrêter") : i18n.tr("Enregistrer")
-                        color: routeRecorder.recording ? UbuntuColors.red : UbuntuColors.green
+                        height: units.gu(6)
+                        text: daemonController.recording ? i18n.tr("Arrêter") : i18n.tr("Enregistrer")
+                        color: daemonController.recording ? Theme.accentRed : Theme.accentGreen
                         onClicked: {
-                            if (routeRecorder.recording) {
-                                routeRecorder.stop()
-                                var url = routeRecorder.saveGpx()
-                                if (url !== "")
-                                    showToast(i18n.tr("Parcours sauvegardé"))
-                                routeRecorder.clear()
+                            if (daemonController.recording) {
+                                daemonController.stopRecording()
+                                showToast(i18n.tr("Enregistrement arrêté"))
                             } else {
-                                routeRecorder.clear()
-                                gpsTracker.start()
-                                routeRecorder.start()
+                                daemonController.startRecording()
                             }
                         }
                     }
                     Button {
                         width: (parent.width - units.gu(0.5)) / 2
+                        height: units.gu(6)
                         text: i18n.tr("Effacer tracé")
-                        enabled: routeRecorder.pointCount > 0
+                        color: Theme.bgSection
+                        enabled: daemonController.pointCount > 0
                         onClicked: {
-                            routeRecorder.clear()
-                            routeRecorder.stop()
+                            if (daemonController.recording)
+                                daemonController.stopRecording()
                         }
                     }
                 }
@@ -981,19 +1137,23 @@ Page {
                 Rectangle {
                     width: parent.width
                     height: units.gu(0.1)
-                    color: "#d2d2d2"
+                    color: Theme.bgCardBorder
                 }
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Exporter GPX")
+                    color: Theme.bgSection
                     enabled: page.routeGpx !== ""
                     onClicked: page.exportNow()
                 }
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Partager le GPX")
+                    color: Theme.bgSection
                     enabled: page.routeGpx !== ""
                     onClicked: {
                         var url = brouter.exportGpx(page.routeGpx)
@@ -1009,7 +1169,9 @@ Page {
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Charger un GPX")
+                    color: Theme.bgSection
                     onClicked: {
                         gpxPicker.visible = true
                     }
@@ -1017,30 +1179,45 @@ Page {
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Historique (%1)").arg(routeHistory.entries.length)
+                    color: Theme.bgSection
                     onClicked: pageStack.push(Qt.resolvedUrl("HistoryPage.qml"))
                 }
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
+                    text: i18n.tr("Aide")
+                    color: Theme.bgSection
+                    onClicked: pageStack.push(Qt.resolvedUrl("HelpPage.qml"))
+                }
+
+                Button {
+                    width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("À propos")
+                    color: Theme.bgSection
                     onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
                 }
 
                 Rectangle {
                     width: parent.width
                     height: units.gu(0.1)
-                    color: "#d2d2d2"
+                    color: Theme.bgCardBorder
                 }
 
                 Label {
                     text: i18n.tr("Favoris (%1)").arg(favorites.entries.length)
                     fontSize: "small"
                     font.bold: true
+                    color: Theme.textPrimary
                 }
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Ajouter ma position aux favoris")
+                    color: Theme.bgSection
                     enabled: gpsTracker.hasFix
                     onClicked: {
                         var name = i18n.tr("Position %1").arg(new Date().toLocaleTimeString())
@@ -1050,12 +1227,10 @@ Page {
                 }
                 Repeater {
                     model: favorites.entries
-                    Rectangle {
+                    SportCard {
                         width: parent.width
                         height: favRow.height + units.gu(1)
-                        color: "white"
-                        radius: units.gu(0.4)
-                        border.color: "#d2d2d2"
+                        padding: units.gu(0.5)
                         Row {
                             id: favRow
                             width: parent.width - units.gu(1)
@@ -1064,14 +1239,15 @@ Page {
                             Label {
                                 width: parent.width - units.gu(10)
                                 fontSize: "small"
+                                color: Theme.textPrimary
                                 elide: Text.ElideRight
                                 text: modelData.name + "  ·  " + modelData.category
                             }
                             Button {
-                                width: units.gu(4)
-                                height: units.gu(4)
+                                width: units.gu(5)
+                                height: units.gu(5)
                                 text: "→"
-                                color: UbuntuColors.blue
+                                color: Theme.accentBlue
                                 onClicked: {
                                     map.centerLat = modelData.lat
                                     map.centerLon = modelData.lon
@@ -1079,16 +1255,16 @@ Page {
                                 }
                             }
                             Button {
-                                width: units.gu(4)
-                                height: units.gu(4)
-                                color: UbuntuColors.red
+                                width: units.gu(5)
+                                height: units.gu(5)
+                                color: Theme.accentRed
                                 onClicked: favorites.remove(index)
                                 Icon {
                                     anchors.centerIn: parent
                                     name: "delete"
                                     width: units.gu(2)
                                     height: units.gu(2)
-                                    color: "white"
+                                    color: Theme.textOnAccent
                                 }
                             }
                         }
@@ -1098,24 +1274,28 @@ Page {
                 Rectangle {
                     width: parent.width
                     height: units.gu(0.1)
-                    color: "#d2d2d2"
+                    color: Theme.bgCardBorder
                 }
 
                 Label {
                     text: i18n.tr("Garmin Connect")
                     fontSize: "small"
                     font.bold: true
+                    color: Theme.textPrimary
                 }
 
                 Label {
                     width: parent.width
                     wrapMode: Text.Wrap
                     fontSize: "small"
+                    color: Theme.textSecondary
                     text: i18n.tr("Le GPX exporté contient des horodatages : Garmin Connect l'accepte (menu « Importer des données » du site).")
                 }
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Ouvrir Garmin Connect dans le navigateur")
+                    color: Theme.bgSection
                     onClicked: {
                         if (!urlOpener.openUrl("https://connect.garmin.com/"))
                             showToast(i18n.tr("Impossible d'ouvrir le navigateur"))
@@ -1126,6 +1306,7 @@ Page {
                     visible: page.routeDistance > 0
                     fontSize: "medium"
                     font.bold: true
+                    color: Theme.textPrimary
                     text: "%1 km  ·  D+ %2 m".arg((page.routeDistance / 1000).toFixed(1)).arg(Math.round(page.routeAscent))
                 }
 
@@ -1140,7 +1321,7 @@ Page {
                 Label {
                     visible: page.routeDistance > 0
                     fontSize: "small"
-                    color: "#666"
+                    color: Theme.textSecondary
                     text: i18n.tr("≈ %1 kcal (estimation pour %2 kg)")
                           .arg(page.estimatedCalories(page.routeDistance, page.routeAscent))
                           .arg(page.userWeightKg)
@@ -1149,43 +1330,42 @@ Page {
                 Rectangle {
                     width: parent.width
                     height: units.gu(0.1)
-                    color: "#d2d2d2"
+                    color: Theme.bgCardBorder
                 }
 
                 Label {
                     text: i18n.tr("Carte hors ligne (tuiles OpenStreetMap)")
                     fontSize: "small"
                     font.bold: true
+                    color: Theme.textPrimary
                 }
-                Row {
+                SegmentedControl {
                     width: parent.width
-                    spacing: units.gu(0.5)
-                    Repeater {
-                        model: [
-                            { key: "osm", label: i18n.tr("Standard") },
-                            { key: "cyclosm", label: i18n.tr("Cyclable") },
-                            { key: "dark", label: i18n.tr("Sombre") },
-                            { key: "satellite", label: i18n.tr("Satellite") }
-                        ]
-                        Button {
-                            width: (parent.width - units.gu(1.5)) / 4
-                            text: modelData.label
-                            color: cache.tileServer === modelData.key ? UbuntuColors.orange : "#dcdcdc"
-                            onClicked: cache.tileServer = modelData.key
-                        }
-                    }
+                    property var tileKeys: ["osm", "cyclosm", "dark", "satellite"]
+                    model: [
+                        { label: i18n.tr("Standard"), value: "osm" },
+                        { label: i18n.tr("Cyclable"), value: "cyclosm" },
+                        { label: i18n.tr("Sombre"), value: "dark" },
+                        { label: i18n.tr("Satellite"), value: "satellite" }
+                    ]
+                    currentIndex: Math.max(0, tileKeys.indexOf(cache.tileServer))
+                    onSelected: cache.tileServer = value
                 }
                 Row {
                     width: parent.width
                     spacing: units.gu(1)
                     Button {
                         width: (parent.width - units.gu(1)) / 2
+                        height: units.gu(6)
                         text: i18n.tr("Précharger la zone affichée")
+                        color: Theme.bgSection
                         onClicked: page.startDownload()
                     }
                     Button {
                         width: (parent.width - units.gu(1)) / 2
+                        height: units.gu(6)
                         text: i18n.tr("Annuler")
+                        color: Theme.bgSection
                         enabled: page.dlTotal > 0 && page.dlDone < page.dlTotal
                         onClicked: {
                             cache.cancelAll()
@@ -1204,30 +1384,55 @@ Page {
                 Label {
                     visible: page.dlTotal > 0
                     fontSize: "small"
+                    color: Theme.textSecondary
                     text: i18n.tr("Tuiles : %1 / %2").arg(page.dlDone).arg(page.dlTotal)
                 }
             }
         }
     }
 
-    Button {
+    // FAB : cercle dégradé orange→ambre avec ombre simulée (pas de
+    // DropShadow fiable sur UT arm64 — rectangle décalé derrière)
+    Item {
         id: panelToggle
         anchors {
             right: parent.right
             bottom: parent.bottom
             rightMargin: units.gu(2)
-            bottomMargin: units.gu(2)
+            // Panneau ouvert : le FAB remonte au-dessus du panneau (sinon il
+            // est recouvert/rogne en bas à droite).
+            bottomMargin: page.panelOpen ? panel.height + units.gu(2) : units.gu(2)
         }
-        width: units.gu(7)
-        height: units.gu(7)
-        color: UbuntuColors.orange
-        onClicked: page.panelOpen = !page.panelOpen
-        Icon {
-            anchors.centerIn: parent
-            name: page.panelOpen ? "close" : "navigation-menu"
-            width: units.gu(3.5)
-            height: units.gu(3.5)
-            color: "white"
+        width: Theme.fabSize
+        height: Theme.fabSize
+
+        Rectangle {
+            x: 0
+            y: units.gu(0.25)
+            width: parent.width
+            height: parent.height
+            radius: width / 2
+            color: Theme.shadowColor
+            opacity: 0.4
+        }
+        Rectangle {
+            anchors.fill: parent
+            radius: width / 2
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Theme.accentOrange }
+                GradientStop { position: 1.0; color: Theme.accentAmber }
+            }
+            Icon {
+                anchors.centerIn: parent
+                name: page.panelOpen ? "close" : "navigation-menu"
+                width: Theme.fabIconSize
+                height: Theme.fabIconSize
+                color: Theme.textOnAccent
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: page.panelOpen = !page.panelOpen
+            }
         }
     }
 
@@ -1288,8 +1493,11 @@ Page {
     }
 
     // Tracé enregistré : ajout incrémental via pointAdded (O(1) par point GPS),
-    // sans copier la liste complète à chaque fix. pointsChanged sert à détecter
-    // l'effacement (clear) : liste vide -> on vide le tracé.
+    // Tracé live sur la carte pendant l'enregistrement : désactivé avec le
+    // daemon GPS (le daemon écrit un JSON, pas de signal point-by-point).
+    // Le tracé est visible après l'arrêt via l'historique.
+    // TODO: lire tracks/en-cours.gpx périodiquement pour le tracé live.
+    /*
     Connections {
         target: routeRecorder
         function onPointAdded(point) {
@@ -1300,6 +1508,7 @@ Page {
                 map.trackPoints = []
         }
     }
+    */
 
     // Pour charger un fichier GPX via le Content Hub (import).
     // handler: Source = on cherche une app qui FOURNIT le fichier (file manager).

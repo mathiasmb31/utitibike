@@ -1,6 +1,7 @@
 
 import QtQuick 2.12
 import Ubuntu.Components 1.3
+import "components"
 
 MainView {
     id: root
@@ -14,9 +15,26 @@ MainView {
     // QML vivent dans le contexte "utitibike" des fichiers po/utitibike_*.po.
     property string translationDomain: (i18n.domain = "utitibike", "utitibike")
 
+    // Fond du bandeau système (indicateurs + poinçon caméra physique) :
+    // blanc comme le PageHeader pour que les indicateurs du shell restent
+    // lisibles. Le contenu des pages démarre SOUS la zone coupée (voir les
+    // marges du PageStack ci-dessous) — le poinçon ne masque plus rien.
+    Rectangle {
+        anchors.fill: parent
+        color: "#ffffff"
+    }
+
     PageStack {
         id: pageStack
         anchors.fill: parent
+        // Insets « safe area » : hors des cutouts de l'écran (poinçon caméra).
+        // deviceInfo détecte le poinçon par heuristique écran (ratio
+        // hauteur/largeur ≥ 2,0) — aucun read_path AppArmor, donc pas de
+        // redflag au click review. Sans écran allongé : marges nulles.
+        anchors.topMargin: deviceInfo.safeTop
+        anchors.bottomMargin: deviceInfo.safeBottom
+        anchors.leftMargin: deviceInfo.safeLeft
+        anchors.rightMargin: deviceInfo.safeRight
         Component.onCompleted: push(Qt.resolvedUrl("MapPage.qml"))
     }
 
@@ -26,7 +44,7 @@ MainView {
     Rectangle {
         id: splash
         anchors.fill: parent
-        color: "#f7f7f7"   // même couleur que X-Ubuntu-Splash-Color
+        color: Theme.bgPage   // même couleur que X-Ubuntu-Splash-Color
         z: 100
 
         // Positionnement explicite (x/y + bindings) — les anchors sur ids
@@ -65,7 +83,7 @@ MainView {
                 text: "Utitibike"
                 fontSize: "x-large"
                 font.weight: Font.Bold
-                color: "#1278d0"
+                color: Theme.accentOrange
             }
 
             Label {
@@ -73,7 +91,7 @@ MainView {
                 y: splashLogo.y + splashLogo.height + units.gu(6.5)
                 text: i18n.tr("Version %1").arg(appVersion)
                 fontSize: "medium"
-                color: "#888888"
+                color: Theme.textSecondary
             }
         }
 

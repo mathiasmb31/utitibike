@@ -69,6 +69,9 @@ private:
     int m_batchDone = 0;
     bool m_online = true;
     bool m_paused = false;
+    // CARTO dark_all exige désormais une clé API (tuiles « API KEY REQUIRED »),
+    // donc on garde OSM standard par défaut. Le style n'est pas persisté
+    // (session uniquement) : aucun risque d'écraser un choix utilisateur.
     QString m_tileServer = QStringLiteral("osm");
     // Auto-détection réseau : 3 échecs réseau consécutifs -> hors ligne ;
     // une sonde toutes les 30 s tente de télécharger la tuile monde (z0) pour

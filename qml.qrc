@@ -1,4 +1,3 @@
-
 <RCC>
     <qresource prefix="/">
         <file>qml/Main.qml</file>
@@ -7,7 +6,12 @@
         <file>qml/ElevationProfile.qml</file>
         <file>qml/HistoryPage.qml</file>
         <file>qml/AboutPage.qml</file>
+        <file>qml/HelpPage.qml</file>
+        <file>qml/HelpSection.qml</file>
+        <file>qml/components/qmldir</file>
+        <file>qml/components/Theme.qml</file>
+        <file>qml/components/SportCard.qml</file>
+        <file>qml/components/SegmentedControl.qml</file>
         <file>logo.png</file>
     </qresource>
 </RCC>
-
