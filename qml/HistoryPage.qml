@@ -22,6 +22,7 @@ Page {
         title: i18n.tr("Tout effacer ?")
         text: i18n.tr("Supprimer définitivement tous les itinéraires de l'historique ?")
         Button {
+            height: units.gu(6)
             text: i18n.tr("Tout effacer")
             color: Theme.accentRed
             onClicked: {
@@ -30,6 +31,7 @@ Page {
             }
         }
         Button {
+            height: units.gu(6)
             text: i18n.tr("Annuler")
             onClicked: PopupUtils.close(clearDialog)
         }
@@ -52,6 +54,7 @@ Page {
                     color: Theme.textPrimary
                 }
                 Button {
+                    height: units.gu(6)
                     text: i18n.tr("Tout effacer")
                     color: Theme.accentRed
                     visible: routeHistory.entries.length > 0
@@ -89,6 +92,7 @@ Page {
                 Row {
                     spacing: units.gu(0.5)
                     Button {
+                        height: units.gu(6)
                         text: i18n.tr("Charger")
                         color: Theme.accentBlue
                         onClicked: {
@@ -103,6 +107,7 @@ Page {
                         }
                     }
                     Button {
+                        height: units.gu(6)
                         text: i18n.tr("Supprimer")
                         color: Theme.accentRed
                         onClicked: routeHistory.removeEntry(index)

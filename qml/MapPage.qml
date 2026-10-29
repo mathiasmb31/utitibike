@@ -445,7 +445,8 @@ Page {
                 spacing: units.gu(0.5)
                 TextField {
                     id: searchField
-                    width: parent.width - units.gu(5)
+                    width: parent.width - units.gu(6)
+                    height: units.gu(5)
                     placeholderText: i18n.tr("Rechercher un lieu…")
                     inputMethodHints: Qt.ImhNoPredictiveText
                     onAccepted: page.doSearch(text)
@@ -453,8 +454,8 @@ Page {
                     Keys.onEnterPressed: page.doSearch(text)
                 }
                 Button {
-                    width: units.gu(4)
-                    height: units.gu(4)
+                    width: units.gu(5)
+                    height: units.gu(5)
                     text: "→"
                     color: Theme.accentBlue
                     enabled: searchField.text.length > 2 && !page.searchBusy
@@ -708,15 +709,15 @@ Page {
         }
         spacing: units.gu(1)
         SportCard {
-            width: units.gu(5)
-            height: units.gu(5)
+            width: units.gu(6)
+            height: units.gu(6)
             radius: width / 2
             padding: 0
             Label {
                 anchors.centerIn: parent
                 text: "+"
                 color: Theme.textPrimary
-                fontSize: "medium"
+                fontSize: "large"
                 font.bold: true
             }
             MouseArea {
@@ -725,15 +726,15 @@ Page {
             }
         }
         SportCard {
-            width: units.gu(5)
-            height: units.gu(5)
+            width: units.gu(6)
+            height: units.gu(6)
             radius: width / 2
             padding: 0
             Label {
                 anchors.centerIn: parent
                 text: "–"
                 color: Theme.textPrimary
-                fontSize: "medium"
+                fontSize: "large"
                 font.bold: true
             }
             MouseArea {
@@ -1049,6 +1050,7 @@ Page {
                     spacing: units.gu(0.5)
                     Button {
                         width: (parent.width - units.gu(1.5)) / 3
+                        height: units.gu(6)
                         text: gpsTracker.active ? i18n.tr("GPS actif") : i18n.tr("Activer GPS")
                         color: gpsTracker.active ? Theme.accentGreen : Theme.bgSection
                         onClicked: {
@@ -1058,6 +1060,7 @@ Page {
                     }
                     Button {
                         width: (parent.width - units.gu(1.5)) / 3
+                        height: units.gu(6)
                         text: page.followGps ? i18n.tr("Suivi GPS") : i18n.tr("Centrer GPS")
                         enabled: gpsTracker.hasFix
                         color: page.followGps ? Theme.accentBlue : Theme.bgSection
@@ -1071,6 +1074,7 @@ Page {
                     }
                     Button {
                         width: (parent.width - units.gu(1.5)) / 3
+                        height: units.gu(6)
                         text: brouter.navigation ? i18n.tr("Arrêter nav.") : i18n.tr("Naviguer")
                         enabled: page.routePoints.length > 1
                         color: brouter.navigation ? Theme.accentRed : Theme.accentBlue
@@ -1105,6 +1109,7 @@ Page {
                     spacing: units.gu(0.5)
                     Button {
                         width: (parent.width - units.gu(0.5)) / 2
+                        height: units.gu(6)
                         text: daemonController.recording ? i18n.tr("Arrêter") : i18n.tr("Enregistrer")
                         color: daemonController.recording ? Theme.accentRed : Theme.accentGreen
                         onClicked: {
@@ -1118,6 +1123,7 @@ Page {
                     }
                     Button {
                         width: (parent.width - units.gu(0.5)) / 2
+                        height: units.gu(6)
                         text: i18n.tr("Effacer tracé")
                         color: Theme.bgSection
                         enabled: daemonController.pointCount > 0
@@ -1136,6 +1142,7 @@ Page {
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Exporter GPX")
                     color: Theme.bgSection
                     enabled: page.routeGpx !== ""
@@ -1144,6 +1151,7 @@ Page {
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Partager le GPX")
                     color: Theme.bgSection
                     enabled: page.routeGpx !== ""
@@ -1161,6 +1169,7 @@ Page {
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Charger un GPX")
                     color: Theme.bgSection
                     onClicked: {
@@ -1170,6 +1179,7 @@ Page {
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Historique (%1)").arg(routeHistory.entries.length)
                     color: Theme.bgSection
                     onClicked: pageStack.push(Qt.resolvedUrl("HistoryPage.qml"))
@@ -1177,6 +1187,7 @@ Page {
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Aide")
                     color: Theme.bgSection
                     onClicked: pageStack.push(Qt.resolvedUrl("HelpPage.qml"))
@@ -1184,6 +1195,7 @@ Page {
 
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("À propos")
                     color: Theme.bgSection
                     onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
@@ -1203,6 +1215,7 @@ Page {
                 }
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Ajouter ma position aux favoris")
                     color: Theme.bgSection
                     enabled: gpsTracker.hasFix
@@ -1231,8 +1244,8 @@ Page {
                                 text: modelData.name + "  ·  " + modelData.category
                             }
                             Button {
-                                width: units.gu(4)
-                                height: units.gu(4)
+                                width: units.gu(5)
+                                height: units.gu(5)
                                 text: "→"
                                 color: Theme.accentBlue
                                 onClicked: {
@@ -1242,8 +1255,8 @@ Page {
                                 }
                             }
                             Button {
-                                width: units.gu(4)
-                                height: units.gu(4)
+                                width: units.gu(5)
+                                height: units.gu(5)
                                 color: Theme.accentRed
                                 onClicked: favorites.remove(index)
                                 Icon {
@@ -1280,6 +1293,7 @@ Page {
                 }
                 Button {
                     width: parent.width
+                    height: units.gu(6)
                     text: i18n.tr("Ouvrir Garmin Connect dans le navigateur")
                     color: Theme.bgSection
                     onClicked: {
@@ -1342,12 +1356,14 @@ Page {
                     spacing: units.gu(1)
                     Button {
                         width: (parent.width - units.gu(1)) / 2
+                        height: units.gu(6)
                         text: i18n.tr("Précharger la zone affichée")
                         color: Theme.bgSection
                         onClicked: page.startDownload()
                     }
                     Button {
                         width: (parent.width - units.gu(1)) / 2
+                        height: units.gu(6)
                         text: i18n.tr("Annuler")
                         color: Theme.bgSection
                         enabled: page.dlTotal > 0 && page.dlDone < page.dlTotal
@@ -1383,7 +1399,9 @@ Page {
             right: parent.right
             bottom: parent.bottom
             rightMargin: units.gu(2)
-            bottomMargin: units.gu(2)
+            // Panneau ouvert : le FAB remonte au-dessus du panneau (sinon il
+            // est recouvert/rogne en bas à droite).
+            bottomMargin: page.panelOpen ? panel.height + units.gu(2) : units.gu(2)
         }
         width: Theme.fabSize
         height: Theme.fabSize
