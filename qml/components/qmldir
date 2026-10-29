@@ -1,0 +1,4 @@
+module Utitibike.Components
+singleton Theme 1.0 Theme.qml
+SportCard 1.0 SportCard.qml
+SegmentedControl 1.0 SegmentedControl.qml
