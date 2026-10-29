@@ -1,11 +1,14 @@
 import QtQuick 2.12
 import Ubuntu.Components 1.3
 import Utitibike 1.0
+import "components"
 
 // Affiche le profil d'altitude d'un itinéraire sous forme de courbe remplie.
 // Entrée : points = [{lat, lon, ele}, ...] (ele en mètres, optionnel).
 // La distance cumulée (haversine, via le singleton GeoUtils) sert d'axe X,
 // l'altitude d'axe Y.
+// Thème « Urban Sport » : fond transparent (le SportCard parent gère le fond),
+// courbe lissée (Bézier), dégradé orange, texte gris clair.
 Item {
     id: root
     property var points: []
@@ -90,63 +93,83 @@ Item {
             }
 
             if (hasEle) {
-                // Courbe remplie
-                ctx.beginPath()
-                ctx.moveTo(xAt(0), padT + h)
+                // Points projetés
+                var xs = []
+                var ys = []
                 for (var i = 0; i < root.points.length; i++) {
                     var p = root.points[i]
                     var ele = (p.ele !== undefined && p.ele !== null) ? p.ele : eleMin
-                    ctx.lineTo(xAt(i), yAt(ele))
+                    xs.push(xAt(i))
+                    ys.push(yAt(ele))
                 }
-                ctx.lineTo(xAt(root.points.length - 1), padT + h)
-                ctx.closePath()
 
+                // Chemin lissé : quadraticCurveTo entre les milieux des
+                // segments (courbe de Bézier à tangente continue).
+                // depuisBase=true : part de la ligne de base et referme le
+                // contour (pour le remplissage sous la courbe).
+                function courbePath(depuisBase) {
+                    if (depuisBase)
+                        ctx.moveTo(xs[0], padT + h)
+                    ctx.lineTo(xs[0], ys[0])
+                    for (var i = 1; i < xs.length; i++) {
+                        var midX = (xs[i - 1] + xs[i]) / 2
+                        var midY = (ys[i - 1] + ys[i]) / 2
+                        ctx.quadraticCurveTo(xs[i - 1], ys[i - 1], midX, midY)
+                    }
+                    ctx.lineTo(xs[xs.length - 1], ys[xs.length - 1])
+                    if (depuisBase) {
+                        ctx.lineTo(xs[xs.length - 1], padT + h)
+                        ctx.closePath()
+                    }
+                }
+
+                // Remplissage : dégradé vertical orange (accentOrange) → transparent
+                ctx.beginPath()
+                courbePath(true)
                 var grad = ctx.createLinearGradient(0, padT, 0, padT + h)
-                grad.addColorStop(0, "#1278d0")
-                grad.addColorStop(1, "#a0c8e8")
+                grad.addColorStop(0, "rgba(255, 107, 53, 0.85)")   // #ff6b35
+                grad.addColorStop(1, "rgba(255, 107, 53, 0.05)")
                 ctx.fillStyle = grad
                 ctx.fill()
 
-                // Ligne de contour
+                // Ligne de contour : ambre (accentAmber #f7931e)
                 ctx.beginPath()
-                for (var j = 0; j < root.points.length; j++) {
-                    var pj = root.points[j]
-                    var elej = (pj.ele !== undefined && pj.ele !== null) ? pj.ele : eleMin
-                    if (j === 0) ctx.moveTo(xAt(j), yAt(elej))
-                    else ctx.lineTo(xAt(j), yAt(elej))
-                }
-                ctx.strokeStyle = "#0a5a9e"
-                ctx.lineWidth = 1.5
+                courbePath(false)
+                ctx.strokeStyle = "#f7931e"
+                ctx.lineWidth = 2
                 ctx.stroke()
             } else {
-                // Pas d'altitude : ligne plate au milieu
+                // Pas d'altitude : ligne plate en pointillés au milieu
                 ctx.beginPath()
                 ctx.moveTo(padL, padT + h / 2)
                 ctx.lineTo(padL + w, padT + h / 2)
-                ctx.strokeStyle = "#999"
+                ctx.strokeStyle = "#555566"   // Theme.textMuted
                 ctx.lineWidth = 1
                 ctx.setLineDash([4, 4])
                 ctx.stroke()
                 ctx.setLineDash([])
             }
 
-            // Axes et labels
-            ctx.fillStyle = "#666"
+            // Axes et labels — littéraux (le contexte 2d du Canvas prend des
+            // chaînes ; les valeurs égales au thème sont rappelées en commentaire)
             ctx.font = " " + units.gu(1.2) + "px sans-serif"
-            ctx.textAlign = "left"
 
-            // Distance totale en bas à droite
+            // Distance totale en bas à droite — Theme.textSecondary #888899
+            ctx.fillStyle = "#888899"
             ctx.textAlign = "right"
             ctx.fillText((totalDist / 1000).toFixed(1) + " km", width - padR, height - units.gu(0.3))
 
             if (hasEle) {
-                // Altitude max en haut à gauche
+                // Altitude max en haut à gauche — Theme.textPrimary #e8e8e8
+                ctx.fillStyle = "#e8e8e8"
                 ctx.textAlign = "left"
                 ctx.fillText(Math.round(root.maxEle) + " m", padL, padT + units.gu(1.2))
-                // Altitude min en bas à gauche
+                // Altitude min en bas à gauche — Theme.textSecondary #888899
+                ctx.fillStyle = "#888899"
                 ctx.fillText(Math.round(root.minEle) + " m", padL, height - padB - units.gu(0.3))
-                // D+ au centre en haut
+                // D+ au centre en haut — Theme.textPrimary #e8e8e8
                 var dPlus = root.maxEle - root.minEle
+                ctx.fillStyle = "#e8e8e8"
                 ctx.textAlign = "center"
                 ctx.fillText("D+ " + Math.round(dPlus) + " m", padL + w / 2, padT + units.gu(1.2))
             }
@@ -158,6 +181,6 @@ Item {
         visible: root.points.length < 2
         text: i18n.tr("Pas de profil d'altitude")
         fontSize: "small"
-        color: "#999"
+        color: Theme.textMuted
     }
 }
