@@ -97,9 +97,9 @@ int main(int argc, char *argv[])
     QDir().mkpath(xdgCache);
     qputenv("XDG_CACHE_HOME", xdgCache.toUtf8());
     AppState appState(&view);
-    // Détection des cutouts d'écran (poinçon caméra…) — créé APRÈS le
-    // qputenv(XDG_CACHE_HOME) pour que son log tombe dans le cache couvert
-    // par l'AppArmor du click.
+    // Détection des cutouts d'écran (poinçon caméra) par heuristique écran
+    // (ratio hauteur/largeur) — aucun read_path AppArmor, donc pas de redflag
+    // au click review ni de review manuel OpenStore.
     DeviceInfo deviceInfo;
     view.rootContext()->setContextProperty(QStringLiteral("urlOpener"), &urlOpener);
     view.rootContext()->setContextProperty(QStringLiteral("haptics"), &haptics);

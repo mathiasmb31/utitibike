@@ -185,38 +185,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build click
-        # --skip-review : le review est un step séparé ci-dessous (qui gère le
-        # redflag read_path connu), inutile de le jouer deux fois ici.
-        run: clickable build --skip-review
-
-      - name: Review click
-        # Redflag ACCEPTÉ (et justifié) : security:redflag_fields:utitibike.apparmor
-        # « found redflagged fields: read_path ». L'app lit la config deviceinfo
-        # du système (/etc/deviceinfo/devices/*.yaml, /proc/device-tree/model,
-        # /etc/machine-info) pour détecter les cutouts d'écran (poinçon caméra)
-        # et décaler son contenu hors de la zone coupée — la MÊME source que
-        # le shell Lomiri utilise pour placer ses indicateurs. Lecture seule
-        # de fichiers de configuration système, aucun write_path ajouté.
-        run: |
-          set +e
-          out=$(clickable review build/aarch64-linux-gnu/app/mathias.utitibike_*.click 2>&1)
-          code=$?
-          set -e
-          out=$(echo "$out" | sed 's/\x1b\[[0-9;]*m//g')
-          echo "$out"
-          if [ $code -eq 0 ]; then
-            echo "Review OK"
-            exit 0
-          fi
-          # Seul le redflag read_path est accepté ; toute autre erreur échoue.
-          other=$(echo "$out" | grep -E '^ - ' | grep -v 'redflag_fields:utitibike\.apparmor' || true)
-          if [ -n "$other" ]; then
-            echo "Review : erreurs non acceptées :"
-            echo "$other"
-            exit 1
-          fi
-          echo "Review OK (redflag read_path accepté — détection des cutouts d'écran)"
+      - name: Build click (avec review)
+        # Le review tourne automatiquement après le build. Aucun redflag
+        # read_path dans l'AppArmor (détection des cutouts par heuristique
+        # écran, sans lecture de fichiers système).
+        run: clickable build
 
       - name: Check click size (garde-fou < 50 Mo)
         run: |

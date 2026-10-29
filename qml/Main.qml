@@ -27,12 +27,10 @@ MainView {
     PageStack {
         id: pageStack
         anchors.fill: parent
-        // Insets « safe area » : hors des cutouts de l'écran (poinçon caméra,
-        // encoches, coins arrondis). deviceInfo lit la config
-        // /etc/deviceinfo/devices/*.yaml — la MÊME que le shell Lomiri
-        // utilise pour ses indicateurs — donc valable pour tout modèle
-        // configuré (Fairphone 4/5, Volla…), avec repli sur une table intégrée
-        // indexée par modèle. Sans info : marges nulles (affichage inchangé).
+        // Insets « safe area » : hors des cutouts de l'écran (poinçon caméra).
+        // deviceInfo détecte le poinçon par heuristique écran (ratio
+        // hauteur/largeur ≥ 2,0) — aucun read_path AppArmor, donc pas de
+        // redflag au click review. Sans écran allongé : marges nulles.
         anchors.topMargin: deviceInfo.safeTop
         anchors.bottomMargin: deviceInfo.safeBottom
         anchors.leftMargin: deviceInfo.safeLeft
