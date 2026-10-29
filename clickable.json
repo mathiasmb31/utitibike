@@ -8,6 +8,6 @@
         "-DCMAKE_C_COMPILER_LAUNCHER=ccache"
     ],
     "env_vars": {
-        "CCACHE_DIR": "/mnt/five/vibeworkspace/velo-touch/.ccache"
+        "CCACHE_DIR": "/home/mathias/vibeworkspace/velo-touch/.ccache"
     }
 }

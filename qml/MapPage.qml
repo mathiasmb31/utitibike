@@ -134,6 +134,9 @@ Page {
         toastTimer.restart()
     }
 
+    // Le beep toutes les 10 s est géré par le daemon GPS (utitibike-gpsd),
+    // pas par l'app QML — il continue même quand l'app est gelée (SIGSTOP).
+
     // En second plan, plus aucun téléchargement de tuile :
     // l'appli ne dépense pratiquement rien en arrière-plan.
     TileCache { id: cache; paused: !appState.foreground }
@@ -141,6 +144,29 @@ Page {
     // brouter est une context property (définie dans main.cpp) pour que
     // HistoryPage puisse appeler loadGpxData() directement.
     // Le profil est bindé ici ; les signaux sont gérés via Connections.
+    // Daemon GPS : resynchronise au démarrage (si un enregistrement était
+    // en cours avant un redémarrage de l'app), importe le résultat final
+    // dans l'historique après l'arrêt.
+    Connections {
+        target: daemonController
+        function onDoneReceived() {
+            var gpxContent = daemonController.lastGpxContent
+            var distM = daemonController.distanceM
+            var ascM = daemonController.ascentM
+            if (!gpxContent.isEmpty()) {
+                var name = i18n.tr("Trajet %1 · %2 km")
+                           .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
+                           .arg((distM / 1000).toFixed(1))
+                routeHistory.addEntry(name, distM, ascM, [], gpxContent)
+                showToast(i18n.tr("Parcours sauvegardé"))
+            }
+        }
+    }
+    Component.onCompleted: {
+        // Vérifie si un enregistrement daemon était en cours (app redémarrée)
+        daemonController.checkExistingRecording()
+    }
+
     Connections {
         target: brouter
         function onRouteReady(points, distanceM, ascentM) {
@@ -338,7 +364,7 @@ Page {
         height: dashCol.height + units.gu(1)
         radius: units.gu(0.8)
         color: "#e6262626"
-        visible: gpsTracker.active || routeRecorder.recording
+        visible: gpsTracker.active || daemonController.recording
         Behavior on y { NumberAnimation { duration: 200 } }
 
         Column {
@@ -363,10 +389,10 @@ Page {
             Label {
                 color: "#ddd"
                 fontSize: "small"
-                visible: routeRecorder.recording
-                text: (routeRecorder.distanceM / 1000).toFixed(2) + " km"
-                    + "  ·  D+ " + Math.round(routeRecorder.ascentM) + " m"
-                    + "  ·  " + formatDuration(routeRecorder.elapsedSec)
+                visible: daemonController.recording
+                text: (daemonController.distanceM / 1000).toFixed(2) + " km"
+                    + "  ·  D+ " + Math.round(daemonController.ascentM) + " m"
+                    + "  ·  " + formatDuration(daemonController.elapsedSec)
             }
             Label {
                 color: "#aaa"
@@ -997,7 +1023,10 @@ Page {
                         onClicked: {
                             if (brouter.navigation) {
                                 brouter.stopNavigation()
-                                displayKeeper.release()
+                                // Ne relâche l'écran que si l'enregistrement
+                                // GPS daemon n'est pas aussi en cours.
+                                if (!daemonController.recording)
+                                    displayKeeper.release()
                             } else {
                                 brouter.startNavigation()
                                 gpsTracker.start()
@@ -1012,51 +1041,34 @@ Page {
                     }
                 }
 
-                // Sémantique : « Enregistrer » démarre, « Arrêter » stoppe ET
-                // sauvegarde le parcours (auto-sauvegarde toutes les 60 s en
-                // plus), « Effacer tracé » efface sans sauvegarder. Pas de
-                // bouton « Sauvegarder » séparé (redondant avec « Arrêter »).
+                // Sémantique : « Enregistrer » démarre le daemon GPS détaché
+                // (utitibike-gpsd), « Arrêter » le stoppe et sauvegarde le
+                // parcours. Le daemon tourne sans UI et sans keep-display-on :
+                // économie batterie maximale. Il meurt automatiquement si
+                // l'app crash (PR_SET_PDEATHSIG + vérification PID).
                 Row {
                     width: parent.width
                     spacing: units.gu(0.5)
                     Button {
                         width: (parent.width - units.gu(0.5)) / 2
-                        text: routeRecorder.recording ? i18n.tr("Arrêter") : i18n.tr("Enregistrer")
-                        color: routeRecorder.recording ? UbuntuColors.red : UbuntuColors.green
+                        text: daemonController.recording ? i18n.tr("Arrêter") : i18n.tr("Enregistrer")
+                        color: daemonController.recording ? UbuntuColors.red : UbuntuColors.green
                         onClicked: {
-                            if (routeRecorder.recording) {
-                                routeRecorder.stop()
-                                var url = routeRecorder.saveGpx()
-                                if (url !== "") {
-                                    showToast(i18n.tr("Parcours sauvegardé"))
-                                    // Ajouter à l'historique (avant clear qui efface les stats)
-                                    var gpxContent = routeRecorder.gpxContent()
-                                    var distM = routeRecorder.distanceM
-                                    var ascM = routeRecorder.ascentM
-                                    if (!gpxContent.isEmpty()) {
-                                        var name = i18n.tr("Trajet %1 · %2 km")
-                                                   .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
-                                                   .arg((distM / 1000).toFixed(1))
-                                        routeHistory.addEntry(name, distM, ascM, [], gpxContent)
-                                    }
-                                } else {
-                                    showToast(i18n.tr("Aucun point enregistré"))
-                                }
-                                routeRecorder.clear()
+                            if (daemonController.recording) {
+                                daemonController.stopRecording()
+                                showToast(i18n.tr("Enregistrement arrêté"))
                             } else {
-                                routeRecorder.clear()
-                                gpsTracker.start()
-                                routeRecorder.start()
+                                daemonController.startRecording()
                             }
                         }
                     }
                     Button {
                         width: (parent.width - units.gu(0.5)) / 2
                         text: i18n.tr("Effacer tracé")
-                        enabled: routeRecorder.pointCount > 0
+                        enabled: daemonController.pointCount > 0
                         onClicked: {
-                            routeRecorder.clear()
-                            routeRecorder.stop()
+                            if (daemonController.recording)
+                                daemonController.stopRecording()
                         }
                     }
                 }
@@ -1102,6 +1114,12 @@ Page {
                     width: parent.width
                     text: i18n.tr("Historique (%1)").arg(routeHistory.entries.length)
                     onClicked: pageStack.push(Qt.resolvedUrl("HistoryPage.qml"))
+                }
+
+                Button {
+                    width: parent.width
+                    text: i18n.tr("Aide")
+                    onClicked: pageStack.push(Qt.resolvedUrl("HelpPage.qml"))
                 }
 
                 Button {
@@ -1371,8 +1389,11 @@ Page {
     }
 
     // Tracé enregistré : ajout incrémental via pointAdded (O(1) par point GPS),
-    // sans copier la liste complète à chaque fix. pointsChanged sert à détecter
-    // l'effacement (clear) : liste vide -> on vide le tracé.
+    // Tracé live sur la carte pendant l'enregistrement : désactivé avec le
+    // daemon GPS (le daemon écrit un JSON, pas de signal point-by-point).
+    // Le tracé est visible après l'arrêt via l'historique.
+    // TODO: lire tracks/en-cours.gpx périodiquement pour le tracé live.
+    /*
     Connections {
         target: routeRecorder
         function onPointAdded(point) {
@@ -1383,6 +1404,7 @@ Page {
                 map.trackPoints = []
         }
     }
+    */
 
     // Pour charger un fichier GPX via le Content Hub (import).
     // handler: Source = on cherche une app qui FOURNIT le fichier (file manager).
