@@ -41,7 +41,7 @@ Item {
                     anchors.centerIn: parent
                     text: modelData.label
                     color: root.currentIndex === index ? Theme.textOnAccent : Theme.textSecondary
-                    fontSize: "small"
+                    fontSize: "medium"
                     font.bold: root.currentIndex === index
                 }
 
