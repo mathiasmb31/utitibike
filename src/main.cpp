@@ -26,6 +26,8 @@
 #include "viewstate.h"
 #include "appdata.h"
 #include "searchclient.h"
+#include "daemoncontroller.h"
+#include "deviceinfo.h"
 
 int main(int argc, char *argv[])
 {
@@ -79,6 +81,7 @@ int main(int argc, char *argv[])
     DisplayKeeper displayKeeper;
     GpsTracker gpsTracker;
     RouteRecorder routeRecorder(&gpsTracker);
+    DaemonController daemonController;
     RouteHistory routeHistory;
     Favorites favorites;
     ViewState viewState;
@@ -94,11 +97,16 @@ int main(int argc, char *argv[])
     QDir().mkpath(xdgCache);
     qputenv("XDG_CACHE_HOME", xdgCache.toUtf8());
     AppState appState(&view);
+    // Détection des cutouts d'écran (poinçon caméra) par heuristique écran
+    // (ratio hauteur/largeur) — aucun read_path AppArmor, donc pas de redflag
+    // au click review ni de review manuel OpenStore.
+    DeviceInfo deviceInfo;
     view.rootContext()->setContextProperty(QStringLiteral("urlOpener"), &urlOpener);
     view.rootContext()->setContextProperty(QStringLiteral("haptics"), &haptics);
     view.rootContext()->setContextProperty(QStringLiteral("appState"), &appState);
     view.rootContext()->setContextProperty(QStringLiteral("gpsTracker"), &gpsTracker);
     view.rootContext()->setContextProperty(QStringLiteral("routeRecorder"), &routeRecorder);
+    view.rootContext()->setContextProperty(QStringLiteral("daemonController"), &daemonController);
     view.rootContext()->setContextProperty(QStringLiteral("routeHistory"), &routeHistory);
     view.rootContext()->setContextProperty(QStringLiteral("favorites"), &favorites);
     view.rootContext()->setContextProperty(QStringLiteral("viewState"), &viewState);
@@ -112,6 +120,9 @@ int main(int argc, char *argv[])
     // displayKeeper retient l'écran allumé pendant l'enregistrement GPS / la
     // navigation (keep-display-on) ; il est lâché à la sortie de l'app.
     view.rootContext()->setContextProperty(QStringLiteral("displayKeeper"), &displayKeeper);
+    // Insets « safe area » (cutouts d'écran) pour le QML : le PageStack
+    // démarre sous la zone coupée (poinçon caméra, encoches).
+    view.rootContext()->setContextProperty(QStringLiteral("deviceInfo"), &deviceInfo);
     QObject::connect(&app, &QGuiApplication::aboutToQuit, &displayKeeper, &DisplayKeeper::release);
     // Dernier filet : si un enregistrement est en cours à la fermeture, le
     // parcours est sauvé (sinon il serait perdu, l'auto-save n'a lieu que
