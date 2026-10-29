@@ -49,10 +49,10 @@ QtObject {
     readonly property real padCard: 12          // 1,5 gu
     readonly property real padSection: 8        // 1 gu
 
-    // Hauteurs (dp)
-    readonly property real chipHeight: 36       // pilules SegmentedControl (4,5 gu)
-    readonly property real fabSize: 56          // FAB (7 gu)
-    readonly property real fabIconSize: 28      // icône FAB (3,5 gu)
+    // Hauteurs (px — les valeurs brutes QML sont en pixels, pas en dp)
+    readonly property real chipHeight: 56       // pilules SegmentedControl (~2,7 gu)
+    readonly property real fabSize: 144         // FAB (~7 gu, taille Material 56 dp)
+    readonly property real fabIconSize: 72      // icône FAB (~3,5 gu)
 
     // Ombre simulée (pas de layer.effect DropShadow fiable sur UT arm64)
     readonly property color shadowColor: "#000000"

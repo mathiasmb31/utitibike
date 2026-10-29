@@ -279,6 +279,7 @@ Page {
 
             Button {
                 width: parent.width
+                height: units.gu(6)
                 text: i18n.tr("À propos d'Utitibike")
                 color: Theme.bgSection
                 onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
