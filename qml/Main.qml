@@ -15,9 +15,28 @@ MainView {
     // QML vivent dans le contexte "utitibike" des fichiers po/utitibike_*.po.
     property string translationDomain: (i18n.domain = "utitibike", "utitibike")
 
+    // Fond du bandeau système (indicateurs + poinçon caméra physique) :
+    // blanc comme le PageHeader pour que les indicateurs du shell restent
+    // lisibles. Le contenu des pages démarre SOUS la zone coupée (voir les
+    // marges du PageStack ci-dessous) — le poinçon ne masque plus rien.
+    Rectangle {
+        anchors.fill: parent
+        color: "#ffffff"
+    }
+
     PageStack {
         id: pageStack
         anchors.fill: parent
+        // Insets « safe area » : hors des cutouts de l'écran (poinçon caméra,
+        // encoches, coins arrondis). deviceInfo lit la config
+        // /etc/deviceinfo/devices/*.yaml — la MÊME que le shell Lomiri
+        // utilise pour ses indicateurs — donc valable pour tout modèle
+        // configuré (Fairphone 4/5, Volla…), avec repli sur une table intégrée
+        // indexée par modèle. Sans info : marges nulles (affichage inchangé).
+        anchors.topMargin: deviceInfo.safeTop
+        anchors.bottomMargin: deviceInfo.safeBottom
+        anchors.leftMargin: deviceInfo.safeLeft
+        anchors.rightMargin: deviceInfo.safeRight
         Component.onCompleted: push(Qt.resolvedUrl("MapPage.qml"))
     }
 

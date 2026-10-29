@@ -9,6 +9,13 @@
         "keep-display-on",
         "location",
         "audio"
+    ],
+    "read_path": [
+        "/etc/deviceinfo/devices/",
+        "/etc/deviceinfo/devices/*.yaml",
+        "/proc/device-tree/model",
+        "/sys/firmware/devicetree/base/model",
+        "/etc/machine-info"
     ]
 }
 

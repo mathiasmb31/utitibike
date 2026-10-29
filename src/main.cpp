@@ -27,6 +27,7 @@
 #include "appdata.h"
 #include "searchclient.h"
 #include "daemoncontroller.h"
+#include "deviceinfo.h"
 
 int main(int argc, char *argv[])
 {
@@ -96,6 +97,10 @@ int main(int argc, char *argv[])
     QDir().mkpath(xdgCache);
     qputenv("XDG_CACHE_HOME", xdgCache.toUtf8());
     AppState appState(&view);
+    // Détection des cutouts d'écran (poinçon caméra…) — créé APRÈS le
+    // qputenv(XDG_CACHE_HOME) pour que son log tombe dans le cache couvert
+    // par l'AppArmor du click.
+    DeviceInfo deviceInfo;
     view.rootContext()->setContextProperty(QStringLiteral("urlOpener"), &urlOpener);
     view.rootContext()->setContextProperty(QStringLiteral("haptics"), &haptics);
     view.rootContext()->setContextProperty(QStringLiteral("appState"), &appState);
@@ -115,6 +120,9 @@ int main(int argc, char *argv[])
     // displayKeeper retient l'écran allumé pendant l'enregistrement GPS / la
     // navigation (keep-display-on) ; il est lâché à la sortie de l'app.
     view.rootContext()->setContextProperty(QStringLiteral("displayKeeper"), &displayKeeper);
+    // Insets « safe area » (cutouts d'écran) pour le QML : le PageStack
+    // démarre sous la zone coupée (poinçon caméra, encoches).
+    view.rootContext()->setContextProperty(QStringLiteral("deviceInfo"), &deviceInfo);
     QObject::connect(&app, &QGuiApplication::aboutToQuit, &displayKeeper, &DisplayKeeper::release);
     // Dernier filet : si un enregistrement est en cours à la fermeture, le
     // parcours est sauvé (sinon il serait perdu, l'auto-save n'a lieu que
