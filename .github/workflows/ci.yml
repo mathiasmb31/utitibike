@@ -149,7 +149,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             qtbase5-dev qtdeclarative5-dev qtpositioning5-dev \
-            qttools5-dev-tools gettext cmake g++ make
+            qtmultimedia5-dev qttools5-dev-tools gettext cmake g++ make
 
       - name: CMake configure (avec tests)
         run: |
