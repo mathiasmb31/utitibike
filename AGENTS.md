@@ -1,5 +1,17 @@
 # AGENTS.md — Règles de travail
 
+## Confidentialité (OBLIGATOIRE — règle de Mathias, 2026-11-01, valable pour TOUS les projets)
+
+**Ne jamais publier l'email ni le nom « XXXX »** dans quoi que ce soit de publié :
+commits/PR (messages, auteurs, committers), code, docs, logs, captures, tickets.
+Rien de publié ne doit contenir `XXXX` (casse-insensible) ni l'adresse email associée.
+
+- Avant chaque commit/PR : `grep -ri XXXX --exclude-dir=.git .` et
+  `git log --all --format='%ae %ce %B' | grep -i XXXX` doivent être vides.
+- Exception : données strictement locales et non publiées (cookies sur le
+  téléphone, logs locaux du device, scratchpad de session).
+- Masquer (`XXXX`) toute occurrence dans un contenu destiné à être publié.
+
 ## Branches (OBLIGATOIRE)
 
 **Ne jamais committer directement sur `main`.**
