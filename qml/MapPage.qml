@@ -162,7 +162,9 @@ Page {
             var gpxContent = daemonController.lastGpxContent
             var distM = daemonController.distanceM
             var ascM = daemonController.ascentM
-            if (!gpxContent.isEmpty()) {
+            // /!\ lastGpxContent est une QString C++ → chaîne JS en QML :
+            // pas de méthode isEmpty() (TypeError) → tester length.
+            if (gpxContent !== "" && gpxContent.length > 0) {
                 var name = i18n.tr("Trajet %1 · %2 km")
                            .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
                            .arg((distM / 1000).toFixed(1))
