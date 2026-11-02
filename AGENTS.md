@@ -1,5 +1,17 @@
 # AGENTS.md — Règles de travail
 
+## Internationalisation (OBLIGATOIRE — règle de Mathias, 2026-11-02, tous les projets d'app)
+
+Tout projet d'app DOIT être internationalisé : **aucun texte visible par l'utilisateur en dur**
+(UI, notifications, bulles, messages shell, pages statiques splash/offline/nonetwork/about,
+titres de fenêtres). Tout passe par le catalogue i18n du projet.
+
+- Langues minimum : les 8 de la convention transverse (FR, EN, ES, DE, IT, PT, ZH, AR).
+- Couvre aussi : notifications push/D-Bus, messages shell (fonction t/i18n), pages statiques.
+- Détection auto de la langue système, fallback FR.
+- Avant commit : aucun texte utilisateur hardcodé — vérifier par grep des chaînes
+  accentuées hors catalogue i18n.
+
 ## Confidentialité (OBLIGATOIRE — règle de Mathias, 2026-11-01, valable pour TOUS les projets)
 
 **Ne jamais publier l'email ni le nom « Brethous »** dans quoi que ce soit de publié :
