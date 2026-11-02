@@ -15,7 +15,9 @@ QtObject {
     // Bordure subtile : blanc à 8 % — littéral #AARRGGBB (alpha d'abord),
     // PAS "#ffffff15" que Qt lirait comme du jaune opaque (#ffff15).
     readonly property color bgCardBorder: "#15ffffff"
-    readonly property color bgPage: "#0f0f1a"
+    // Fond de page « Ubuntu dark » #2C001E (même couleur que
+    // X-Ubuntu-Splash-Color dans utitibike.desktop et le splash in-app).
+    readonly property color bgPage: "#2C001E"
     readonly property color bgSection: "#252540"
     readonly property color bgInput: "#1e1e38"
 
