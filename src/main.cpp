@@ -10,6 +10,7 @@
 #include <QLocale>
 #include <QDir>
 #include <QStandardPaths>
+#include <QTimer>
 
 #include "tilecache.h"
 #include "tilemapitem.h"
@@ -162,6 +163,14 @@ int main(int argc, char *argv[])
                          if (s == Qt::ApplicationActive)
                              forceFullRepaint();
                      });
+
+    // DEBUG: --record-test démarre puis arrête un enregistrement daemon
+    // automatiquement (test sans interaction tactile).
+    const QStringList args = app.arguments();
+    if (args.contains(QStringLiteral("--record-test"))) {
+        QTimer::singleShot(5000, &daemonController, &DaemonController::startRecording);
+        QTimer::singleShot(35000, &daemonController, &DaemonController::stopRecording);
+    }
 
     return app.exec();
 }
