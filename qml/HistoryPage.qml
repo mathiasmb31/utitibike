@@ -6,7 +6,7 @@ import "components"
 
 Page {
     id: historyPage
-    title: i18n.tr("Historique")
+    header: AppHeader { title: i18n.tr("Historique") }
 
     // Fond sombre (la Page a un fond blanc par défaut)
     Rectangle {
