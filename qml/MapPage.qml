@@ -896,7 +896,7 @@ Page {
                     opacity: page.waypoints.length >= 2 && !brouter.busy ? 1.0 : 0.45
                     gradient: Gradient {
                         GradientStop { position: 0.0; color: Theme.accentOrange }
-                        GradientStop { position: 1.0; color: Theme.accentAmber }
+                        GradientStop { position: 1.0; color: Theme.ubuntuAubergine }
                     }
                     Label {
                         anchors.centerIn: parent
@@ -1422,7 +1422,7 @@ Page {
             radius: width / 2
             gradient: Gradient {
                 GradientStop { position: 0.0; color: Theme.accentOrange }
-                GradientStop { position: 1.0; color: Theme.accentAmber }
+                GradientStop { position: 1.0; color: Theme.ubuntuAubergine }
             }
             Icon {
                 anchors.centerIn: parent

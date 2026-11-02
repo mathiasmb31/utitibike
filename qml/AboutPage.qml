@@ -45,6 +45,45 @@ Page {
                 text: i18n.tr("Version %1").arg(appVersion)
                 color: Theme.textSecondary
             }
+
+            // Badge « made for Ubuntu Touch » : pastille dégradé orange
+            // Ubuntu → aubergine + logo Ubuntu du thème d'icônes (suru).
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: badgeRow.width + units.gu(4)
+                height: units.gu(5)
+                radius: height / 2
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.accentOrange }
+                    GradientStop { position: 1.0; color: Theme.ubuntuAubergine }
+                }
+                Row {
+                    id: badgeRow
+                    anchors.centerIn: parent
+                    spacing: units.gu(1)
+                    Icon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: "ubuntu-logo-symbolic"
+                        width: units.gu(3)
+                        height: units.gu(3)
+                        color: "#ffffff"
+                    }
+                    Label {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: i18n.tr("Conçu pour Ubuntu Touch")
+                        color: "#ffffff"
+                        fontSize: "small"
+                        font.bold: true
+                    }
+                }
+            }
+            Label {
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                fontSize: "small"
+                color: Theme.textSecondary
+                text: i18n.tr("Ubuntu Touch 24.04 · framework ubuntu-touch-24.04-1.x · Qt 5.15")
+            }
             Label {
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter

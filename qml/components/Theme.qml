@@ -26,8 +26,12 @@ QtObject {
     readonly property color textMuted: "#555566"
 
     // Accents
-    readonly property color accentOrange: "#ff6b35"
+    // Orange Ubuntu officiel (#E95420) + aubergine Ubuntu (#772953) :
+    // le duo de couleurs de la marque Ubuntu Touch.
+    readonly property color accentOrange: "#E95420"
     readonly property color accentAmber: "#f7931e"
+    readonly property color ubuntuAubergine: "#772953"   // aubergine Ubuntu
+    readonly property color ubuntuDark: "#2C001E"        // fond sombre Ubuntu
     readonly property color accentCyan: "#00d4ff"
     readonly property color accentGreen: "#2ecc71"
     readonly property color accentRed: "#e74c3c"
