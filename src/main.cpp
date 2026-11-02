@@ -144,6 +144,25 @@ int main(int argc, char *argv[])
     qDebug() << "utitibike window" << view.width() << "x" << view.height()
              << "screen" << (screen ? screen->size() : QSize());
 
+    // Après mise en veille ou app par-dessus, Qt Quick ne repaint que les
+    // éléments "dirty" → l'UI revient en morceaux. On force un repaint complet
+    // de la fenêtre + du root item à chaque retour au premier plan.
+    auto forceFullRepaint = [&view]() {
+        view.update();
+        if (view.rootObject())
+            view.rootObject()->update();
+    };
+    QObject::connect(&view, &QWindow::visibilityChanged, &view,
+                     [forceFullRepaint](QWindow::Visibility v) {
+                         if (v != QWindow::Hidden)
+                             forceFullRepaint();
+                     });
+    QObject::connect(&app, &QGuiApplication::applicationStateChanged, &view,
+                     [forceFullRepaint](Qt::ApplicationState s) {
+                         if (s == Qt::ApplicationActive)
+                             forceFullRepaint();
+                     });
+
     return app.exec();
 }
 
