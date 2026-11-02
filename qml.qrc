@@ -12,6 +12,7 @@
         <file>qml/components/Theme.qml</file>
         <file>qml/components/SportCard.qml</file>
         <file>qml/components/SegmentedControl.qml</file>
+        <file>qml/components/AppHeader.qml</file>
         <file>logo.png</file>
     </qresource>
 </RCC>
