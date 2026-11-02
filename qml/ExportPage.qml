@@ -6,7 +6,7 @@ import Ubuntu.Content 1.3
 Page {
     id: exportPage
     anchors.fill: parent
-    title: i18n.tr("Enregistrer le GPX")
+    header: AppHeader { title: i18n.tr("Enregistrer le GPX") }
 
     property string fileUrl: ""
     property string fileName: ""
