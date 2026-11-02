@@ -10,6 +10,21 @@ projet au centre, entouré du **texte circulaire** « VIBE CODED • HUMAN TESTE
 
 ## Historique
 
+- **0.1.21** : retour du **dessin original** (cycliste, chaussures de rando,
+  montagne en arrière-plan — `logo-old-256.png`) dans le look actuel 0.1.18 :
+  squircle à coins transparents, dégradé diagonal orange Ubuntu `#E95420` →
+  aubergine `#772953`, dessin rendu **en blanc** (alpha modulé par la
+  luminance du dessin : `0,55 + 0,45·(1−lum)`, le cycliste sombre ressort
+  plus que la montagne claire). Le SVG source du look 0.1.18 ayant été perdu
+  (seul le PNG était commité), la source est restaurée dans
+  **`logo-ubuntu.svg`** (squircle + dégradé + dessin blanchi embarqué en
+  base64). `logo.png` sert à la fois d'**icône** (`Icon=logo.png`) et de
+  **splash in-app** (`qrc:/logo.png` dans `qml/Main.qml`). Génération :
+  script PIL (fond = masque alpha du logo 0.1.18 + dégradé fit #E95420→
+  #772953 ; dessin 256→320 px centré en (96,92)), rendu vérifié : coins
+  alpha=0, dégradé (100,100)≈#E95420 / (410,410)≈#772953, ~39 kpx blancs
+  centrés. Le rendu inkscape de `logo-ubuntu.svg` donne le même masque à
+  99,9 %.
 - Jusqu'en 0.1.3 : `logo.png` = dessin original seul (256×256).
 - En 0.1.4 : le logo avait été remplacé par le badge « Vibe coded / Human
   Tested / Human verified » **seul** (glyph vélo, voir `logo-vibe.svg`) — le
