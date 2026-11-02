@@ -93,6 +93,14 @@ MainView {
                 fontSize: "medium"
                 color: Theme.textSecondary
             }
+
+            Label {
+                x: splashContent.cx - width / 2
+                y: splashLogo.y + splashLogo.height + units.gu(9)
+                text: i18n.tr("Conçu pour Ubuntu Touch")
+                fontSize: "small"
+                color: Theme.accentOrange
+            }
         }
 
         Behavior on opacity {
