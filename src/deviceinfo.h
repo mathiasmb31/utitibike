@@ -73,9 +73,11 @@ public slots:
         const double ratio = static_cast<double>(ph) / pw;
         int depth = 0;
         if (ratio >= 2.0) {
-            // Poinçon centré. Référence FP4 : 81 px de profondeur sur
-            // 2340 px de hauteur portrait → ~3,5 %.
-            depth = qRound(ph * 0.035);
+            // Poinçon centré. La fenêtre QPA exclut déjà la barre système
+            // (~81 px sur FP4) : on ne réserve qu'une petite marge pour le
+            // bord du poinçon (0.035 → 0.015, soit ~35 px sur 2340 au lieu
+            // de 82 — la bande haute perd ~47 px).
+            depth = qRound(ph * 0.015);
         }
 
         int top = 0, bottom = 0, left = 0, right = 0;

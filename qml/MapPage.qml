@@ -1438,7 +1438,7 @@ Page {
         }
     }
 
-    header: PageHeader {
+    header: AppHeader {
         title: i18n.tr("Utitibike")
         trailingActionBar.actions: [
             Action {
