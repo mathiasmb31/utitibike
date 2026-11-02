@@ -4,7 +4,7 @@ import "components"
 
 Page {
     id: aboutPage
-    title: i18n.tr("À propos")
+    header: AppHeader { title: i18n.tr("À propos") }
 
     // Fond sombre (la Page a un fond blanc par défaut)
     Rectangle {
