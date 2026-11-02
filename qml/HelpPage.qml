@@ -6,7 +6,7 @@ import "components"
 // et l'enregistrement GPS avec le daemon.
 Page {
     id: helpPage
-    title: i18n.tr("Aide")
+    header: AppHeader { title: i18n.tr("Aide") }
 
     // Fond sombre (la Page a un fond blanc par défaut)
     Rectangle {

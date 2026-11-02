@@ -15,13 +15,12 @@ MainView {
     // QML vivent dans le contexte "utitibike" des fichiers po/utitibike_*.po.
     property string translationDomain: (i18n.domain = "utitibike", "utitibike")
 
-    // Fond du bandeau système (indicateurs + poinçon caméra physique) :
-    // blanc comme le PageHeader pour que les indicateurs du shell restent
-    // lisibles. Le contenu des pages démarre SOUS la zone coupée (voir les
-    // marges du PageStack ci-dessous) — le poinçon ne masque plus rien.
+    // Fond de la bande haute (zone sous les indicateurs, au-dessus du
+    // PageStack) : « Ubuntu dark » #2C001E — fond sombre comme le shell,
+    // la bande ne se voit plus comme une bande blanche.
     Rectangle {
         anchors.fill: parent
-        color: "#ffffff"
+        color: Theme.ubuntuDark
     }
 
     PageStack {
@@ -66,8 +65,39 @@ MainView {
                 height: width
                 fillMode: Image.PreserveAspectFit
                 smooth: true
+            }
 
-                // Rotation du texte circulaire — même vitesse que le SVG (20s/tour)
+            // Anneau de texte circulaire tournant autour du logo
+            // (20 s/tour, comme l'ancien SVG du splash).
+            Canvas {
+                id: ringText
+                width: splashContent.logoSize * 1.32
+                height: width
+                x: splashContent.cx - width / 2
+                y: splashContent.cy - height / 2
+                onPaint: {
+                    var ctx = getContext("2d")
+                    ctx.reset()
+                    ctx.clearRect(0, 0, width, height)
+                    var text = "UTITIBIKE · CONÇU POUR UBUNTU TOUCH · "
+                    var r = width / 2 - width * 0.055
+                    ctx.fillStyle = Theme.accentOrange
+                    ctx.font = "bold " + Math.round(width * 0.042) + "px Ubuntu"
+                    ctx.textAlign = "center"
+                    ctx.textBaseline = "middle"
+                    var n = text.length
+                    for (var i = 0; i < n; i++) {
+                        var a = (i / n) * 2 * Math.PI - Math.PI / 2
+                        ctx.save()
+                        ctx.translate(width / 2 + r * Math.cos(a),
+                                      height / 2 + r * Math.sin(a))
+                        ctx.rotate(a + Math.PI / 2)
+                        ctx.fillText(text.charAt(i), 0, 0)
+                        ctx.restore()
+                    }
+                }
+                onWidthChanged: requestPaint()
+                Component.onCompleted: requestPaint()
                 RotationAnimation on rotation {
                     from: 0
                     to: 360
