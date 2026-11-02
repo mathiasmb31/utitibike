@@ -46,6 +46,7 @@ GpsDaemon::GpsDaemon(QObject *parent)
         QCoreApplication::quit();
         return;
     }
+    qWarning() << "[gpsd] position source OK:" << m_gps->sourceName();
     // 1 fix toutes les 5 s : à 20 km/h = un point tous les 28 m, très
     // suffisant pour du vélo. Intervalle plus espacé = moins de conso
     // batterie (le GPS est le 2e poste de conso après l'écran).
@@ -91,6 +92,28 @@ void GpsDaemon::run()
     m_controlTimer.start();
     qWarning() << "[gpsd] daemon started, appDataDir=" << m_appDataDir
                << "ppid=" << getppid();
+
+    // DEBUG: GPS simulé pour tests sans satellite (intérieur).
+    // UTITIBIKE_FAKE_GPS=1 → une position synthétique toutes les secondes.
+    if (qEnvironmentVariableIsSet("UTITIBIKE_FAKE_GPS")) {
+        m_fakeGpsTimer.setInterval(1000);
+        connect(&m_fakeGpsTimer, &QTimer::timeout, this, [this]() {
+            static int i = 0;
+            ++i;
+            QGeoPositionInfo info;
+            QGeoCoordinate c(43.6000 + 0.00002 * i, 1.4400 + 0.00002 * i,
+                             150.0 + i);
+            info.setCoordinate(c);
+            info.setTimestamp(QDateTime::currentDateTimeUtc());
+            info.setAttribute(QGeoPositionInfo::GroundSpeed, 5.5);
+            info.setAttribute(QGeoPositionInfo::Direction, 45.0);
+            info.setAttribute(QGeoPositionInfo::VerticalAccuracy, 5.0);
+            info.setAttribute(QGeoPositionInfo::HorizontalAccuracy, 8.0);
+            onPositionUpdated(info);
+        });
+        m_fakeGpsTimer.start();
+        qWarning() << "[gpsd] FAKE GPS mode ON";
+    }
 }
 
 void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
