@@ -13,6 +13,8 @@ DaemonController::DaemonController(QObject *parent)
     : QObject(parent)
 {
     m_appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    qWarning() << "[daemonctl] ctor appDataDir=" << m_appDataDir
+               << "appName=" << QCoreApplication::applicationName();
     m_controlFile = m_appDataDir + QStringLiteral("/recording.control");
     m_statsFile   = m_appDataDir + QStringLiteral("/recording.json");
     m_doneFile    = m_appDataDir + QStringLiteral("/recording.done");
@@ -34,11 +36,13 @@ void DaemonController::startRecording()
     // que ce PID est vivant, en secours de PR_SET_PDEATHSIG).
     QFile cf(m_controlFile);
     if (!cf.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        qWarning() << "[daemonctl] cannot create control file" << m_controlFile;
+        qWarning() << "[daemonctl] cannot create control file" << m_controlFile
+                   << cf.errorString();
         return;
     }
     cf.write(QByteArray::number(QCoreApplication::applicationPid()));
     cf.close();
+    qWarning() << "[daemonctl] control file written:" << m_controlFile;
 
     // Lance le daemon comme fils (pas startDetached) pour que
     // PR_SET_PDEATHSIG fonctionne : le noyau tuera le daemon si l'app meurt.
@@ -50,7 +54,10 @@ void DaemonController::startRecording()
 
     const QString daemonPath = QCoreApplication::applicationDirPath()
                                + QStringLiteral("/utitibike-gpsd");
-    qWarning() << "[daemonctl] starting daemon:" << daemonPath;
+    qWarning() << "[daemonctl] starting daemon:" << daemonPath
+               << "exists=" << QFile::exists(daemonPath)
+               << "appDirPath=" << QCoreApplication::applicationDirPath();
+    m_daemon->setProcessChannelMode(QProcess::ForwardedChannels);
     m_daemon->start(daemonPath, QStringList());
 
     if (!m_daemon->waitForStarted(3000)) {
@@ -59,6 +66,7 @@ void DaemonController::startRecording()
         cleanupFiles();
         return;
     }
+    qWarning() << "[daemonctl] daemon started, pid=" << m_daemon->processId();
 
     m_recording = true;
     m_distance = 0.0;
@@ -202,8 +210,10 @@ void DaemonController::readStatsJson()
 void DaemonController::readDoneJson()
 {
     QFile f(m_doneFile);
-    if (!f.open(QIODevice::ReadOnly))
+    if (!f.open(QIODevice::ReadOnly)) {
+        qWarning() << "[daemonctl] readDoneJson: no done file" << m_doneFile;
         return;
+    }
     const QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
     f.close();
     if (!doc.isObject())
@@ -218,7 +228,12 @@ void DaemonController::readDoneJson()
     m_lastGpxContent = obj.value(QStringLiteral("gpxContent")).toString();
 
     qWarning() << "[daemonctl] done received:" << m_pointCount << "points,"
-               << m_distance << "m," << m_lastGpxPath;
+               << m_distance << "m," << m_lastGpxPath
+               << "gpxContent len=" << m_lastGpxContent.size();
+
+    // Fichier consommé : évite un second doneReceived (stopRecording et
+    // onDaemonFinished lisent tous deux le done) → doublon dans l'historique.
+    QFile::remove(m_doneFile);
 
     emit statsChanged();
     emit doneReceived();

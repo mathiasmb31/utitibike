@@ -36,19 +36,20 @@ private slots:
     void onStatsTick();
     void onBeepTick();
     void onControlTick();
+    void cleanup();  // slot : appelé via QMetaObject::invokeMethod depuis le handler SIGTERM
 
 private:
     void writeStatsJson();
     void writeDoneJson(const QString &gpxPath);
     QString generateGpx() const;
     QString saveGpx(const QString &fileName) const;
-    void cleanup();
 
     QGeoPositionInfoSource *m_gps = nullptr;
     QTimer m_autoSaveTimer;    // 60 s — sauvegarde GPX périodique
     QTimer m_statsTimer;       // 2 s — écriture du JSON de stats
     QTimer m_beepTimer;        // 10 s — beep de confirmation
     QTimer m_controlTimer;     // 2 s — vérifie si recording.control existe
+    QTimer m_fakeGpsTimer;      // DEBUG — GPS simulé (UTITIBIKE_FAKE_GPS=1)
     QSoundEffect m_beep;
 
     bool m_recording = false;
