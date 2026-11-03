@@ -846,15 +846,17 @@ Page {
         // (accès direct, sans ouvrir le panneau). Nom court = pas dépendant
         // des icônes du thème.
         SportCard {
+            id: tileLayerCard
             width: units.gu(6)
             height: units.gu(6)
             radius: width / 2
             padding: 0
             property var keys: ["osm", "cyclosm", "dark", "satellite"]
-            property var shortNames: { "osm": "OSM", "cyclosm": "Cyc", "dark": "Nuit", "satellite": "Sat" }
+            property var shortNames: ({ "osm": "OSM", "cyclosm": "Cyc", "dark": "Nuit", "satellite": "Sat" })
             Label {
                 anchors.centerIn: parent
-                text: parent.shortNames[cache.tileServer] || "OSM"
+                // SportCard reparent les enfants dans inner : référencer par id
+                text: tileLayerCard.shortNames[cache.tileServer] || "OSM"
                 color: Theme.accentOrange
                 fontSize: "x-small"
                 font.bold: true
@@ -862,8 +864,8 @@ Page {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    var i = parent.keys.indexOf(cache.tileServer)
-                    cache.tileServer = parent.keys[(i + 1) % parent.keys.length]
+                    var i = tileLayerCard.keys.indexOf(cache.tileServer)
+                    cache.tileServer = tileLayerCard.keys[(i + 1) % tileLayerCard.keys.length]
                     haptics.vibrate(20)
                 }
             }
@@ -1240,7 +1242,7 @@ Page {
                     Switch {
                         anchors.verticalCenter: parent.verticalCenter
                         checked: daemonController.beepEnabled
-                        onCheckedChanged: daemonController.setBeepEnabled(checked)
+                        onCheckedChanged: daemonController.beepEnabled = checked
                     }
                 }
                 Row {
@@ -1264,7 +1266,7 @@ Page {
                         width: (parent.width - units.gu(1.5)) / 3
                         height: units.gu(6)
                         text: page.followGps ? i18n.tr("Suivi GPS") : i18n.tr("Centrer GPS")
-                        iconName: "compass"
+                        iconName: "edit-find"
                         enabled: page.liveHasPos
                         color: page.followGps ? Theme.accentBlue : Theme.bgSection
                         onClicked: {
@@ -1279,7 +1281,7 @@ Page {
                         width: (parent.width - units.gu(1.5)) / 3
                         height: units.gu(6)
                         text: brouter.navigation ? i18n.tr("Arrêter nav.") : i18n.tr("Naviguer")
-                        iconName: "map"
+                        iconName: "go-next"
                         enabled: page.routePoints.length > 1
                         color: brouter.navigation ? Theme.accentRed : Theme.accentBlue
                         onClicked: {
@@ -1403,7 +1405,7 @@ Page {
                     width: parent.width
                     height: units.gu(6)
                     text: i18n.tr("Aide")
-                    iconName: "help-about"
+                    iconName: "info"
                     color: Theme.bgSection
                     onClicked: pageStack.push(Qt.resolvedUrl("HelpPage.qml"))
                 }
@@ -1574,7 +1576,7 @@ Page {
                         width: (parent.width - units.gu(1)) / 2
                         height: units.gu(6)
                         text: i18n.tr("Précharger la zone affichée")
-                        iconName: "emblem-downloads"
+                        iconName: "view-refresh"
                         color: Theme.bgSection
                         onClicked: page.startDownload()
                     }
