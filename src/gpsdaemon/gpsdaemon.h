@@ -64,6 +64,8 @@ private:
     bool readBeepConf() const;   // gpsd.conf : beep=0/1 (option utilisateur)
     void playLongBeep();         // alerte départ manuel (joue même écran éteint)
     void playAlarm();            // sonnerie 5 s arrêt batterie (joue toujours)
+    // Notification système (org.freedesktop.Notifications, session bus)
+    void sendNotification(const QString &body) const;
     bool screenIsOn() const;    // logind : la session seat0 est-elle active ?
     double batteryPct() const;  // UPower : pourcentage batterie (-1 si indispo)
     // Garde-fous disque : espace libre (statvfs) et erreurs d'écriture

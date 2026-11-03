@@ -79,3 +79,32 @@ msgctxt "DaemonController"
 msgid "Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"
 msgstr "Batteri vid 20 % — inspelning stoppad, rutt sparad"
 
+
+msgctxt "GpsDaemon"
+msgid "Enregistrement démarré"
+msgstr "Inspelning startad"
+
+msgctxt "GpsDaemon"
+msgid "Enregistrement repris après un crash"
+msgstr "Inspelning återupptagen efter krasch"
+
+msgctxt "GpsDaemon"
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Ingen GPS-signal — tryck på kartan för att ange start"
+
+msgctxt "GpsDaemon"
+msgid "Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"
+msgstr "Batteri vid 20 % — inspelning stoppad, rutt sparad"
+
+msgctxt "GpsDaemon"
+msgid "Disque plein — enregistrement arrêté, parcours sauvegardé"
+msgstr "Disken är full — inspelning stoppad, rutt sparad"
+
+msgctxt "GpsDaemon"
+msgid "Erreur d'écriture disque — enregistrement arrêté, parcours sauvegardé"
+msgstr "Skrivfel — inspelning stoppad, rutt sparad"
+
+msgctxt "GpsDaemon"
+msgid "Durée max (12 h) atteinte — enregistrement arrêté, parcours sauvegardé"
+msgstr "Max tid (12 t) uppnådd — inspelning stoppad, rutt sparad"
+

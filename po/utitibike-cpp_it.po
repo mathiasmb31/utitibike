@@ -79,3 +79,32 @@ msgctxt "DaemonController"
 msgid "Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"
 msgstr "Batteria al 20 % — registrazione arrestata, percorso salvato"
 
+
+msgctxt "GpsDaemon"
+msgid "Enregistrement démarré"
+msgstr "Registrazione avviata"
+
+msgctxt "GpsDaemon"
+msgid "Enregistrement repris après un crash"
+msgstr "Registrazione ripresa dopo un crash"
+
+msgctxt "GpsDaemon"
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Nessun segnale GPS: tocca la mappa per impostare la partenza"
+
+msgctxt "GpsDaemon"
+msgid "Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"
+msgstr "Batteria al 20 % — registrazione arrestata, percorso salvato"
+
+msgctxt "GpsDaemon"
+msgid "Disque plein — enregistrement arrêté, parcours sauvegardé"
+msgstr "Disco pieno — registrazione arrestata, percorso salvato"
+
+msgctxt "GpsDaemon"
+msgid "Erreur d'écriture disque — enregistrement arrêté, parcours sauvegardé"
+msgstr "Errore di scrittura — registrazione arrestata, percorso salvato"
+
+msgctxt "GpsDaemon"
+msgid "Durée max (12 h) atteinte — enregistrement arrêté, parcours sauvegardé"
+msgstr "Durata max (12 h) raggiunta — registrazione arrestata, percorso salvato"
+

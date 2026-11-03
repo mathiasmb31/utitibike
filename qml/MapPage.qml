@@ -221,6 +221,7 @@ Page {
                                       daemonController.ascentM, [], gpxContent)
             }
             showToast(i18n.tr("Parcours récupéré après un arrêt brutal"))
+            daemonController.notify(i18n.tr("Parcours récupéré après un arrêt brutal"))
         }
     }
 
