@@ -184,15 +184,19 @@ void DaemonController::checkExistingRecording()
     // celui de l'ancienne instance de l'app — probablement mort).
     QFile cf(m_controlFile);
     if (cf.open(QIODevice::ReadOnly)) {
-        const int oldPid = cf.readAll().trimmed().toInt();
+        const QList<QByteArray> parts = cf.readAll().simplified().split(' ');
+        const int oldPid = parts.value(0).toInt();
+        const QByteArray session = parts.value(1);  // préservé tel quel
         cf.close();
-        // Met à jour avec notre PID pour les futurs contrôles
+        // Met à jour avec notre PID (et le même sessionId) pour les futurs
+        // contrôles — sans quoi le daemon perdrait la session du .part.
         if (cf.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-            cf.write(QByteArray::number(QCoreApplication::applicationPid()));
+            cf.write(QByteArray::number(QCoreApplication::applicationPid()) + " " + session);
             cf.close();
         }
         qWarning() << "[daemonctl] found existing recording, old app pid:"
-                   << oldPid << "new pid:" << QCoreApplication::applicationPid();
+                   << oldPid << "new pid:" << QCoreApplication::applicationPid()
+                   << "session" << session;
     }
 
     // Essaie de lire les stats existantes pour voir si le daemon tourne
@@ -273,6 +277,12 @@ void DaemonController::onDaemonFinished(int exitCode, QProcess::ExitStatus statu
 
     m_recording = false;
     m_pollTimer.stop();
+    if (!QFile::exists(m_doneFile)) {
+        // Pas de recording.done (daemon mort sans sauver, relances épuisées) :
+        // on récupère le tracé partiel depuis en-cours.part tout de suite.
+        if (recoverOrphanPart())
+            qWarning() << "[daemonctl] partial track recovered from .part";
+    }
     readDoneJson();
     emit recordingChanged();
     emit statsChanged();
