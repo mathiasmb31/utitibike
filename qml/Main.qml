@@ -16,11 +16,16 @@ MainView {
     property string translationDomain: (i18n.domain = "utitibike", "utitibike")
 
     // Fond de la bande haute (zone sous les indicateurs, au-dessus du
-    // PageStack) : « Ubuntu dark » #2C001E — fond sombre comme le shell,
-    // la bande ne se voit plus comme une bande blanche.
+    // PageStack) : même couleur que l'en-tête des pages — la bande ne se
+    // voit plus comme une bande blanche.
     Rectangle {
         anchors.fill: parent
-        color: Theme.ubuntuDark
+        color: Theme.headerBg
+    }
+
+    Component.onCompleted: {
+        // Le thème de l'app suit la préférence persistée (auto/sombre/clair)
+        Theme.mode = Qt.binding(function() { return viewState.themeMode })
     }
 
     PageStack {

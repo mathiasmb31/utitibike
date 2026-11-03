@@ -1,5 +1,5 @@
 # Utitibike translations (C++/Qt) — pt.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -59,4 +59,14 @@ msgstr "GPS ativo"
 msgctxt "RouteHistory"
 msgid "Itinéraire %1"
 msgstr "Rota %1"
+
+
+msgctxt "GpsTracker"
+msgid "Position approximative…"
+msgstr "Posição aproximada…"
+
+
+msgctxt "DaemonController"
+msgid "Parcours sauvegardé : %1 km · D+ %2 m"
+msgstr "Percurso guardado: %1 km · D+ %2 m"
 

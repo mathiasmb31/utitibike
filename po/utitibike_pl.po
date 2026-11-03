@@ -1,5 +1,5 @@
 # Utitibike translations — Polish.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -241,3 +241,91 @@ msgstr "Usunąć wszystko?"
 
 msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
 msgstr "Trwale usunąć wszystkie trasy z historii?"
+
+msgid "Position approximative…"
+msgstr "Pozycja przybliżona…"
+
+msgid "Recherche du signal GPS…"
+msgstr "Szukanie sygnału GPS…"
+
+msgid "GPS déjà géré par l'enregistrement en cours"
+msgstr "GPS jest już obsługiwany przez trwające nagrywanie"
+
+
+msgid "Pause auto (arrêt détecté)"
+msgstr "Auto-pauza (wykryto postój)"
+
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Brak sygnału GPS — dotknij mapy, aby wyznaczyć start"
+
+msgid "Départ défini sur la carte"
+msgstr "Start wyznaczony na mapie"
+
+msgid "Bip de confirmation"
+msgstr "Sygnał potwierdzenia"
+
+msgid "Parcours récupéré après un arrêt brutal"
+msgstr "Trasa odzyskana po nagłym zatrzymaniu"
+
+msgid "Arrêt auto : batterie faible"
+msgstr "Auto-zatrzymanie: niski poziom baterii"
+
+msgid "Arrêt auto : durée max atteinte (12 h)"
+msgstr "Auto-zatrzymanie: osiągnięto maks. czas (12 h)"
+
+
+msgid "Arrêt auto : disque plein"
+msgstr "Auto-zatrzymanie: dysk pełny"
+
+msgid "Arrêt auto : erreur d'écriture disque"
+msgstr "Auto-zatrzymanie: błąd zapisu na dysku"
+
+msgid "Arrêt après un crash — parcours sauvegardé"
+msgstr "Zatrzymano po awarii — trasa zapisana"
+
+msgid "Enregistrement repris après un crash du daemon"
+msgstr "Nagrywanie wznowione po awarii demona"
+
+msgid "Erreur d'écriture disque"
+msgstr "Błąd zapisu na dysku"
+
+
+msgid "Apparence"
+msgstr "Wygląd"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Clair"
+msgstr "Jasny"
+
+msgid "Stats"
+msgstr "Stats"
+
+msgid "Statistiques"
+msgstr "Statystyki"
+
+msgid "Cette semaine"
+msgstr "Ten tydzień"
+
+msgid "Ce mois-ci"
+msgstr "Ten miesiąc"
+
+msgid "Depuis le début"
+msgstr "Od początku"
+
+msgid "Sorties"
+msgstr "Przejażdżki"
+
+msgid "Record de distance"
+msgstr "Rekord odległości"
+
+msgid "D+ total"
+msgstr "Suma D+"
+
+msgid "Distance"
+msgstr "Dystans"
+
+msgid "D+"
+msgstr "D+"
+

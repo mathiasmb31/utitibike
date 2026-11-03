@@ -1,5 +1,5 @@
 # Utitibike translations — Dutch.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -241,3 +241,91 @@ msgstr "Alles verwijderen?"
 
 msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
 msgstr "Alle routes definitief uit de geschiedenis verwijderen?"
+
+msgid "Position approximative…"
+msgstr "Geschatte positie…"
+
+msgid "Recherche du signal GPS…"
+msgstr "GPS-signaal wordt gezocht…"
+
+msgid "GPS déjà géré par l'enregistrement en cours"
+msgstr "GPS wordt al beheerd door de lopende opname"
+
+
+msgid "Pause auto (arrêt détecté)"
+msgstr "Auto-pauze (stop gedetecteerd)"
+
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Geen GPS-signaal — tik op de kaart om het startpunt te bepalen"
+
+msgid "Départ défini sur la carte"
+msgstr "Start op de kaart ingesteld"
+
+msgid "Bip de confirmation"
+msgstr "Bevestigingssignaal"
+
+msgid "Parcours récupéré après un arrêt brutal"
+msgstr "Route hersteld na een abrupt stop"
+
+msgid "Arrêt auto : batterie faible"
+msgstr "Auto-stop: lage batterij"
+
+msgid "Arrêt auto : durée max atteinte (12 h)"
+msgstr "Auto-stop: max. duur bereikt (12 u)"
+
+
+msgid "Arrêt auto : disque plein"
+msgstr "Auto-stop: schijf vol"
+
+msgid "Arrêt auto : erreur d'écriture disque"
+msgstr "Auto-stop: schrijffout op schijf"
+
+msgid "Arrêt après un crash — parcours sauvegardé"
+msgstr "Gestopt na een crash — route opgeslagen"
+
+msgid "Enregistrement repris après un crash du daemon"
+msgstr "Opname hervat na een crash van de daemon"
+
+msgid "Erreur d'écriture disque"
+msgstr "Schrijffout op schijf"
+
+
+msgid "Apparence"
+msgstr "Uiterlijk"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Clair"
+msgstr "Licht"
+
+msgid "Stats"
+msgstr "Stats"
+
+msgid "Statistiques"
+msgstr "Statistieken"
+
+msgid "Cette semaine"
+msgstr "Deze week"
+
+msgid "Ce mois-ci"
+msgstr "Deze maand"
+
+msgid "Depuis le début"
+msgstr "Alles samen"
+
+msgid "Sorties"
+msgstr "Ritjes"
+
+msgid "Record de distance"
+msgstr "Afstandsrecord"
+
+msgid "D+ total"
+msgstr "D+ totaal"
+
+msgid "Distance"
+msgstr "Afstand"
+
+msgid "D+"
+msgstr "D+"
+

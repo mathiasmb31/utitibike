@@ -1,5 +1,5 @@
 # Utitibike translations — Spanish.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -241,3 +241,91 @@ msgstr "¿Borrar todo?"
 
 msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
 msgstr "¿Eliminar definitivamente todas las rutas del historial?"
+
+msgid "Position approximative…"
+msgstr "Posición aproximada…"
+
+msgid "Recherche du signal GPS…"
+msgstr "Buscando señal GPS…"
+
+msgid "GPS déjà géré par l'enregistrement en cours"
+msgstr "El GPS ya lo gestiona la grabación en curso"
+
+
+msgid "Pause auto (arrêt détecté)"
+msgstr "Pausa automática (detención detectada)"
+
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Sin señal GPS: toca el mapa para marcar la salida"
+
+msgid "Départ défini sur la carte"
+msgstr "Salida marcada en el mapa"
+
+msgid "Bip de confirmation"
+msgstr "Bip de confirmación"
+
+msgid "Parcours récupéré après un arrêt brutal"
+msgstr "Trayecto recuperado tras una parada brusca"
+
+msgid "Arrêt auto : batterie faible"
+msgstr "Parada automática: batería baja"
+
+msgid "Arrêt auto : durée max atteinte (12 h)"
+msgstr "Parada automática: duración máxima alcanzada (12 h)"
+
+
+msgid "Arrêt auto : disque plein"
+msgstr "Parada automática: disco lleno"
+
+msgid "Arrêt auto : erreur d'écriture disque"
+msgstr "Parada automática: error de escritura en disco"
+
+msgid "Arrêt après un crash — parcours sauvegardé"
+msgstr "Detenido tras un fallo: trayecto guardado"
+
+msgid "Enregistrement repris après un crash du daemon"
+msgstr "Grabación reanudada tras un fallo del daemon"
+
+msgid "Erreur d'écriture disque"
+msgstr "Error de escritura en disco"
+
+
+msgid "Apparence"
+msgstr "Apariencia"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Clair"
+msgstr "Claro"
+
+msgid "Stats"
+msgstr "Stats"
+
+msgid "Statistiques"
+msgstr "Estadísticas"
+
+msgid "Cette semaine"
+msgstr "Esta semana"
+
+msgid "Ce mois-ci"
+msgstr "Este mes"
+
+msgid "Depuis le début"
+msgstr "Desde el principio"
+
+msgid "Sorties"
+msgstr "Salidas"
+
+msgid "Record de distance"
+msgstr "Récord de distancia"
+
+msgid "D+ total"
+msgstr "D+ total"
+
+msgid "Distance"
+msgstr "Distancia"
+
+msgid "D+"
+msgstr "D+"
+

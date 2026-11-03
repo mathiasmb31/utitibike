@@ -9,6 +9,7 @@
 #include <QJsonObject>
 #include <QDateTime>
 #include <QDir>
+#include <QXmlStreamReader>
 #include <QUuid>
 #include <QDebug>
 
@@ -119,6 +120,43 @@ QVariantList RouteHistory::waypointsAt(int index) const
     if (index < 0 || index >= m_entries.size())
         return QVariantList();
     return m_entries.at(index).toMap().value(QStringLiteral("waypoints")).toList();
+}
+
+// Points du tracé d'une entrée pour le profil d'altitude (mini courbe dans
+// l'historique) : [{lat, lon, ele?}, ...] lus depuis le GPX.
+QVariantList RouteHistory::profileAt(int index) const
+{
+    QVariantList out;
+    const QString gpx = gpxAt(index);
+    if (gpx.isEmpty())
+        return out;
+    QXmlStreamReader r(gpx);
+    double lat = 0.0, lon = 0.0, ele = 0.0;
+    bool inPt = false, hasEle = false;
+    while (!r.atEnd()) {
+        r.readNext();
+        if (r.isStartElement()) {
+            if (r.name() == QLatin1String("trkpt")) {
+                lat = r.attributes().value(QStringLiteral("lat")).toDouble();
+                lon = r.attributes().value(QStringLiteral("lon")).toDouble();
+                inPt = true;
+                hasEle = false;
+                ele = 0.0;
+            } else if (inPt && r.name() == QLatin1String("ele")) {
+                ele = r.readElementText().toDouble();
+                hasEle = true;
+            }
+        } else if (r.isEndElement() && r.name() == QLatin1String("trkpt")) {
+            QVariantMap p;
+            p.insert(QStringLiteral("lat"), lat);
+            p.insert(QStringLiteral("lon"), lon);
+            if (hasEle)
+                p.insert(QStringLiteral("ele"), ele);
+            out.append(p);
+            inPt = false;
+        }
+    }
+    return out;
 }
 
 void RouteHistory::load()

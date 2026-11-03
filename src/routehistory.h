@@ -26,6 +26,8 @@ public:
     // Retourne le GPX d'une entrée, ou QString vide
     Q_INVOKABLE QString gpxAt(int index) const;
     Q_INVOKABLE QVariantList waypointsAt(int index) const;
+    // Points du tracé pour le profil d'altitude : [{lat, lon, ele?}, ...]
+    Q_INVOKABLE QVariantList profileAt(int index) const;
 
 signals:
     void entriesChanged();

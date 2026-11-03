@@ -29,6 +29,7 @@
 #include "searchclient.h"
 #include "daemoncontroller.h"
 #include "deviceinfo.h"
+#include "palettewatcher.h"
 
 int main(int argc, char *argv[])
 {
@@ -102,6 +103,8 @@ int main(int argc, char *argv[])
     // (ratio hauteur/largeur) — aucun read_path AppArmor, donc pas de redflag
     // au click review ni de review manuel OpenStore.
     DeviceInfo deviceInfo;
+    // Thème système Lomiri (clair/sombre) propagé par le QPA via la palette
+    PaletteWatcher paletteWatcher;
     view.rootContext()->setContextProperty(QStringLiteral("urlOpener"), &urlOpener);
     view.rootContext()->setContextProperty(QStringLiteral("haptics"), &haptics);
     view.rootContext()->setContextProperty(QStringLiteral("appState"), &appState);
@@ -124,6 +127,7 @@ int main(int argc, char *argv[])
     // Insets « safe area » (cutouts d'écran) pour le QML : le PageStack
     // démarre sous la zone coupée (poinçon caméra, encoches).
     view.rootContext()->setContextProperty(QStringLiteral("deviceInfo"), &deviceInfo);
+    view.rootContext()->setContextProperty(QStringLiteral("paletteWatcher"), &paletteWatcher);
     QObject::connect(&app, &QGuiApplication::aboutToQuit, &displayKeeper, &DisplayKeeper::release);
     // Dernier filet : si un enregistrement est en cours à la fermeture, le
     // parcours est sauvé (sinon il serait perdu, l'auto-save n'a lieu que

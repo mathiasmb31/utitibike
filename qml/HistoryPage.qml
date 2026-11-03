@@ -6,17 +6,36 @@ import "components"
 
 Page {
     id: historyPage
-    header: AppHeader { title: i18n.tr("Historique") }
+    header: AppHeader {
+        title: i18n.tr("Historique")
+        trailingActionBar.actions: [
+            Action {
+                text: i18n.tr("Stats")
+                iconName: "view-list-symbolic"
+                onTriggered: pageStack.push(Qt.resolvedUrl("StatsPage.qml"))
+            }
+        ]
+    }
 
-    // Fond sombre (la Page a un fond blanc par défaut)
+    // Fond de page (la Page a un fond blanc par défaut)
     Rectangle {
         anchors.fill: parent
         color: Theme.bgPage
         z: -10
     }
 
+    function loadEntry(idx) {
+        var gpx = routeHistory.gpxAt(idx)
+        if (gpx !== "" && gpx.length > 100) {
+            // brouter est une context property (main.cpp),
+            // accessible directement depuis HistoryPage.
+            brouter.loadingFromHistory = true
+            brouter.loadGpxData(gpx)
+            pageStack.pop()
+        }
+    }
+
     // Confirmation avant « Tout effacer » (suppression définitive).
-    // Ubuntu.Components.Popups 1.3 : les types s'utilisent sans préfixe.
     Dialog {
         id: clearDialog
         title: i18n.tr("Tout effacer ?")
@@ -40,15 +59,19 @@ Page {
     ListView {
         anchors.fill: parent
         model: routeHistory.entries
-        spacing: units.gu(0.3)
-        header: Rectangle {
-            width: parent.width
-            height: headerCol.height + units.gu(2)
-            color: Theme.bgCard
-            Column {
-                id: headerCol
+        spacing: 0   // les dividers des ListItem gèrent la séparation
+        header: ListItem {
+            height: headerRow.height + units.gu(2)
+            StyleHints {
+                backgroundColor: Theme.bgCard
+                dividerColor: Theme.bgCardBorder
+            }
+            Row {
+                id: headerRow
                 anchors.centerIn: parent
+                spacing: units.gu(2)
                 Label {
+                    anchors.verticalCenter: parent.verticalCenter
                     text: i18n.tr("%1 itinéraire(s)").arg(routeHistory.entries.length)
                     fontSize: "small"
                     color: Theme.textPrimary
@@ -56,27 +79,52 @@ Page {
                 Button {
                     height: units.gu(6)
                     text: i18n.tr("Tout effacer")
+                    iconName: "delete"
                     color: Theme.accentRed
                     visible: routeHistory.entries.length > 0
                     onClicked: PopupUtils.open(clearDialog)
                 }
             }
         }
-        delegate: SportCard {
-            width: parent.width - units.gu(2)
-            height: entryCol.height + units.gu(2)
-            anchors.horizontalCenter: parent.horizontalCenter
-            padding: units.gu(1)
+        // ListItem natif Ubuntu Touch : divider, highlight au tap, swipe
+        // gauche = supprimer, swipe droite = charger sur la carte.
+        delegate: ListItem {
+            height: entryCol.height + units.gu(2.4)
+            StyleHints {
+                backgroundColor: Theme.bgCard
+                selectedBackgroundColor: Theme.bgSection
+                dividerColor: Theme.bgCardBorder
+                foregroundColor: Theme.textPrimary
+            }
+            leadingActions: ListItemActions {
+                ListItemAction {
+                    iconName: "delete"
+                    text: i18n.tr("Supprimer")
+                    onTriggered: routeHistory.removeEntry(index)
+                }
+            }
+            trailingActions: ListItemActions {
+                ListItemAction {
+                    iconName: "document-open"
+                    text: i18n.tr("Charger")
+                    onTriggered: historyPage.loadEntry(index)
+                }
+            }
+            onClicked: historyPage.loadEntry(index)
 
             Column {
                 id: entryCol
                 anchors {
                     left: parent.left
                     right: parent.right
-                    top: parent.top
+                    verticalCenter: parent.verticalCenter
+                    leftMargin: units.gu(2)
+                    rightMargin: units.gu(2)
                 }
                 spacing: units.gu(0.3)
                 Label {
+                    width: parent.width
+                    elide: Text.ElideRight
                     text: modelData.name
                     fontSize: "medium"
                     font.bold: true
@@ -89,29 +137,12 @@ Page {
                           + "  ·  " + (modelData.distanceM / 1000).toFixed(1) + " km"
                           + "  ·  D+ " + Math.round(modelData.ascentM) + " m"
                 }
-                Row {
-                    spacing: units.gu(0.5)
-                    Button {
-                        height: units.gu(6)
-                        text: i18n.tr("Charger")
-                        color: Theme.accentBlue
-                        onClicked: {
-                            var gpx = routeHistory.gpxAt(index)
-                            if (gpx !== "" && gpx.length > 100) {
-                                // brouter est une context property (main.cpp),
-                                // accessible directement depuis HistoryPage.
-                                brouter.loadingFromHistory = true
-                                brouter.loadGpxData(gpx)
-                                pageStack.pop()
-                            }
-                        }
-                    }
-                    Button {
-                        height: units.gu(6)
-                        text: i18n.tr("Supprimer")
-                        color: Theme.accentRed
-                        onClicked: routeHistory.removeEntry(index)
-                    }
+                // Mini profil d'altitude du parcours (depuis le GPX)
+                ElevationProfile {
+                    width: parent.width
+                    height: units.gu(5)
+                    points: routeHistory.profileAt(index)
+                    visible: points.length > 1
                 }
             }
         }
