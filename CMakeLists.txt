@@ -48,6 +48,7 @@ set(SRC
     src/daemoncontroller.h
     src/daemoncontroller.cpp
     src/deviceinfo.h
+    src/palettewatcher.h
 )
 
 qt5_add_resources(QRC_SOURCES qml.qrc)
@@ -61,7 +62,8 @@ target_link_libraries(utitibike Qt5::Core Qt5::Gui Qt5::Quick Qt5::Network Qt5::
 # --- Daemon GPS détaché ---
 # Exécutable secondaire dans le même click. Lancé par l'app QML via
 # QProcess::startDetached() — échappe au SIGSTOP de Lomiri.
-# Enregistre le GPS sans UI, écrit les stats en JSON, beep toutes les 10 s.
+# Enregistre le GPS sans UI (fix toutes les 5 s en roulant, 30 s à l'arrêt),
+# écrit les stats en JSON toutes les 5 s, beep toutes les 30 s.
 set(GPSD_SRC
     src/gpsdaemon/main.cpp
     src/gpsdaemon/gpsdaemon.h
@@ -75,7 +77,9 @@ add_executable(utitibike-gpsd ${GPSD_SRC})
 
 target_include_directories(utitibike-gpsd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-target_link_libraries(utitibike-gpsd Qt5::Core Qt5::Positioning Qt5::Multimedia)
+# Qt5::DBus : le daemon interroge UPower (batterie) et logind (état écran)
+# sur le bus système pour l'auto-stop batterie et le beep écran allumé seul.
+target_link_libraries(utitibike-gpsd Qt5::Core Qt5::Positioning Qt5::Multimedia Qt5::DBus)
 
 install(TARGETS utitibike utitibike-gpsd DESTINATION .)
 install(FILES manifest.json utitibike.apparmor utitibike.desktop logo.png DESTINATION .)

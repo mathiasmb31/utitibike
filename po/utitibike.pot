@@ -1,5 +1,5 @@
 # Utitibike translation template.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -240,3 +240,91 @@ msgstr ""
 
 msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
 msgstr ""
+
+msgid "Position approximative…"
+msgstr ""
+
+msgid "Recherche du signal GPS…"
+msgstr ""
+
+msgid "GPS déjà géré par l'enregistrement en cours"
+msgstr ""
+
+
+msgid "Pause auto (arrêt détecté)"
+msgstr ""
+
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr ""
+
+msgid "Départ défini sur la carte"
+msgstr ""
+
+msgid "Bip de confirmation"
+msgstr ""
+
+msgid "Parcours récupéré après un arrêt brutal"
+msgstr ""
+
+msgid "Arrêt auto : batterie faible"
+msgstr ""
+
+msgid "Arrêt auto : durée max atteinte (12 h)"
+msgstr ""
+
+
+msgid "Arrêt auto : disque plein"
+msgstr ""
+
+msgid "Arrêt auto : erreur d'écriture disque"
+msgstr ""
+
+msgid "Arrêt après un crash — parcours sauvegardé"
+msgstr ""
+
+msgid "Enregistrement repris après un crash du daemon"
+msgstr ""
+
+msgid "Erreur d'écriture disque"
+msgstr ""
+
+
+msgid "Apparence"
+msgstr ""
+
+msgid "Auto"
+msgstr ""
+
+msgid "Clair"
+msgstr ""
+
+msgid "Stats"
+msgstr ""
+
+msgid "Statistiques"
+msgstr ""
+
+msgid "Cette semaine"
+msgstr ""
+
+msgid "Ce mois-ci"
+msgstr ""
+
+msgid "Depuis le début"
+msgstr ""
+
+msgid "Sorties"
+msgstr ""
+
+msgid "Record de distance"
+msgstr ""
+
+msgid "D+ total"
+msgstr ""
+
+msgid "Distance"
+msgstr ""
+
+msgid "D+"
+msgstr ""
+

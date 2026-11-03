@@ -1,5 +1,5 @@
 # Utitibike translations — English.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -241,3 +241,91 @@ msgstr "Delete all?"
 
 msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
 msgstr "Permanently delete all routes from the history?"
+
+msgid "Position approximative…"
+msgstr "Approximate position…"
+
+msgid "Recherche du signal GPS…"
+msgstr "Searching for GPS signal…"
+
+msgid "GPS déjà géré par l'enregistrement en cours"
+msgstr "GPS already handled by the current recording"
+
+
+msgid "Pause auto (arrêt détecté)"
+msgstr "Auto-pause (stop detected)"
+
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "No GPS signal — tap the map to set the start"
+
+msgid "Départ défini sur la carte"
+msgstr "Start set on the map"
+
+msgid "Bip de confirmation"
+msgstr "Confirmation beep"
+
+msgid "Parcours récupéré après un arrêt brutal"
+msgstr "Track recovered after an abrupt stop"
+
+msgid "Arrêt auto : batterie faible"
+msgstr "Auto-stop: low battery"
+
+msgid "Arrêt auto : durée max atteinte (12 h)"
+msgstr "Auto-stop: max duration reached (12 h)"
+
+
+msgid "Arrêt auto : disque plein"
+msgstr "Auto-stop: disk full"
+
+msgid "Arrêt auto : erreur d'écriture disque"
+msgstr "Auto-stop: disk write error"
+
+msgid "Arrêt après un crash — parcours sauvegardé"
+msgstr "Stopped after a crash — track saved"
+
+msgid "Enregistrement repris après un crash du daemon"
+msgstr "Recording resumed after a daemon crash"
+
+msgid "Erreur d'écriture disque"
+msgstr "Disk write error"
+
+
+msgid "Apparence"
+msgstr "Appearance"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Clair"
+msgstr "Light"
+
+msgid "Stats"
+msgstr "Stats"
+
+msgid "Statistiques"
+msgstr "Statistics"
+
+msgid "Cette semaine"
+msgstr "This week"
+
+msgid "Ce mois-ci"
+msgstr "This month"
+
+msgid "Depuis le début"
+msgstr "All time"
+
+msgid "Sorties"
+msgstr "Rides"
+
+msgid "Record de distance"
+msgstr "Distance record"
+
+msgid "D+ total"
+msgstr "Total elevation gain"
+
+msgid "Distance"
+msgstr "Distance"
+
+msgid "D+"
+msgstr "D+"
+

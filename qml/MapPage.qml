@@ -26,6 +26,19 @@ Page {
     property bool searchBusy: false
     property real userWeightKg: 70  // poids pour l'estimation des calories
 
+    // Source de position « live » unique : pendant un enregistrement, c'est le
+    // daemon qui fournit la position (une seule source GPS ouverte côté app =
+    // moins de batterie) ; sinon c'est le GpsTracker de l'UI.
+    property bool liveRecording: daemonController.recording
+    property bool liveHasFix: liveRecording ? daemonController.hasFix
+                                            : (gpsTracker.active && gpsTracker.hasFix)
+    property bool liveHasApprox: liveRecording ? daemonController.approx
+                                               : (gpsTracker.active && gpsTracker.hasApprox)
+    property bool liveHasPos: liveHasFix || liveHasApprox
+    property real liveLat: liveRecording ? daemonController.latitude : gpsTracker.latitude
+    property real liveLon: liveRecording ? daemonController.longitude : gpsTracker.longitude
+    property real liveSpeedKmh: liveRecording ? daemonController.speedKmh : gpsTracker.speedKmh
+
     readonly property var profiles: ["trekking", "fastbike", "safety", "shortest"]
 
     // ── Estimation difficulté & calories ────────────────────────────
@@ -171,11 +184,39 @@ Page {
                 routeHistory.addEntry(name, distM, ascM, [], gpxContent)
                 showToast(i18n.tr("Parcours sauvegardé"))
             }
+            // Arrêt automatique du daemon (batterie faible / durée max / disque)
+            if (daemonController.stopReason === "battery")
+                showToast(i18n.tr("Arrêt auto : batterie faible"))
+            else if (daemonController.stopReason === "maxduration")
+                showToast(i18n.tr("Arrêt auto : durée max atteinte (12 h)"))
+            else if (daemonController.stopReason === "diskfull")
+                showToast(i18n.tr("Arrêt auto : disque plein"))
+            else if (daemonController.stopReason === "writeerror")
+                showToast(i18n.tr("Arrêt auto : erreur d'écriture disque"))
+            else if (daemonController.stopReason === "crash")
+                showToast(i18n.tr("Arrêt après un crash — parcours sauvegardé"))
+        }
+        function onDaemonRestarted() {
+            // Le daemon a crashé et a été relancé : le tracé reprend depuis
+            // la dernière sauvegarde incrémentale.
+            showToast(i18n.tr("Enregistrement repris après un crash du daemon"))
         }
     }
     Component.onCompleted: {
         // Vérifie si un enregistrement daemon était en cours (app redémarrée)
         daemonController.checkExistingRecording()
+        // Récupère un éventuel en-cours.part laissé par un daemon tué brutalement
+        if (daemonController.recoverOrphanPart()) {
+            var gpxContent = daemonController.lastGpxContent
+            if (gpxContent !== "" && gpxContent.length > 0) {
+                var name = i18n.tr("Trajet %1 · %2 km")
+                           .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
+                           .arg((daemonController.distanceM / 1000).toFixed(1))
+                routeHistory.addEntry(name, daemonController.distanceM,
+                                      daemonController.ascentM, [], gpxContent)
+            }
+            showToast(i18n.tr("Parcours récupéré après un arrêt brutal"))
+        }
     }
 
     Connections {
@@ -223,7 +264,7 @@ Page {
         cache: cache
         waypoints: page.waypoints
         route: page.routePoints
-        currentPosition: gpsTracker.hasFix ? { "lat": gpsTracker.latitude, "lon": gpsTracker.longitude } : ({})
+        currentPosition: page.liveHasPos ? { "lat": page.liveLat, "lon": page.liveLon } : ({})
         favoritePoints: favorites.entries
 
         // Vue persistée (view.json via viewState) : restaurée au démarrage,
@@ -389,7 +430,7 @@ Page {
                     color: Theme.textPrimary
                     fontSize: "x-large"
                     font.bold: true
-                    text: gpsTracker.hasFix ? gpsTracker.speedKmh.toFixed(1) : "--"
+                    text: page.liveHasFix ? page.liveSpeedKmh.toFixed(1) : "--"
                 }
                 Label {
                     color: Theme.accentCyan
@@ -407,9 +448,91 @@ Page {
                     + "  ·  " + formatDuration(daemonController.elapsedSec)
             }
             Label {
-                color: Theme.textSecondary
+                color: Theme.accentAmber
                 fontSize: "x-small"
-                text: gpsTracker.statusText
+                visible: daemonController.recording && daemonController.paused
+                text: i18n.tr("Pause auto (arrêt détecté)")
+            }
+            Label {
+                color: Theme.accentRed
+                fontSize: "x-small"
+                visible: daemonController.recording && daemonController.writeError
+                text: i18n.tr("Erreur d'écriture disque")
+            }
+            // Voyant d'état du signal GPS : vert fixe = vrai fix satellite ;
+            // orange clignotant = position approximative (dernier lieu connu
+            // ou réseau) ; rouge clignotant = recherche, aucune position.
+            Row {
+                spacing: units.gu(1)
+                Rectangle {
+                    id: fixDot
+                    width: units.gu(1.6)
+                    height: width
+                    radius: width / 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: page.liveHasFix ? Theme.accentGreen
+                                          : (page.liveHasApprox ? Theme.accentAmber
+                                                                : Theme.accentRed)
+                    SequentialAnimation on opacity {
+                        running: !page.liveHasFix
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 0.2; duration: 600 }
+                        NumberAnimation { to: 1.0; duration: 600 }
+                    }
+                }
+                Label {
+                    color: Theme.textSecondary
+                    fontSize: "x-small"
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: page.liveRecording
+                          ? (daemonController.hasFix ? i18n.tr("GPS actif")
+                             : (daemonController.approx ? i18n.tr("Position approximative…")
+                                                        : i18n.tr("Recherche du signal GPS…")))
+                          : gpsTracker.statusText
+                }
+            }
+        }
+    }
+
+    // Bandeau « départ manuel » : affiché quand le daemon enregistre depuis
+    // plus de 6 min sans aucun fix satellite — un appui simple sur la carte
+    // définit le point de départ.
+    SportCard {
+        id: manualStartBanner
+        z: 20
+        anchors {
+            left: parent.left
+            right: parent.right
+            margins: units.gu(1)
+        }
+        y: units.gu(1)
+        height: units.gu(5)
+        padding: units.gu(1)
+        visible: daemonController.recording && daemonController.awaitManualStart
+        Behavior on y { NumberAnimation { duration: 200 } }
+        Row {
+            anchors.centerIn: parent
+            spacing: units.gu(1)
+            Rectangle {
+                width: units.gu(1.6)
+                height: width
+                radius: width / 2
+                color: Theme.accentRed
+                anchors.verticalCenter: parent.verticalCenter
+                SequentialAnimation on opacity {
+                    running: manualStartBanner.visible
+                    loops: Animation.Infinite
+                    NumberAnimation { to: 0.2; duration: 600 }
+                    NumberAnimation { to: 1.0; duration: 600 }
+                }
+            }
+            Label {
+                width: parent.width - units.gu(3.6)
+                wrapMode: Text.WordWrap
+                color: Theme.textPrimary
+                fontSize: "small"
+                anchors.verticalCenter: parent.verticalCenter
+                text: i18n.tr("Pas de signal GPS — touchez la carte pour définir le départ")
             }
         }
     }
@@ -617,6 +740,14 @@ Page {
             onReleased: {
                 warnTimer.stop()
                 addTimer.stop()
+                // Départ manuel : si le daemon attend un point de départ (pas de
+                // fix GPS), un appui simple sur la carte définit le départ.
+                if (daemonController.recording && daemonController.awaitManualStart
+                        && !longPressDone) {
+                    var ll = map.itemToLatLon(mapMouse.pressX, mapMouse.pressY)
+                    daemonController.setManualStart(ll.lat, ll.lon)
+                    showToast(i18n.tr("Départ défini sur la carte"))
+                }
             }
             onCanceled: {
                 warnTimer.stop()
@@ -710,17 +841,43 @@ Page {
             verticalCenter: parent.verticalCenter
         }
         spacing: units.gu(1)
+        // Bouton couche de carte : cycle OSM → Cyclable → Sombre → Satellite
+        // (accès direct, sans ouvrir le panneau). Nom court = pas dépendant
+        // des icônes du thème.
         SportCard {
             width: units.gu(6)
             height: units.gu(6)
             radius: width / 2
             padding: 0
+            property var keys: ["osm", "cyclosm", "dark", "satellite"]
+            property var shortNames: { "osm": "OSM", "cyclosm": "Cyc", "dark": "Nuit", "satellite": "Sat" }
             Label {
                 anchors.centerIn: parent
-                text: "+"
-                color: Theme.textPrimary
-                fontSize: "large"
+                text: parent.shortNames[cache.tileServer] || "OSM"
+                color: Theme.accentOrange
+                fontSize: "x-small"
                 font.bold: true
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    var i = parent.keys.indexOf(cache.tileServer)
+                    cache.tileServer = parent.keys[(i + 1) % parent.keys.length]
+                    haptics.vibrate(20)
+                }
+            }
+        }
+        SportCard {
+            width: units.gu(6)
+            height: units.gu(6)
+            radius: width / 2
+            padding: 0
+            Icon {
+                anchors.centerIn: parent
+                name: "zoom-in"
+                width: units.gu(3)
+                height: width
+                color: Theme.textPrimary
             }
             MouseArea {
                 anchors.fill: parent
@@ -732,12 +889,12 @@ Page {
             height: units.gu(6)
             radius: width / 2
             padding: 0
-            Label {
+            Icon {
                 anchors.centerIn: parent
-                text: "–"
+                name: "zoom-out"
+                width: units.gu(3)
+                height: width
                 color: Theme.textPrimary
-                fontSize: "large"
-                font.bold: true
             }
             MouseArea {
                 anchors.fill: parent
@@ -1042,10 +1199,48 @@ Page {
                 }
 
                 Label {
+                    text: i18n.tr("Apparence")
+                    fontSize: "small"
+                    font.bold: true
+                    color: Theme.textPrimary
+                }
+                SegmentedControl {
+                    width: parent.width
+                    property var modeKeys: ["auto", "dark", "light"]
+                    model: [
+                        { label: i18n.tr("Auto"), value: "auto" },
+                        { label: i18n.tr("Sombre"), value: "dark" },
+                        { label: i18n.tr("Clair"), value: "light" }
+                    ]
+                    currentIndex: Math.max(0, modeKeys.indexOf(viewState.themeMode))
+                    onSelected: viewState.themeMode = value
+                }
+                Rectangle {
+                    width: parent.width
+                    height: units.gu(0.1)
+                    color: Theme.bgCardBorder
+                }
+
+                Label {
                     text: i18n.tr("GPS & Navigation")
                     fontSize: "small"
                     font.bold: true
                     color: Theme.textPrimary
+                }
+                Row {
+                    width: parent.width
+                    spacing: units.gu(1)
+                    Label {
+                        text: i18n.tr("Bip de confirmation")
+                        color: Theme.textSecondary
+                        fontSize: "small"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Switch {
+                        anchors.verticalCenter: parent.verticalCenter
+                        checked: daemonController.beepEnabled
+                        onCheckedChanged: daemonController.setBeepEnabled(checked)
+                    }
                 }
                 Row {
                     width: parent.width
@@ -1054,9 +1249,13 @@ Page {
                         width: (parent.width - units.gu(1.5)) / 3
                         height: units.gu(6)
                         text: gpsTracker.active ? i18n.tr("GPS actif") : i18n.tr("Activer GPS")
+                        iconName: "location"
                         color: gpsTracker.active ? Theme.accentGreen : Theme.bgSection
                         onClicked: {
                             if (gpsTracker.active) gpsTracker.stop()
+                            // Pendant un enregistrement, le daemon gère déjà le
+                            // GPS : ne pas ouvrir une 2e source (batterie).
+                            else if (daemonController.recording) showToast(i18n.tr("GPS déjà géré par l'enregistrement en cours"))
                             else gpsTracker.start()
                         }
                     }
@@ -1064,13 +1263,14 @@ Page {
                         width: (parent.width - units.gu(1.5)) / 3
                         height: units.gu(6)
                         text: page.followGps ? i18n.tr("Suivi GPS") : i18n.tr("Centrer GPS")
-                        enabled: gpsTracker.hasFix
+                        iconName: "compass"
+                        enabled: page.liveHasPos
                         color: page.followGps ? Theme.accentBlue : Theme.bgSection
                         onClicked: {
                             page.followGps = !page.followGps
-                            if (page.followGps && gpsTracker.hasFix) {
-                                map.centerLat = gpsTracker.latitude
-                                map.centerLon = gpsTracker.longitude
+                            if (page.followGps && page.liveHasPos) {
+                                map.centerLat = page.liveLat
+                                map.centerLon = page.liveLon
                             }
                         }
                     }
@@ -1078,6 +1278,7 @@ Page {
                         width: (parent.width - units.gu(1.5)) / 3
                         height: units.gu(6)
                         text: brouter.navigation ? i18n.tr("Arrêter nav.") : i18n.tr("Naviguer")
+                        iconName: "map"
                         enabled: page.routePoints.length > 1
                         color: brouter.navigation ? Theme.accentRed : Theme.accentBlue
                         onClicked: {
@@ -1113,6 +1314,7 @@ Page {
                         width: (parent.width - units.gu(0.5)) / 2
                         height: units.gu(6)
                         text: daemonController.recording ? i18n.tr("Arrêter") : i18n.tr("Enregistrer")
+                        iconName: daemonController.recording ? "media-playback-stop" : "media-record"
                         color: daemonController.recording ? Theme.accentRed : Theme.accentGreen
                         onClicked: {
                             if (daemonController.recording) {
@@ -1120,6 +1322,11 @@ Page {
                                 showToast(i18n.tr("Enregistrement arrêté"))
                             } else {
                                 daemonController.startRecording()
+                                // Une seule source GPS active (le daemon) et
+                                // écran non retenu allumé : économie batterie.
+                                if (gpsTracker.active)
+                                    gpsTracker.stop()
+                                displayKeeper.release()
                             }
                         }
                     }
@@ -1127,6 +1334,7 @@ Page {
                         width: (parent.width - units.gu(0.5)) / 2
                         height: units.gu(6)
                         text: i18n.tr("Effacer tracé")
+                        iconName: "edit-clear"
                         color: Theme.bgSection
                         enabled: daemonController.pointCount > 0
                         onClicked: {
@@ -1146,6 +1354,7 @@ Page {
                     width: parent.width
                     height: units.gu(6)
                     text: i18n.tr("Exporter GPX")
+                    iconName: "share"
                     color: Theme.bgSection
                     enabled: page.routeGpx !== ""
                     onClicked: page.exportNow()
@@ -1173,6 +1382,7 @@ Page {
                     width: parent.width
                     height: units.gu(6)
                     text: i18n.tr("Charger un GPX")
+                    iconName: "document-open"
                     color: Theme.bgSection
                     onClicked: {
                         gpxPicker.visible = true
@@ -1183,6 +1393,7 @@ Page {
                     width: parent.width
                     height: units.gu(6)
                     text: i18n.tr("Historique (%1)").arg(routeHistory.entries.length)
+                    iconName: "view-list-symbolic"
                     color: Theme.bgSection
                     onClicked: pageStack.push(Qt.resolvedUrl("HistoryPage.qml"))
                 }
@@ -1191,6 +1402,7 @@ Page {
                     width: parent.width
                     height: units.gu(6)
                     text: i18n.tr("Aide")
+                    iconName: "help-about"
                     color: Theme.bgSection
                     onClicked: pageStack.push(Qt.resolvedUrl("HelpPage.qml"))
                 }
@@ -1219,11 +1431,12 @@ Page {
                     width: parent.width
                     height: units.gu(6)
                     text: i18n.tr("Ajouter ma position aux favoris")
+                    iconName: "starred"
                     color: Theme.bgSection
-                    enabled: gpsTracker.hasFix
+                    enabled: page.liveHasPos
                     onClicked: {
                         var name = i18n.tr("Position %1").arg(new Date().toLocaleTimeString())
-                        favorites.add(name, gpsTracker.latitude, gpsTracker.longitude, "position")
+                        favorites.add(name, page.liveLat, page.liveLon, "position")
                         showToast(i18n.tr("Favori ajouté"))
                     }
                 }
@@ -1360,6 +1573,7 @@ Page {
                         width: (parent.width - units.gu(1)) / 2
                         height: units.gu(6)
                         text: i18n.tr("Précharger la zone affichée")
+                        iconName: "emblem-downloads"
                         color: Theme.bgSection
                         onClicked: page.startDownload()
                     }
@@ -1367,6 +1581,7 @@ Page {
                         width: (parent.width - units.gu(1)) / 2
                         height: units.gu(6)
                         text: i18n.tr("Annuler")
+                        iconName: "edit-undo"
                         color: Theme.bgSection
                         enabled: page.dlTotal > 0 && page.dlDone < page.dlTotal
                         onClicked: {
@@ -1462,6 +1677,23 @@ Page {
         }
     }
 
+    // Préchargement des tuiles autour de la position pendant l'enregistrement
+    // (toutes les 5 min, ±~900 m, zooms 15-17) : la carte reste utilisable
+    // hors-ligne ensuite. cache.paused vaut vrai quand l'app est en
+    // arrière-plan : aucun téléchargement tant que l'app est gelée.
+    Timer {
+        id: preloadTimer
+        interval: 300000
+        repeat: true
+        running: daemonController.recording && daemonController.hasFix
+        onTriggered: {
+            var d = 0.008
+            cache.downloadArea(daemonController.latitude - d, daemonController.longitude - d,
+                               daemonController.latitude + d, daemonController.longitude + d,
+                               15, 17)
+        }
+    }
+
     // Quand l'app revient au premier plan, force le redessin de la carte :
     // le QQuickPaintedItem ne se repaint pas tout seul après une mise en
     // arrière-plan (la surface Mir est suspendue), l'écran reste blanc.
@@ -1477,20 +1709,34 @@ Page {
     Connections {
         target: gpsTracker
         function onPositionUpdated() {
+            // Pendant un enregistrement daemon, la position vient du daemon
+            // (voir Connections ci-dessous) : on ne centre pas depuis les 2 sources.
             // Premier lancement (pas de vue restaurée) : centrer sur le
             // premier fix GPS, sauf si l'utilisateur a déjà déplacé la carte.
-            if (gpsTracker.hasFix && !viewState.restored && !page.userMovedMap) {
+            if (gpsTracker.hasFix && !daemonController.recording && !viewState.restored && !page.userMovedMap) {
                 page.restoringView = true
                 map.centerLat = gpsTracker.latitude
                 map.centerLon = gpsTracker.longitude
                 page.restoringView = false
             }
-            if (page.followGps && gpsTracker.hasFix) {
+            if (page.followGps && gpsTracker.hasFix && !daemonController.recording) {
                 map.centerLat = gpsTracker.latitude
                 map.centerLon = gpsTracker.longitude
             }
             if (brouter.navigation && gpsTracker.hasFix)
                 brouter.updatePosition(gpsTracker.latitude, gpsTracker.longitude)
+        }
+    }
+
+    // Pendant l'enregistrement, le suivi de carte utilise la position publiée
+    // par le daemon dans recording.json (une seule source GPS ouverte).
+    Connections {
+        target: daemonController
+        function onStatsChanged() {
+            if (page.followGps && daemonController.recording && daemonController.hasFix) {
+                map.centerLat = daemonController.latitude
+                map.centerLon = daemonController.longitude
+            }
         }
     }
 
