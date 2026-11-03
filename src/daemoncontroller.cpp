@@ -57,17 +57,22 @@ void DaemonController::startRecording()
     m_stopRequested = false;
     m_restartAttempts = 0;
 
-    // Écrit le fichier de contrôle avec notre PID (le daemon vérifie
-    // que ce PID est vivant, en secours de PR_SET_PDEATHSIG).
+    // Écrit le fichier de contrôle : "<pid> <sessionId>". Le daemon vérifie
+    // que le PID est vivant (secours de PR_SET_PDEATHSIG) ; le sessionId
+    // (timestamp du démarrage) permet au daemon de distinguer une REPRISE
+    // après crash (même sessionId → il recharge en-cours.part) d'un NOUVEL
+    // enregistrement (sessionId différent → il ignore et supprime le .part,
+    // sinon un vieux tracé de test serait repris à tort).
+    const QString sessionId = QString::number(QDateTime::currentMSecsSinceEpoch());
     QFile cf(m_controlFile);
     if (!cf.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         qWarning() << "[daemonctl] cannot create control file" << m_controlFile
                    << cf.errorString();
         return;
     }
-    cf.write(QByteArray::number(QCoreApplication::applicationPid()));
+    cf.write(QByteArray::number(QCoreApplication::applicationPid()) + " " + sessionId.toLatin1());
     cf.close();
-    qWarning() << "[daemonctl] control file written:" << m_controlFile;
+    qWarning() << "[daemonctl] control file written:" << m_controlFile << "session" << sessionId;
 
     // Lance le daemon comme fils (pas startDetached) pour que
     // PR_SET_PDEATHSIG fonctionne : le noyau tuera le daemon si l'app meurt.
@@ -325,6 +330,7 @@ void DaemonController::readDoneJson()
     m_pointCount = obj.value(QStringLiteral("pointCount")).toInt();
     m_lastGpxPath = obj.value(QStringLiteral("gpxPath")).toString();
     m_lastGpxContent = obj.value(QStringLiteral("gpxContent")).toString();
+    m_startTime = obj.value(QStringLiteral("startTime")).toString();
     m_stopReason = obj.value(QStringLiteral("stopReason")).toString("user");
     if (m_stopReason.isEmpty())
         m_stopReason = QStringLiteral("user");
@@ -363,7 +369,7 @@ void DaemonController::importDoneToHistory(RouteHistory *history)
         const QString name = tr("Trajet %1 · %2 km")
                 .arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM HH:mm")))
                 .arg(m_distance / 1000.0, 0, 'f', 1);
-        history->addEntry(name, m_distance, m_ascent, QVariantList(), m_lastGpxContent);
+        history->addEntry(name, m_distance, m_ascent, QVariantList(), m_lastGpxContent, m_startTime);
         qWarning() << "[daemonctl] done imported to history at quit:" << m_pointCount << "points";
     }
 }
@@ -476,6 +482,7 @@ bool DaemonController::recoverOrphanPart()
     }
     if (!start.isValid())
         start = QDateTime::currentDateTimeUtc();
+    m_startTime = start.toString(Qt::ISODateWithMs);  // date de début du tracé récupéré
 
     // Génère le GPX (même format que le daemon)
     QString gpx;

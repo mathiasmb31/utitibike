@@ -182,7 +182,7 @@ Page {
                 var name = i18n.tr("Trajet %1 · %2 km")
                            .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
                            .arg((distM / 1000).toFixed(1))
-                routeHistory.addEntry(name, distM, ascM, [], gpxContent)
+                routeHistory.addEntry(name, distM, ascM, [], gpxContent, daemonController.startTime)
                 showToast(i18n.tr("Parcours sauvegardé"))
             }
             // Arrêt automatique du daemon (batterie / durée max / disque)
@@ -218,11 +218,36 @@ Page {
                            .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
                            .arg((daemonController.distanceM / 1000).toFixed(1))
                 routeHistory.addEntry(name, daemonController.distanceM,
-                                      daemonController.ascentM, [], gpxContent)
+                                      daemonController.ascentM, [], gpxContent,
+                                      daemonController.startTime)
             }
             showToast(i18n.tr("Parcours récupéré après un arrêt brutal"))
             daemonController.notify(i18n.tr("Parcours récupéré après un arrêt brutal"))
         }
+    }
+
+    // Centre la carte sur le bounding box d'un tracé (itinéraire calculé
+    // OU trajet chargé depuis l'historique) — sinon la carte reste sur la
+    // vue restaurée et le tracé semble « ne correspondre à rien ».
+    function fitToBounds(pts) {
+        if (!pts || pts.length === 0)
+            return
+        var minLat = 90, maxLat = -90, minLon = 180, maxLon = -180
+        for (var i = 0; i < pts.length; i++) {
+            var p = pts[i]
+            if (p.lat < minLat) minLat = p.lat
+            if (p.lat > maxLat) maxLat = p.lat
+            if (p.lon < minLon) minLon = p.lon
+            if (p.lon > maxLon) maxLon = p.lon
+        }
+        map.centerLat = (minLat + maxLat) / 2
+        map.centerLon = (minLon + maxLon) / 2
+        // zoom adapté à l'étendue (~360°/2^z de côté)
+        var d = Math.max(maxLat - minLat, maxLon - minLon)
+        var z = 17
+        while (z > 3 && d > 360 / Math.pow(2, z))
+            z--
+        map.zoom = z
     }
 
     Connections {
@@ -232,6 +257,7 @@ Page {
             page.routeDistance = distanceM
             page.routeAscent = ascentM
             page.routeGpx = brouter.lastGpx
+            page.fitToBounds(points)
             // Toast avec difficulté + calories (visible immédiatement)
             var diff = page.difficultyLevel(distanceM, ascentM)
             var kcal = page.estimatedCalories(distanceM, ascentM)
