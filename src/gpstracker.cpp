@@ -16,6 +16,8 @@ QString GpsTracker::statusText() const
         return tr("GPS inactif");
     if (!m_active)
         return tr("GPS arrêté");
+    if (!m_hasFix && m_hasApprox)
+        return tr("Position approximative…");
     if (!m_hasFix)
         return tr("Recherche du signal GPS…");
     return tr("GPS actif");
@@ -34,9 +36,23 @@ void GpsTracker::start()
             return;
         }
         m_source->setUpdateInterval(1000);
+        // Satellite + réseau (WiFi/cellule via geoclue) : une position
+        // approximative peut arriver avant le premier fix satellite.
+        m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
+        // Position de secours : dernière position connue en cache (lue sans
+        // attendre le serveur) pour afficher tout de suite où l'on est.
+        const QGeoPositionInfo lastKnown = m_source->lastKnownPosition(false);
+        if (lastKnown.isValid() && lastKnown.coordinate().isValid()) {
+            m_lat = lastKnown.coordinate().latitude();
+            m_lon = lastKnown.coordinate().longitude();
+            m_hasApprox = true;
+            emit positionUpdated();
+        }
         connect(m_source, &QGeoPositionInfoSource::positionUpdated,
                 this, [this](const QGeoPositionInfo &info) {
             m_hasFix = info.isValid();
+            if (m_hasFix)
+                m_hasApprox = false;  // un vrai fix remplace la position approx
             if (!m_hasFix) {
                 // Émettre quand même : le QML masque la position (hasFix=false)
                 // au lieu de garder un point fantôme à la dernière position.

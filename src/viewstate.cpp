@@ -25,10 +25,22 @@ ViewState::ViewState(QObject *parent)
         o.insert(QStringLiteral("centerLat"), m_lat);
         o.insert(QStringLiteral("centerLon"), m_lon);
         o.insert(QStringLiteral("zoom"), m_zoom);
+        o.insert(QStringLiteral("themeMode"), m_themeMode);
         f.write(QJsonDocument(o).toJson(QJsonDocument::Compact));
         f.commit();
     });
     load();
+}
+
+void ViewState::setThemeMode(const QString &v)
+{
+    const QString mode = (v == QLatin1String("dark") || v == QLatin1String("light"))
+                         ? v : QStringLiteral("auto");
+    if (m_themeMode == mode)
+        return;
+    m_themeMode = mode;
+    emit themeModeChanged();
+    scheduleSave();
 }
 
 void ViewState::setCenterLat(double v)
@@ -79,6 +91,10 @@ void ViewState::load()
     m_lat = lat.toDouble();
     m_lon = lon.toDouble();
     m_zoom = qBound(3, int(zoom.toDouble()), 17);
+    const QJsonValue theme = o.value(QStringLiteral("themeMode"));
+    if (theme.isString())
+        m_themeMode = theme.toString();
     m_restored = true;
-    qWarning() << "viewstate restored" << m_lat << m_lon << "zoom" << m_zoom;
+    qWarning() << "viewstate restored" << m_lat << m_lon << "zoom" << m_zoom
+               << "theme" << m_themeMode;
 }
