@@ -8,8 +8,7 @@
         "content_exchange_source",
         "keep-display-on",
         "location",
-        "audio",
-        "dbus"
+        "audio"
     ]
 }
 
