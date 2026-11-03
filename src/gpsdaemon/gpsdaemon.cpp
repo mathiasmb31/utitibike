@@ -427,10 +427,25 @@ double GpsDaemon::batteryPct() const
     msg2.setArguments({ QStringLiteral("org.freedesktop.UPower.Device"),
                         QStringLiteral("Percentage") });
     const QDBusMessage reply = QDBusConnection::systemBus().call(msg2, QDBus::Block, 2000);
-    if (reply.type() == QDBusMessage::ErrorMessage || reply.arguments().isEmpty())
-        return -1.0;
-    const QVariant v = reply.arguments().first();  // QDBusVariant(Percentage)
-    return v.value<QDBusVariant>().variant().toDouble();
+    if (reply.type() != QDBusMessage::ErrorMessage && !reply.arguments().isEmpty()) {
+        const QVariant v = reply.arguments().first();  // QDBusVariant(Percentage)
+        const double pct = v.value<QDBusVariant>().variant().toDouble();
+        if (pct >= 0.0 && pct <= 100.0)
+            return pct;
+    }
+    // Fallback sysfs si le bus est bloqué par AppArmor
+    const QDir psDir(QStringLiteral("/sys/class/power_supply"));
+    const QStringList entries = psDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QString &e : entries) {
+        QFile f(psDir.filePath(e + QStringLiteral("/capacity")));
+        if (f.open(QIODevice::ReadOnly)) {
+            const double v = QString::fromLatin1(f.readAll().trimmed()).toDouble();
+            f.close();
+            if (v >= 0.0 && v <= 100.0)
+                return v;
+        }
+    }
+    return -1.0;
 }
 
 // État de l'écran via logind : la session seat0 est "Active" quand l'écran
@@ -444,34 +459,45 @@ bool GpsDaemon::screenIsOn() const
                 QStringLiteral("org.freedesktop.login1.Manager"),
                 QStringLiteral("ListSessions"));
     const QDBusMessage reply = QDBusConnection::systemBus().call(msg, QDBus::Block, 2000);
-    if (reply.type() == QDBusMessage::ErrorMessage || reply.arguments().isEmpty())
-        return true;
-    const QDBusArgument arg = reply.arguments().first().value<QDBusArgument>();
-    if (arg.currentType() != QDBusArgument::ArrayType)
-        return true;
-    QDBusObjectPath seat0;
-    arg.beginArray();
-    while (!arg.atEnd()) {
-        arg.beginStructure();
-        QString id; uint uid = 0; QString user; QString seat; QDBusObjectPath path;
-        arg >> id >> uid >> user >> seat >> path;
-        arg.endStructure();
-        if (seat == QStringLiteral("seat0"))
-            seat0 = path;
+    if (reply.type() != QDBusMessage::ErrorMessage && !reply.arguments().isEmpty()) {
+        const QDBusArgument arg = reply.arguments().first().value<QDBusArgument>();
+        if (arg.currentType() == QDBusArgument::ArrayType) {
+            QDBusObjectPath seat0;
+            arg.beginArray();
+            while (!arg.atEnd()) {
+                arg.beginStructure();
+                QString id; uint uid = 0; QString user; QString seat; QDBusObjectPath path;
+                arg >> id >> uid >> user >> seat >> path;
+                arg.endStructure();
+                if (seat == QStringLiteral("seat0"))
+                    seat0 = path;
+            }
+            arg.endArray();
+            if (!seat0.path().isEmpty()) {
+                QDBusMessage pmsg = QDBusMessage::createMethodCall(
+                            QStringLiteral("org.freedesktop.login1"), seat0.path(),
+                            QStringLiteral("org.freedesktop.DBus.Properties"),
+                            QStringLiteral("Get"));
+                pmsg.setArguments({ QStringLiteral("org.freedesktop.login1.Session"),
+                                    QStringLiteral("Active") });
+                const QDBusMessage preply = QDBusConnection::systemBus().call(pmsg, QDBus::Block, 2000);
+                if (preply.type() != QDBusMessage::ErrorMessage && !preply.arguments().isEmpty())
+                    return preply.arguments().first().value<QDBusVariant>().variant().toBool();
+            }
+        }
     }
-    arg.endArray();
-    if (seat0.path().isEmpty())
-        return true;
-    QDBusMessage pmsg = QDBusMessage::createMethodCall(
-                QStringLiteral("org.freedesktop.login1"), seat0.path(),
-                QStringLiteral("org.freedesktop.DBus.Properties"),
-                QStringLiteral("Get"));
-    pmsg.setArguments({ QStringLiteral("org.freedesktop.login1.Session"),
-                        QStringLiteral("Active") });
-    const QDBusMessage preply = QDBusConnection::systemBus().call(pmsg, QDBus::Block, 2000);
-    if (preply.type() == QDBusMessage::ErrorMessage || preply.arguments().isEmpty())
-        return true;
-    return preply.arguments().first().value<QDBusVariant>().variant().toBool();
+    // Fallback sysfs si le bus est bloqué par AppArmor : luminosité > 0 = allumé
+    const QDir blDir(QStringLiteral("/sys/class/backlight"));
+    const QStringList entries = blDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QString &e : entries) {
+        QFile f(blDir.filePath(e + QStringLiteral("/actual_brightness")));
+        if (f.open(QIODevice::ReadOnly)) {
+            const int v = QString::fromLatin1(f.readAll().trimmed()).toInt();
+            f.close();
+            return v > 0;
+        }
+    }
+    return true;  // inconnu → on considère l'écran allumé (beep actif, sûr)
 }
 
 bool GpsDaemon::readBeepConf() const
