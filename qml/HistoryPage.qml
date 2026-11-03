@@ -62,10 +62,6 @@ Page {
         spacing: 0   // les dividers des ListItem gèrent la séparation
         header: ListItem {
             height: headerRow.height + units.gu(2)
-            StyleHints {
-                backgroundColor: Theme.bgCard
-                dividerColor: Theme.bgCardBorder
-            }
             Row {
                 id: headerRow
                 anchors.centerIn: parent
@@ -88,28 +84,29 @@ Page {
         }
         // ListItem natif Ubuntu Touch : divider, highlight au tap, swipe
         // gauche = supprimer, swipe droite = charger sur la carte.
+        // (Lomiri Components 1.3 : ListItemActions contient des Action,
+        //  assignes par id — ListItemAction n'existe pas.)
         delegate: ListItem {
+            id: entryItem
             height: entryCol.height + units.gu(2.4)
-            StyleHints {
-                backgroundColor: Theme.bgCard
-                selectedBackgroundColor: Theme.bgSection
-                dividerColor: Theme.bgCardBorder
-                foregroundColor: Theme.textPrimary
-            }
-            leadingActions: ListItemActions {
-                ListItemAction {
+            ListItemActions {
+                id: deleteActions
+                Action {
                     iconName: "delete"
                     text: i18n.tr("Supprimer")
                     onTriggered: routeHistory.removeEntry(index)
                 }
             }
-            trailingActions: ListItemActions {
-                ListItemAction {
+            ListItemActions {
+                id: loadActions
+                Action {
                     iconName: "document-open"
                     text: i18n.tr("Charger")
                     onTriggered: historyPage.loadEntry(index)
                 }
             }
+            leadingActions: deleteActions
+            trailingActions: loadActions
             onClicked: historyPage.loadEntry(index)
 
             Column {
