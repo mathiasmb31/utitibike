@@ -869,5 +869,13 @@ void GpsDaemon::cleanup()
 
     qWarning() << "[gpsd] saved" << gpxPath << m_points.size() << "points,"
                << "stopReason=" << m_stopReason << "exiting";
+
+    // Arrêt batterie : on ferme aussi l'app (même gelée écran éteint) pour
+    // qu'elle importe le parcours dans l'historique à sa fermeture.
+    if (m_stopReason == QLatin1String("battery") && m_parentPid > 0) {
+        qWarning() << "[gpsd] battery stop — SIGTERM to parent app pid" << m_parentPid;
+        kill(m_parentPid, SIGTERM);
+    }
+
     QCoreApplication::quit();
 }

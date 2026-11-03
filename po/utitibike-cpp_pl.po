@@ -70,3 +70,12 @@ msgctxt "DaemonController"
 msgid "Parcours sauvegardé : %1 km · D+ %2 m"
 msgstr "Trasa zapisana: %1 km · D+ %2 m"
 
+
+msgctxt "DaemonController"
+msgid "Trajet %1 · %2 km"
+msgstr "Trasa %1 · %2 km"
+
+msgctxt "DaemonController"
+msgid "Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"
+msgstr "Bateria na poziomie 20 % — nagrywanie zatrzymane, trasa zapisana"
+

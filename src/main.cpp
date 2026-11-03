@@ -136,6 +136,13 @@ int main(int argc, char *argv[])
         if (routeRecorder.recording())
             routeRecorder.saveGpx();
     });
+    // Arrêt batterie : le daemon a SIGTERM l'app après avoir écrit
+    // recording.done — on importe le parcours dans l'historique ici (le QML
+    // ne tourne plus à ce stade).
+    QObject::connect(&app, &QGuiApplication::aboutToQuit, &daemonController,
+                     [&daemonController, &routeHistory]() {
+        daemonController.importDoneToHistory(&routeHistory);
+    });
     // The root item follows the window, and the window takes the whole screen:
     // the UI adapts to every phone's resolution.
     view.setResizeMode(QQuickView::SizeRootObjectToView);

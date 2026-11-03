@@ -6,6 +6,8 @@
 #include <QProcess>
 #include <QDateTime>
 
+class RouteHistory;
+
 // Contrôle le daemon GPS détaché (utitibike-gpsd) depuis l'app QML.
 // Remplace RouteRecorder pour le mode enregistrement : le daemon tourne
 // sans UI, l'app peut se fermer (le daemon reçoit SIGTERM via
@@ -86,6 +88,10 @@ public:
     // reconstruit un GPX, le sauve, remplit lastGpx*/distance/ascent.
     // Retourne true si un parcours a été récupéré.
     Q_INVOKABLE bool recoverOrphanPart();
+    // Appelé à la fermeture de l'app (aboutToQuit) : si un recording.done
+    // traîne (ex. arrêt batterie qui a SIGTERM l'app), l'importe dans
+    // l'historique directement en C++ (le QML ne tourne plus).
+    void importDoneToHistory(RouteHistory *history);
 
 signals:
     void recordingChanged();

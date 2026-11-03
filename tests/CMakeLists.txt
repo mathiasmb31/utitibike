@@ -53,6 +53,8 @@ add_test(NAME persistence COMMAND tst_persistence)
 # option bip persistée (gpsd.conf)
 add_executable(tst_daemoncontroller tst_daemoncontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/daemoncontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/routehistory.cpp
+    ${CMAKE_SOURCE_DIR}/src/appdata.cpp
 )
 target_include_directories(tst_daemoncontroller PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(tst_daemoncontroller Qt5::Test Qt5::Core Qt5::DBus)
