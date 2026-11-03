@@ -18,9 +18,12 @@ public:
 
     QVariantList entries() const { return m_entries; }
 
-    // Ajoute un itinéraire à l'historique (appelé quand routeReady)
+    // Ajoute un itinéraire à l'historique (appelé quand routeReady).
+    // dateIso : date de DÉBUT du trajet (ISO, ex. startTime du daemon) ;
+    // vide = date courante (comportement historique).
     Q_INVOKABLE void addEntry(const QString &name, double distanceM, double ascentM,
-                              const QVariantList &waypoints, const QString &gpx);
+                              const QVariantList &waypoints, const QString &gpx,
+                              const QString &dateIso = QString());
     Q_INVOKABLE void removeEntry(int index);
     Q_INVOKABLE void clear();
     // Retourne le GPX d'une entrée, ou QString vide

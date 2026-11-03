@@ -144,6 +144,9 @@ private:
     // Départ manuel : l'app écrit "lat lon" dans manual-start.control quand
     // aucun fix n'est arrivé après kManualStartAfterMs.
     bool m_awaitManualStart = false;
+    // Session d'enregistrement (2e champ du fichier de contrôle) : le .part
+    // ne doit être repris après crash que si la session correspond.
+    QString m_sessionId;
     QString m_stopReason = QStringLiteral("user");
     // Garde-fou écriture : nb d'échecs consécutifs (QSaveFile/QFile)
     mutable int m_writeErrors = 0;
