@@ -104,3 +104,14 @@ Contrôles effectués sur le rendu 512×512 :
     (font-size resté à 74 au lieu de 78 — édition perdue) alors que le
     PNG rendu correspondait à F=78. Corrigé dans le commit suivant : le SVG
     et le PNG de la branche sont cohérents (F=80, R=325).
+
+## 2026-11-03 — dessin agrandi et renforcé
+Sur demande du mainteneur (« le vélo et la scène sont peu visibles ») :
+- dessin central **320 → 400 px** (centré en 56,56 au lieu de 320 px en 96,92)
+- blanchiment renforcé : alpha `0,55 + 0,45·(1−lum)` → **`0,82 + 0,18·(1−lum)`**
+  (le cycliste et la montagne ressortent nettement plus sur le dégradé)
+- masque alpha du squircle réutilisé tel quel (diff 0 px avec l'ancien logo),
+  dégradé inchangé (#E95420 → #772953), coins transparents conservés
+- régénéré en PIL depuis `logo-old-256.png` ; `logo-ubuntu.svg` mis à jour
+  (base64 + x/y/width/height). Aperçu 256 : scratchpad `logo-apercu-256.png`.
+- pixels "dessin" (échantillon 1/2) : 9686 → 30056, soit ~3× plus visible.
