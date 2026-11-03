@@ -366,15 +366,29 @@ bool GpsDaemon::loadPartFile()
     if (content.isEmpty())
         return false;
 
+    // Première ligne = meta "#session <id>" : ne reprendre le .part que si
+    // la session correspond à celle du fichier de contrôle courant.
+    const QList<QByteArray> rawLines = content.split('\n');
+    int first = 0;
+    if (!rawLines.isEmpty() && rawLines.first().startsWith("#session ")) {
+        const QString partSession = QString::fromLatin1(rawLines.first().mid(9).trimmed());
+        if (!m_sessionId.isEmpty() && partSession != m_sessionId) {
+            qWarning() << "[gpsd] .part session" << partSession
+                       << "!= session courante" << m_sessionId << "— ignoré";
+            return false;
+        }
+        first = 1;
+    }
+
     QVariantList points;
     double distance = 0.0, ascent = 0.0;
     bool hasLast = false;
     double lastLat = 0.0, lastLon = 0.0, lastAlt = 0.0;
     bool hasAlt = false;
     QDateTime start;
-    const QList<QByteArray> lines = content.split('\n');
-    for (const QByteArray &line : lines) {
-        if (line.trimmed().isEmpty())
+    for (int li = first; li < rawLines.size(); ++li) {
+        const QByteArray &line = rawLines.at(li);
+        if (line.trimmed().isEmpty() || line.startsWith('#'))
             continue;
         const QJsonObject o = QJsonDocument::fromJson(line).object();
         if (o.isEmpty())
@@ -615,10 +629,14 @@ void GpsDaemon::onControlTick()
         // Démarrage demandé par l'app — lit le PID parent depuis le fichier
         QFile cf(m_controlFile);
         if (cf.open(QIODevice::ReadOnly)) {
-            m_parentPid = cf.readAll().trimmed().toInt();
+            const QList<QByteArray> parts = cf.readAll().simplified().split(' ');
             cf.close();
+            m_parentPid = parts.value(0).toInt();
+            if (parts.size() > 1)
+                m_sessionId = QString::fromLatin1(parts.at(1));
         }
-        qWarning() << "[gpsd] parent PID from control file:" << m_parentPid;
+        qWarning() << "[gpsd] parent PID from control file:" << m_parentPid
+                   << "session" << m_sessionId;
 
         m_recording = true;
         m_distance = 0.0;
@@ -644,9 +662,11 @@ void GpsDaemon::onControlTick()
         m_startTime = QDateTime::currentDateTimeUtc();
         m_elapsed.start();
 
-        // Reprise après crash : si un en-cours.part existe (daemon tué puis
-        // relancé par l'app), on recharge le tracé et on continue là où on
-        // s'était arrêté. Sinon, nouvel enregistrement from scratch.
+        // Reprise après crash : si un en-cours.part existe ET porte la même
+        // session (daemon tué puis relancé par l'app avec le même control
+        // file), on recharge le tracé et on continue. Sinon (nouvel
+        // enregistrement, session différente), on ignore le .part — un vieux
+        // tracé ne doit JAMAIS être repris dans une nouvelle session.
         if (QFile::exists(m_partFile) && QFileInfo(m_partFile).size() > 0 && loadPartFile()) {
             qWarning() << "[gpsd] RESUME from en-cours.part:" << m_points.size()
                        << "points, dist=" << m_distance << "m";
@@ -663,6 +683,12 @@ void GpsDaemon::onControlTick()
             }
             QFile::remove(m_partFile);
             QFile::remove(m_tracksDir + QStringLiteral("/en-cours.gpx"));
+            // Nouveau .part avec la meta de session en première ligne
+            QFile nf(m_partFile);
+            if (nf.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+                nf.write("#session " + m_sessionId.toLatin1() + "\n");
+                nf.close();
+            }
         }
         m_autoSaveTimer.start();
         m_partTimer.start();

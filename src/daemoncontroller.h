@@ -45,6 +45,8 @@ class DaemonController : public QObject
     Q_PROPERTY(bool beepEnabled READ beepEnabled WRITE setBeepEnabled NOTIFY beepEnabledChanged)
     // Raison du dernier arrêt : "user", "control", "parent", "battery", "maxduration"
     Q_PROPERTY(QString stopReason READ stopReason NOTIFY doneReceived)
+    // Date de début de l'enregistrement (ISO UTC, lue dans recording.done)
+    Q_PROPERTY(QString startTime READ startTime NOTIFY doneReceived)
     // Dernier GPX sauvegardé (disponible après stop, pour l'historique)
     Q_PROPERTY(QString lastGpxPath READ lastGpxPath NOTIFY doneReceived)
     Q_PROPERTY(QString lastGpxContent READ lastGpxContent NOTIFY doneReceived)
@@ -69,6 +71,7 @@ public:
     bool beepEnabled() const { return m_beepEnabled; }
     void setBeepEnabled(bool v);
     QString stopReason() const { return m_stopReason; }
+    QString startTime() const { return m_startTime; }
     QString lastGpxPath() const { return m_lastGpxPath; }
     QString lastGpxContent() const { return m_lastGpxContent; }
 
@@ -138,6 +141,7 @@ private:
     bool m_awaitManualStart = false;
     bool m_beepEnabled = true;
     QString m_stopReason = QStringLiteral("user");
+    QString m_startTime;
     QString m_lastGpxPath;
     QString m_lastGpxContent;
     QString m_appDataDir;

@@ -44,13 +44,20 @@ QString RouteHistory::gpxFilePath(const QString &fileName) const
 }
 
 void RouteHistory::addEntry(const QString &name, double distanceM, double ascentM,
-                            const QVariantList &waypoints, const QString &gpx)
+                            const QVariantList &waypoints, const QString &gpx,
+                            const QString &dateIso)
 {
     QVariantMap entry;
     entry.insert(QStringLiteral("name"), name.isEmpty()
                  ? tr("Itinéraire %1").arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM HH:mm")))
                  : name);
-    entry.insert(QStringLiteral("date"), QDateTime::currentDateTime().toString(Qt::ISODate));
+    // Date de début du trajet (et non de l'arrêt) quand fournie
+    QDateTime date = dateIso.isEmpty()
+                     ? QDateTime::currentDateTime()
+                     : QDateTime::fromString(dateIso, Qt::ISODateWithMs).toLocalTime();
+    if (!date.isValid())
+        date = QDateTime::currentDateTime();
+    entry.insert(QStringLiteral("date"), date.toString(Qt::ISODate));
     entry.insert(QStringLiteral("distanceM"), distanceM);
     entry.insert(QStringLiteral("ascentM"), ascentM);
     entry.insert(QStringLiteral("waypoints"), waypoints);
