@@ -43,6 +43,8 @@ class DaemonController : public QObject
     Q_PROPERTY(bool awaitManualStart READ awaitManualStart NOTIFY statsChanged)
     // Bip de confirmation activé (persisté dans gpsd.conf, lu par le daemon)
     Q_PROPERTY(bool beepEnabled READ beepEnabled WRITE setBeepEnabled NOTIFY beepEnabledChanged)
+    // Source GPS : "auto" | "satellite" | "network" (persisté dans gpsd.conf)
+    Q_PROPERTY(QString positioningMode READ positioningMode WRITE setPositioningMode NOTIFY positioningModeChanged)
     // Raison du dernier arrêt : "user", "control", "parent", "battery", "maxduration"
     Q_PROPERTY(QString stopReason READ stopReason NOTIFY doneReceived)
     // Date de début de l'enregistrement (ISO UTC, lue dans recording.done)
@@ -70,6 +72,8 @@ public:
     bool awaitManualStart() const { return m_awaitManualStart; }
     bool beepEnabled() const { return m_beepEnabled; }
     void setBeepEnabled(bool v);
+    QString positioningMode() const { return m_positioningMode; }
+    void setPositioningMode(const QString &v);
     QString stopReason() const { return m_stopReason; }
     QString startTime() const { return m_startTime; }
     QString lastGpxPath() const { return m_lastGpxPath; }
@@ -103,6 +107,7 @@ signals:
     void statsChanged();
     void doneReceived();  // recording.done reçu (après stop)
     void beepEnabledChanged();
+    void positioningModeChanged();
     void daemonRestarted();  // le daemon a crashé et a été relancé (reprise depuis en-cours.part)
 
 private slots:
@@ -116,6 +121,7 @@ private:
     void readDoneJson();
     void updateFromJson(const QJsonObject &obj);
     void cleanupFiles();
+    void writeConf();  // réécrit gpsd.conf (beep + positioning)
     bool launchDaemon();  // (re)lance le processus utitibike-gpsd
     // Notification système (org.freedesktop.Notifications, session bus)
     void sendNotification(const QString &body) const;
@@ -140,6 +146,7 @@ private:
     bool m_writeError = false;
     bool m_awaitManualStart = false;
     bool m_beepEnabled = true;
+    QString m_positioningMode = QStringLiteral("auto");
     QString m_stopReason = QStringLiteral("user");
     QString m_startTime;
     QString m_lastGpxPath;

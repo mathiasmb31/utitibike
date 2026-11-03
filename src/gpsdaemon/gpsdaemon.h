@@ -62,6 +62,7 @@ private:
     bool loadPartFile();
     qint64 elapsedMs() const { return m_elapsed.elapsed() + m_elapsedOffsetMs; }
     bool readBeepConf() const;   // gpsd.conf : beep=0/1 (option utilisateur)
+    void applyPositioningMode(); // gpsd.conf : positioning=auto|satellite|network
     void playLongBeep();         // alerte départ manuel (joue même écran éteint)
     void playAlarm();            // sonnerie 5 s arrêt batterie (joue toujours)
     // Notification système (org.freedesktop.Notifications, session bus)
