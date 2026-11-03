@@ -328,3 +328,10 @@ msgstr ""
 msgid "D+"
 msgstr ""
 
+
+msgid "Source GPS"
+msgstr ""
+
+msgid "Réseau"
+msgstr ""
+

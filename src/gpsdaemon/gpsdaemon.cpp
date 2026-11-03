@@ -74,9 +74,8 @@ GpsDaemon::GpsDaemon(QObject *parent)
         return;
     }
     qWarning() << "[gpsd] position source OK:" << m_gps->sourceName();
-    // Toutes les méthodes de positionnement (satellite + réseau WiFi/cellule
-    // via geoclue) : une position approximative peut arriver avant le fix.
-    m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
+    // Source de position selon gpsd.conf (défaut auto = satellite + réseau)
+    applyPositioningMode();
     // 1 fix toutes les 5 s en roulant : à 20 km/h = un point tous les 28 m,
     // très suffisant pour du vélo. À l'arrêt, on passe à 30 s (voir
     // onPositionUpdated). Intervalle plus espacé = moins de conso batterie
@@ -533,6 +532,30 @@ bool GpsDaemon::readBeepConf() const
     return !content.contains("beep=0");
 }
 
+// Applique la source de position choisie dans gpsd.conf (positioning=...) :
+// auto = satellite + WiFi/cell, satellite = GPS seul, network = réseau seul.
+void GpsDaemon::applyPositioningMode()
+{
+    QString mode = QStringLiteral("auto");
+    QFile f(m_confFile);
+    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        const QByteArray content = f.readAll();
+        f.close();
+        const QList<QByteArray> lines = content.split('\n');
+        for (const QByteArray &line : lines) {
+            if (line.startsWith("positioning="))
+                mode = QString::fromLatin1(line.mid(12).trimmed());
+        }
+    }
+    if (mode == QLatin1String("satellite"))
+        m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::SatellitePositioningMethods);
+    else if (mode == QLatin1String("network"))
+        m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::NonSatellitePositioningMethods);
+    else
+        m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
+    qWarning() << "[gpsd] positioning mode:" << mode;
+}
+
 void GpsDaemon::onSafetyTick()
 {
     if (!m_recording)
@@ -659,6 +682,7 @@ void GpsDaemon::onControlTick()
         m_curSpeed = 0.0;
         m_curAccuracy = 0.0;
         m_gps->setUpdateInterval(kIntervalMovingMs);
+        applyPositioningMode();  // relit gpsd.conf au cas où le réglage a changé
         m_startTime = QDateTime::currentDateTimeUtc();
         m_elapsed.start();
 

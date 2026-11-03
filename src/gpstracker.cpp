@@ -36,9 +36,8 @@ void GpsTracker::start()
             return;
         }
         m_source->setUpdateInterval(1000);
-        // Satellite + réseau (WiFi/cellule via geoclue) : une position
-        // approximative peut arriver avant le premier fix satellite.
-        m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
+        // Applique le mode choisi (auto = satellite + réseau WiFi/cell)
+        setPositioningMode(m_positioningMode);
         // Position de secours : dernière position connue en cache (lue sans
         // attendre le serveur) pour afficher tout de suite où l'on est.
         const QGeoPositionInfo lastKnown = m_source->lastKnownPosition(false);
@@ -98,4 +97,18 @@ void GpsTracker::stop()
     m_active = false;
     emit activeChanged();
     emit statusChanged();
+}
+
+void GpsTracker::setPositioningMode(const QString &mode)
+{
+    m_positioningMode = (mode == QLatin1String("satellite") || mode == QLatin1String("network"))
+                        ? mode : QStringLiteral("auto");
+    if (!m_source)
+        return;
+    if (m_positioningMode == QLatin1String("satellite"))
+        m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::SatellitePositioningMethods);
+    else if (m_positioningMode == QLatin1String("network"))
+        m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::NonSatellitePositioningMethods);
+    else
+        m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
 }

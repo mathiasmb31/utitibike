@@ -47,6 +47,9 @@ public:
 
     Q_INVOKABLE void start();
     Q_INVOKABLE void stop();
+    // "auto" (satellite + réseau WiFi/cell), "satellite" (GPS seul),
+    // "network" (WiFi/cell uniquement, pas de satellite)
+    Q_INVOKABLE void setPositioningMode(const QString &mode);
 
 signals:
     void activeChanged();
@@ -65,6 +68,7 @@ private:
     double m_direction = 0.0;
     bool m_hasFix = false;
     bool m_hasApprox = false;
+    QString m_positioningMode = QStringLiteral("auto");
 };
 
 #endif // GPSTRACKER_H
