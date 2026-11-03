@@ -26,6 +26,8 @@ MainView {
     Component.onCompleted: {
         // Le thème de l'app suit la préférence persistée (auto/sombre/clair)
         Theme.mode = Qt.binding(function() { return viewState.themeMode })
+        // Source GPS persistée (auto/satellite/réseau) appliquée au tracker UI
+        gpsTracker.setPositioningMode(viewState.positioningMode)
     }
 
     PageStack {

@@ -29,12 +29,21 @@ DaemonController::DaemonController(QObject *parent)
     m_manualStartFile = m_appDataDir + QStringLiteral("/manual-start.control");
     m_tracksDir   = m_appDataDir + QStringLiteral("/tracks");
 
-    // Option bip persistée (lue aussi par le daemon à chaque beep)
+    // Options persistées dans gpsd.conf (lues aussi par le daemon)
     QFile cf(m_confFile);
     if (cf.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        m_beepEnabled = !cf.readAll().contains("beep=0");
+        const QByteArray content = cf.readAll();
         cf.close();
+        m_beepEnabled = !content.contains("beep=0");
+        const QList<QByteArray> lines = content.split('\n');
+        for (const QByteArray &line : lines) {
+            if (line.startsWith("positioning="))
+                m_positioningMode = QString::fromLatin1(line.mid(12).trimmed());
+        }
     }
+    if (m_positioningMode != QLatin1String("satellite")
+            && m_positioningMode != QLatin1String("network"))
+        m_positioningMode = QStringLiteral("auto");
 
     // Poll toutes les 5 s pour lire recording.json (moins de réveils CPU
     // côté app pendant l'enregistrement)
@@ -401,17 +410,35 @@ void DaemonController::cleanupFiles()
     QFile::remove(m_doneFile);
 }
 
+// Réécrit gpsd.conf en conservant les deux clés (beep + positioning)
+void DaemonController::writeConf()
+{
+    QSaveFile f(m_confFile);
+    if (f.open(QIODevice::WriteOnly)) {
+        f.write(QByteArray("beep=") + (m_beepEnabled ? "1" : "0") + "\n");
+        f.write(QByteArray("positioning=") + m_positioningMode.toLatin1() + "\n");
+        f.commit();
+    }
+}
+
 void DaemonController::setBeepEnabled(bool v)
 {
     if (m_beepEnabled == v)
         return;
     m_beepEnabled = v;
-    QSaveFile f(m_confFile);
-    if (f.open(QIODevice::WriteOnly)) {
-        f.write(v ? "beep=1\n" : "beep=0\n");
-        f.commit();
-    }
+    writeConf();
     emit beepEnabledChanged();
+}
+
+void DaemonController::setPositioningMode(const QString &v)
+{
+    const QString mode = (v == QLatin1String("satellite") || v == QLatin1String("network"))
+                         ? v : QStringLiteral("auto");
+    if (m_positioningMode == mode)
+        return;
+    m_positioningMode = mode;
+    writeConf();  // le daemon relit gpsd.conf au prochain démarrage d'enregistrement
+    emit positioningModeChanged();
 }
 
 void DaemonController::setManualStart(double lat, double lon)

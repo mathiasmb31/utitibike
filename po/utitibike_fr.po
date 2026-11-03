@@ -329,3 +329,10 @@ msgstr "Distance"
 msgid "D+"
 msgstr "D+"
 
+
+msgid "Source GPS"
+msgstr "Source GPS"
+
+msgid "Réseau"
+msgstr "Réseau"
+

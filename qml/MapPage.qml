@@ -1276,6 +1276,26 @@ Page {
                         onCheckedChanged: daemonController.beepEnabled = checked
                     }
                 }
+                Label {
+                    text: i18n.tr("Source GPS")
+                    fontSize: "x-small"
+                    color: Theme.textSecondary
+                }
+                SegmentedControl {
+                    width: parent.width
+                    property var modeKeys: ["auto", "satellite", "network"]
+                    model: [
+                        { label: i18n.tr("Auto"), value: "auto" },
+                        { label: i18n.tr("Satellite"), value: "satellite" },
+                        { label: i18n.tr("Réseau"), value: "network" }
+                    ]
+                    currentIndex: Math.max(0, modeKeys.indexOf(viewState.positioningMode))
+                    onSelected: {
+                        viewState.positioningMode = value
+                        gpsTracker.setPositioningMode(value)
+                        daemonController.setPositioningMode(value)
+                    }
+                }
                 Row {
                     width: parent.width
                     spacing: units.gu(0.5)

@@ -26,6 +26,7 @@ ViewState::ViewState(QObject *parent)
         o.insert(QStringLiteral("centerLon"), m_lon);
         o.insert(QStringLiteral("zoom"), m_zoom);
         o.insert(QStringLiteral("themeMode"), m_themeMode);
+        o.insert(QStringLiteral("positioningMode"), m_positioningMode);
         f.write(QJsonDocument(o).toJson(QJsonDocument::Compact));
         f.commit();
     });
@@ -40,6 +41,17 @@ void ViewState::setThemeMode(const QString &v)
         return;
     m_themeMode = mode;
     emit themeModeChanged();
+    scheduleSave();
+}
+
+void ViewState::setPositioningMode(const QString &v)
+{
+    const QString mode = (v == QLatin1String("satellite") || v == QLatin1String("network"))
+                         ? v : QStringLiteral("auto");
+    if (m_positioningMode == mode)
+        return;
+    m_positioningMode = mode;
+    emit positioningModeChanged();
     scheduleSave();
 }
 
@@ -94,6 +106,9 @@ void ViewState::load()
     const QJsonValue theme = o.value(QStringLiteral("themeMode"));
     if (theme.isString())
         m_themeMode = theme.toString();
+    const QJsonValue pos = o.value(QStringLiteral("positioningMode"));
+    if (pos.isString())
+        m_positioningMode = pos.toString();
     m_restored = true;
     qWarning() << "viewstate restored" << m_lat << m_lon << "zoom" << m_zoom
                << "theme" << m_themeMode;
