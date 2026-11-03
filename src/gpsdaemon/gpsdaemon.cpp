@@ -14,6 +14,7 @@
 #include <QDebug>
 #include <QtMath>
 #include <QtDBus/QDBusVariant>
+#include <QtDBus/QDBusPendingCall>
 #include <algorithm>
 #include <csignal>
 #include <unistd.h>
@@ -550,6 +551,27 @@ void GpsDaemon::playAlarm()
     m_alarm.play();
 }
 
+// Notification système (session bus, async — échoue silencieusement si
+// AppArmor bloque). Le daemon tourne toujours, même app gelée : c'est lui
+// qui notifie les événements impactants de l'enregistrement.
+void GpsDaemon::sendNotification(const QString &body) const
+{
+    QDBusMessage msg = QDBusMessage::createMethodCall(
+                QStringLiteral("org.freedesktop.Notifications"),
+                QStringLiteral("/org/freedesktop/Notifications"),
+                QStringLiteral("org.freedesktop.Notifications"),
+                QStringLiteral("Notify"));
+    msg.setArguments({ QStringLiteral("utitibike"),
+                       QVariant(uint(0)),
+                       QStringLiteral("emblem-ok"),
+                       QStringLiteral("Utitibike"),
+                       body,
+                       QVariantList(),
+                       QVariantMap(),
+                       QVariant(int(5000)) });
+    QDBusConnection::sessionBus().asyncCall(msg);
+}
+
 void GpsDaemon::onStatsTick()
 {
     if (!m_recording)
@@ -628,6 +650,7 @@ void GpsDaemon::onControlTick()
         if (QFile::exists(m_partFile) && QFileInfo(m_partFile).size() > 0 && loadPartFile()) {
             qWarning() << "[gpsd] RESUME from en-cours.part:" << m_points.size()
                        << "points, dist=" << m_distance << "m";
+            sendNotification(tr("Enregistrement repris après un crash"));
         } else {
             m_points.clear();
             // Position de départ : dernier fix reçu si on en a un, sinon la
@@ -648,6 +671,7 @@ void GpsDaemon::onControlTick()
         m_safetyTimer.start();
         writeStatsJson();
         qWarning() << "[gpsd] recording STARTED";
+        sendNotification(tr("Enregistrement démarré"));
     } else if (m_recording) {
         // Vérifie si l'arrêt a été demandé (fichier supprimé)
         if (!controlExists) {
@@ -700,6 +724,7 @@ void GpsDaemon::onControlTick()
         if (!m_gotFix && elapsedMs() > kManualStartAfterMs && !m_awaitManualStart) {
             m_awaitManualStart = true;
             playLongBeep();
+            sendNotification(tr("Pas de signal GPS — touchez la carte pour définir le départ"));
         } else if (m_awaitManualStart && (m_gotFix || m_hasLast)) {
             // Un fix est arrivé ou le départ manuel a été posé : on retire la demande.
             m_awaitManualStart = false;
@@ -869,6 +894,17 @@ void GpsDaemon::cleanup()
 
     qWarning() << "[gpsd] saved" << gpxPath << m_points.size() << "points,"
                << "stopReason=" << m_stopReason << "exiting";
+
+    // Notification d'arrêt pour les auto-stops (le daemon tourne même si
+    // l'app est gelée). Les arrêts manuels sont notifiés par l'app.
+    if (m_stopReason == QLatin1String("battery"))
+        sendNotification(tr("Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"));
+    else if (m_stopReason == QLatin1String("diskfull"))
+        sendNotification(tr("Disque plein — enregistrement arrêté, parcours sauvegardé"));
+    else if (m_stopReason == QLatin1String("writeerror"))
+        sendNotification(tr("Erreur d'écriture disque — enregistrement arrêté, parcours sauvegardé"));
+    else if (m_stopReason == QLatin1String("maxduration"))
+        sendNotification(tr("Durée max (12 h) atteinte — enregistrement arrêté, parcours sauvegardé"));
 
     // Arrêt batterie : on ferme aussi l'app (même gelée écran éteint) pour
     // qu'elle importe le parcours dans l'historique à sa fermeture.

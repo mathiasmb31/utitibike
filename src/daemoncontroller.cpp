@@ -337,15 +337,17 @@ void DaemonController::readDoneJson()
     // onDaemonFinished lisent tous deux le done) → doublon dans l'historique.
     QFile::remove(m_doneFile);
 
-    // Notification système (session bus) : parcours sauvegardé, ou alarme
-    // batterie si l'arrêt vient du seuil 20 %.
-    if (!m_lastGpxContent.isEmpty()) {
-        if (m_stopReason == QLatin1String("battery"))
-            sendNotification(tr("Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"));
-        else
-            sendNotification(tr("Parcours sauvegardé : %1 km · D+ %2 m")
-                             .arg(m_distance / 1000.0, 0, 'f', 1)
-                             .arg(qRound(m_ascent)));
+    // Notification système (session bus) : « parcours sauvegardé » pour un
+    // arrêt normal. Les auto-stops (battery/diskfull/writeerror/maxduration)
+    // sont notifiés par le daemon lui-même (l'app peut être gelée).
+    if (!m_lastGpxContent.isEmpty()
+            && m_stopReason != QLatin1String("battery")
+            && m_stopReason != QLatin1String("diskfull")
+            && m_stopReason != QLatin1String("writeerror")
+            && m_stopReason != QLatin1String("maxduration")) {
+        sendNotification(tr("Parcours sauvegardé : %1 km · D+ %2 m")
+                         .arg(m_distance / 1000.0, 0, 'f', 1)
+                         .arg(qRound(m_ascent)));
     }
 
     emit statsChanged();

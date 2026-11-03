@@ -92,6 +92,8 @@ public:
     // traîne (ex. arrêt batterie qui a SIGTERM l'app), l'importe dans
     // l'historique directement en C++ (le QML ne tourne plus).
     void importDoneToHistory(RouteHistory *history);
+    // Notification système depuis le QML (ex. parcours récupéré après crash)
+    Q_INVOKABLE void notify(const QString &body) const { sendNotification(body); }
 
 signals:
     void recordingChanged();
