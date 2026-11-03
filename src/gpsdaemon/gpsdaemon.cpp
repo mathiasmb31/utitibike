@@ -167,24 +167,6 @@ void GpsDaemon::run()
 
 void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
 {
-    // Position courante mise à jour à chaque fix (même hors enregistrement) :
-    // publiée dans le JSON de stats pour que l'app suive la carte sans 2e GPS.
-    if (info.isValid() && info.coordinate().isValid()) {
-        m_curLat = info.coordinate().latitude();
-        m_curLon = info.coordinate().longitude();
-        m_curValid = true;
-        m_curApprox = false;
-        m_curSpeed = info.hasAttribute(QGeoPositionInfo::GroundSpeed)
-                     ? info.attribute(QGeoPositionInfo::GroundSpeed) : 0.0;
-        if (m_curSpeed < 0) m_curSpeed = 0.0;
-        m_curAccuracy = info.hasAttribute(QGeoPositionInfo::HorizontalAccuracy)
-                        ? info.attribute(QGeoPositionInfo::HorizontalAccuracy) : 0.0;
-        // Intervalle adaptatif : à l'arrêt (vitesse < 1 m/s), on espace les
-        // fixes à 30 s pour ne pas solliciter le récepteur GPS inutilement ;
-        // dès que ça roule, retour à 5 s.
-        m_gps->setUpdateInterval(m_curSpeed < 1.0 ? kIntervalIdleMs : kIntervalMovingMs);
-    }
-
     if (!m_recording || !info.isValid())
         return;
 
@@ -205,25 +187,40 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
     if (m_stopping)
         return;
 
+    // Filtre qualité AVANT de publier la position : un fix à > 50 m de
+    // précision n'écrase pas la dernière bonne position affichée (sauf au
+    // tout début, où on accepte pour avoir un point de départ).
+    if (hAcc > kMaxAccuracyM && m_hasLast) {
+        ++m_rejected;
+        return;
+    }
+
+    // Position courante publiée dans le JSON de stats (pour que l'app suive
+    // la carte sans ouvrir une 2e source GPS).
+    m_curLat = lat;
+    m_curLon = lon;
+    m_curValid = true;
+    m_curApprox = false;
+    m_curSpeed = info.hasAttribute(QGeoPositionInfo::GroundSpeed)
+                 ? info.attribute(QGeoPositionInfo::GroundSpeed) : 0.0;
+    if (m_curSpeed < 0) m_curSpeed = 0.0;
+    m_curAccuracy = hAcc;
+    // Intervalle adaptatif : à l'arrêt (vitesse < 1 m/s), on espace les
+    // fixes à 30 s pour ne pas solliciter le récepteur GPS inutilement ;
+    // dès que ça roule, retour à 5 s.
+    m_gps->setUpdateInterval(m_curSpeed < 1.0 ? kIntervalIdleMs : kIntervalMovingMs);
+
     // Auto-pause : à l'arrêt (vitesse < 1 m/s) depuis plus de 3 min, on cesse
     // d'ajouter des points (tracé propre, batterie économisée). Reprise
     // automatique dès qu'un fix indique un mouvement.
     if (m_curSpeed >= 1.0) {
         m_lastMoveMs = elapsedMs();
         m_paused = false;
-    } else if (m_lastMoveMs > 0
-               && elapsedMs() - m_lastMoveMs > kPauseAfterMs) {
+    } else if (elapsedMs() - m_lastMoveMs > kPauseAfterMs) {
         m_paused = true;
     }
     if (m_paused)
         return;
-
-    // Filtre qualité : précision horizontale > 50 m → point ignoré pour le
-    // tracé (évite les positions fantômes en ville ou sous les arbres).
-    if (hAcc > kMaxAccuracyM) {
-        ++m_rejected;
-        return;
-    }
 
     // Ignore les sauts GPS aberrants (> 200 m entre 2 fixes)
     if (m_hasLast) {
@@ -426,6 +423,12 @@ bool GpsDaemon::loadPartFile()
     m_hasLast = true;
     m_lastLat = lastLat;
     m_lastLon = lastLon;
+    // D+ : on repart de la dernière altitude connue du tracé repris
+    if (hasAlt) {
+        m_lastAltEff = lastAlt;
+        m_hasAltEff = true;
+    }
+    m_lastMoveMs = elapsedMs();
     // Position courante = dernier point du tracé repris
     m_curLat = lastLat;
     m_curLon = lastLon;
@@ -666,7 +669,8 @@ void GpsDaemon::onControlTick()
         m_ascent = 0.0;
         m_hasLast = false;
         m_paused = false;
-        m_lastMoveMs = 0;
+        m_lastMoveMs = elapsedMs();  // init au start : la pause auto fonctionne
+                                      // même si on démarre à l'arrêt
         m_gotFix = false;
         m_rejected = 0;
         m_altWinN = 0;
