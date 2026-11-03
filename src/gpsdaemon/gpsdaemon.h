@@ -62,6 +62,7 @@ private:
     bool loadPartFile();
     qint64 elapsedMs() const { return m_elapsed.elapsed() + m_elapsedOffsetMs; }
     bool readBeepConf() const;   // gpsd.conf : beep=0/1 (option utilisateur)
+    void playLongBeep();         // alerte départ manuel (joue même écran éteint)
     bool screenIsOn() const;    // logind : la session seat0 est-elle active ?
     double batteryPct() const;  // UPower : pourcentage batterie (-1 si indispo)
     // Garde-fous disque : espace libre (statvfs) et erreurs d'écriture
@@ -94,6 +95,7 @@ private:
     QTimer m_safetyTimer;      // 60 s — batterie (UPower) + durée max 12 h
     QTimer m_fakeGpsTimer;      // DEBUG — GPS simulé (UTITIBIKE_FAKE_GPS=1)
     QSoundEffect m_beep;
+    QSoundEffect m_beepLong;    // alerte « action requise » (départ manuel)
 
     bool m_recording = false;
     int m_parentPid = 0;       // PID de l'app QML (lu depuis recording.control)

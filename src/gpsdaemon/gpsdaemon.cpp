@@ -52,10 +52,14 @@ GpsDaemon::GpsDaemon(QObject *parent)
 
     QDir().mkpath(m_tracksDir);
 
-    // Beep : fichier installé à côté de l'exécutable dans le click.
+    // Beep : fichiers installés à côté de l'exécutable dans le click.
     m_beep.setSource(QUrl::fromLocalFile(
         QCoreApplication::applicationDirPath() + QStringLiteral("/sounds/beep.wav")));
     m_beep.setVolume(0.5f);
+    // Beep long d'alerte « action requise » (départ manuel proposé)
+    m_beepLong.setSource(QUrl::fromLocalFile(
+        QCoreApplication::applicationDirPath() + QStringLiteral("/sounds/beep-long.wav")));
+    m_beepLong.setVolume(0.7f);
 
     // GPS
     m_gps = QGeoPositionInfoSource::createDefaultSource(this);
@@ -525,6 +529,19 @@ void GpsDaemon::onBeepTick()
     m_beep.play();
 }
 
+// Beep long d'alerte : joue MEME si l'écran est éteint — c'est une alerte
+// « action requise » (départ manuel), l'utilisateur doit réagir.
+// Respecte quand même l'option gpsd.conf (bip désactivé = aucun son).
+void GpsDaemon::playLongBeep()
+{
+    if (!readBeepConf())
+        return;
+    qWarning() << "[gpsd] LONG BEEP — départ manuel proposé";
+    m_beepLong.play();
+    // 2e coup après 1,4 s (QSoundEffect Qt5 n'a pas setLoops)
+    QTimer::singleShot(1400, this, [this]() { m_beepLong.play(); });
+}
+
 void GpsDaemon::onControlTick()
 {
     const bool controlExists = QFile::exists(m_controlFile);
@@ -634,9 +651,14 @@ void GpsDaemon::onControlTick()
             QFile::remove(m_manualStartFile);
         }
         // Après 6 min sans aucun fix, on propose à l'app un départ manuel
-        // (touche sur la carte).
-        if (!m_gotFix && elapsedMs() > kManualStartAfterMs)
+        // (touche sur la carte) + beep long d'alerte au moment du passage.
+        if (!m_gotFix && elapsedMs() > kManualStartAfterMs && !m_awaitManualStart) {
             m_awaitManualStart = true;
+            playLongBeep();
+        } else if (m_awaitManualStart && (m_gotFix || m_hasLast)) {
+            // Un fix est arrivé ou le départ manuel a été posé : on retire la demande.
+            m_awaitManualStart = false;
+        }
     }
 }
 
