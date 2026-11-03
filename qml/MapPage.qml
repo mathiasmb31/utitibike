@@ -24,6 +24,7 @@ Page {
     property bool searchOpen: false
     property var searchResults: []
     property bool searchBusy: false
+    property bool manualStartWarned: false  // vibration déjà envoyée pour le départ manuel
     property real userWeightKg: 70  // poids pour l'estimation des calories
 
     // Source de position « live » unique : pendant un enregistrement, c'est le
@@ -1737,6 +1738,15 @@ Page {
                 map.centerLat = daemonController.latitude
                 map.centerLon = daemonController.longitude
             }
+            // Départ manuel proposé (6 min sans fix) : vibration d'alerte
+            // (le daemon joue aussi un beep long, même écran éteint).
+            if (daemonController.recording && daemonController.awaitManualStart
+                    && !page.manualStartWarned) {
+                page.manualStartWarned = true
+                haptics.vibrate(300)
+            }
+            if (!daemonController.recording)
+                page.manualStartWarned = false
         }
     }
 
