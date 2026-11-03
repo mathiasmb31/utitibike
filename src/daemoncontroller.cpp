@@ -1,5 +1,6 @@
 #include "daemoncontroller.h"
 #include "geo.h"
+#include "routehistory.h"
 
 #include <QCoreApplication>
 #include <QStandardPaths>
@@ -336,15 +337,33 @@ void DaemonController::readDoneJson()
     // onDaemonFinished lisent tous deux le done) → doublon dans l'historique.
     QFile::remove(m_doneFile);
 
-    // Notification système « parcours sauvegardé » (session bus)
+    // Notification système (session bus) : parcours sauvegardé, ou alarme
+    // batterie si l'arrêt vient du seuil 20 %.
     if (!m_lastGpxContent.isEmpty()) {
-        sendNotification(tr("Parcours sauvegardé : %1 km · D+ %2 m")
-                         .arg(m_distance / 1000.0, 0, 'f', 1)
-                         .arg(qRound(m_ascent)));
+        if (m_stopReason == QLatin1String("battery"))
+            sendNotification(tr("Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"));
+        else
+            sendNotification(tr("Parcours sauvegardé : %1 km · D+ %2 m")
+                             .arg(m_distance / 1000.0, 0, 'f', 1)
+                             .arg(qRound(m_ascent)));
     }
 
     emit statsChanged();
     emit doneReceived();
+}
+
+void DaemonController::importDoneToHistory(RouteHistory *history)
+{
+    if (!QFile::exists(m_doneFile) || history == nullptr)
+        return;
+    readDoneJson();
+    if (!m_lastGpxContent.isEmpty()) {
+        const QString name = tr("Trajet %1 · %2 km")
+                .arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM HH:mm")))
+                .arg(m_distance / 1000.0, 0, 'f', 1);
+        history->addEntry(name, m_distance, m_ascent, QVariantList(), m_lastGpxContent);
+        qWarning() << "[daemonctl] done imported to history at quit:" << m_pointCount << "points";
+    }
 }
 
 // Notification système via org.freedesktop.Notifications (bus de session).

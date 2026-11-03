@@ -185,9 +185,13 @@ Page {
                 routeHistory.addEntry(name, distM, ascM, [], gpxContent)
                 showToast(i18n.tr("Parcours sauvegardé"))
             }
-            // Arrêt automatique du daemon (batterie faible / durée max / disque)
-            if (daemonController.stopReason === "battery")
-                showToast(i18n.tr("Arrêt auto : batterie faible"))
+            // Arrêt automatique du daemon (batterie / durée max / disque)
+            if (daemonController.stopReason === "battery") {
+                showToast(i18n.tr("Arrêt auto : batterie à 20 %"))
+                // L'enregistrement s'est arrêté pour batterie : on ferme
+                // l'app (le daemon l'a peut-être déjà fermée par SIGTERM).
+                QTimer.singleShot(1500, function() { Qt.quit() })
+            }
             else if (daemonController.stopReason === "maxduration")
                 showToast(i18n.tr("Arrêt auto : durée max atteinte (12 h)"))
             else if (daemonController.stopReason === "diskfull")
