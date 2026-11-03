@@ -60,6 +60,10 @@ GpsDaemon::GpsDaemon(QObject *parent)
     m_beepLong.setSource(QUrl::fromLocalFile(
         QCoreApplication::applicationDirPath() + QStringLiteral("/sounds/beep-long.wav")));
     m_beepLong.setVolume(0.7f);
+    // Sonnerie d'alarme 5 s (arrêt batterie à 20 %)
+    m_alarm.setSource(QUrl::fromLocalFile(
+        QCoreApplication::applicationDirPath() + QStringLiteral("/sounds/beep-5s.wav")));
+    m_alarm.setVolume(0.8f);
 
     // GPS
     m_gps = QGeoPositionInfoSource::createDefaultSource(this);
@@ -196,6 +200,10 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
                         ? info.attribute(QGeoPositionInfo::HorizontalAccuracy) : 0.0;
 
     m_gotFix = true;
+
+    // Pendant la sonnerie d'arrêt batterie (5 s), on n'ajoute plus de points
+    if (m_stopping)
+        return;
 
     // Auto-pause : à l'arrêt (vitesse < 1 m/s) depuis plus de 3 min, on cesse
     // d'ajouter des points (tracé propre, batterie économisée). Reprise
@@ -521,16 +529,25 @@ void GpsDaemon::onSafetyTick()
         cleanup();
         return;
     }
-    // Batterie < 5 % : on sauve et on s'arrête proprement.
+    // Batterie <= 20 % : sonnerie d'alerte 5 s (même écran éteint, même si
+    // bip désactivé — c'est une alarme d'arrêt), puis sauvegarde et arrêt.
     const double pct = batteryPct();
-    if (pct >= 0.0) {
-        if (pct <= kBatteryLowPct) {
-            qWarning() << "[gpsd] battery low" << pct << "% — stopping";
-            m_stopReason = QStringLiteral("battery");
-            cleanup();
-            return;
-        }
+    if (pct >= 0.0 && pct <= kBatteryLowPct && !m_alarmPlaying) {
+        m_alarmPlaying = true;
+        m_stopping = true;   // plus de nouveaux points pendant la sonnerie
+        m_stopReason = QStringLiteral("battery");
+        qWarning() << "[gpsd] battery" << pct << "% <= 20% — ALARM 5s, then save+stop";
+        playAlarm();
+        QTimer::singleShot(kAlarmDurationMs, this, [this]() { cleanup(); });
+        return;
     }
+}
+
+// Sonnerie d'alarme 5 s : jouée quoi qu'il arrive (écran éteint, bip coupé) —
+// c'est une alarme d'arrêt de l'enregistrement, pas une confirmation.
+void GpsDaemon::playAlarm()
+{
+    m_alarm.play();
 }
 
 void GpsDaemon::onStatsTick()
@@ -593,6 +610,8 @@ void GpsDaemon::onControlTick()
         m_hasAltEff = false;
         m_partWritten = 0;
         m_awaitManualStart = false;
+        m_alarmPlaying = false;
+        m_stopping = false;
         m_stopReason = QStringLiteral("user");
         m_elapsedOffsetMs = 0;
         m_curValid = false;

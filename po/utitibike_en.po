@@ -267,8 +267,8 @@ msgstr "Confirmation beep"
 msgid "Parcours récupéré après un arrêt brutal"
 msgstr "Track recovered after an abrupt stop"
 
-msgid "Arrêt auto : batterie faible"
-msgstr "Auto-stop: low battery"
+msgid "Arrêt auto : batterie à 20 %"
+msgstr "Auto-stop: battery at 20%"
 
 msgid "Arrêt auto : durée max atteinte (12 h)"
 msgstr "Auto-stop: max duration reached (12 h)"

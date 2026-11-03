@@ -266,7 +266,7 @@ msgstr ""
 msgid "Parcours récupéré après un arrêt brutal"
 msgstr ""
 
-msgid "Arrêt auto : batterie faible"
+msgid "Arrêt auto : batterie à 20 %"
 msgstr ""
 
 msgid "Arrêt auto : durée max atteinte (12 h)"

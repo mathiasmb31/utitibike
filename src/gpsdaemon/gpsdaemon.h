@@ -63,6 +63,7 @@ private:
     qint64 elapsedMs() const { return m_elapsed.elapsed() + m_elapsedOffsetMs; }
     bool readBeepConf() const;   // gpsd.conf : beep=0/1 (option utilisateur)
     void playLongBeep();         // alerte départ manuel (joue même écran éteint)
+    void playAlarm();            // sonnerie 5 s arrêt batterie (joue toujours)
     bool screenIsOn() const;    // logind : la session seat0 est-elle active ?
     double batteryPct() const;  // UPower : pourcentage batterie (-1 si indispo)
     // Garde-fous disque : espace libre (statvfs) et erreurs d'écriture
@@ -80,9 +81,11 @@ private:
     static constexpr qint64 kPauseAfterMs = 180000;
     // Départ manuel proposé à l'app après 6 min sans aucun fix satellite
     static constexpr qint64 kManualStartAfterMs = 360000;
-    // Arrêt automatique de sécurité : batterie < 5 % ou durée > 12 h
-    static constexpr double kBatteryLowPct = 5.0;
+    // Arrêt automatique de sécurité : batterie <= 20 % (sonnerie 5 s puis
+    // sauvegarde) ou durée > 12 h
+    static constexpr double kBatteryLowPct = 20.0;
     static constexpr qint64 kMaxDurationMs = 12LL * 3600LL * 1000LL;
+    static constexpr int kAlarmDurationMs = 5200;  // sonnerie 5 s + marge
     // Précision horizontale max acceptée pour un point de tracé (m)
     static constexpr double kMaxAccuracyM = 50.0;
 
@@ -96,6 +99,7 @@ private:
     QTimer m_fakeGpsTimer;      // DEBUG — GPS simulé (UTITIBIKE_FAKE_GPS=1)
     QSoundEffect m_beep;
     QSoundEffect m_beepLong;    // alerte « action requise » (départ manuel)
+    QSoundEffect m_alarm;       // sonnerie 5 s d'arrêt batterie (20 %)
 
     bool m_recording = false;
     int m_parentPid = 0;       // PID de l'app QML (lu depuis recording.control)
@@ -141,6 +145,9 @@ private:
     QString m_stopReason = QStringLiteral("user");
     // Garde-fou écriture : nb d'échecs consécutifs (QSaveFile/QFile)
     mutable int m_writeErrors = 0;
+    // Sonnerie batterie en cours : on n'ajoute plus de points pendant les 5 s
+    bool m_alarmPlaying = false;
+    bool m_stopping = false;
     // Reprise après crash : offset pour recaler le chrono sur l'heure de début
     // du tracé rechargé depuis en-cours.part.
     qint64 m_elapsedOffsetMs = 0;

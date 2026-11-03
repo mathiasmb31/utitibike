@@ -85,7 +85,7 @@ install(TARGETS utitibike utitibike-gpsd DESTINATION .)
 install(FILES manifest.json utitibike.apparmor utitibike.desktop logo.png DESTINATION .)
 # beep.wav / beep-long.wav installés comme fichiers séparés (pas dans le qrc)
 # pour que le daemon puisse y accéder via applicationDirPath()/sounds/.
-install(FILES sounds/beep.wav sounds/beep-long.wav DESTINATION sounds/)
+install(FILES sounds/beep.wav sounds/beep-long.wav sounds/beep-5s.wav DESTINATION sounds/)
 
 # --- Tests unitaires ---
 # OFF par défaut : le build clickable (cross-compile ARM64) ne les compile pas.

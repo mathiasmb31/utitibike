@@ -267,8 +267,8 @@ msgstr "Bip de confirmación"
 msgid "Parcours récupéré après un arrêt brutal"
 msgstr "Trayecto recuperado tras una parada brusca"
 
-msgid "Arrêt auto : batterie faible"
-msgstr "Parada automática: batería baja"
+msgid "Arrêt auto : batterie à 20 %"
+msgstr "Parada automática: batería al 20 %"
 
 msgid "Arrêt auto : durée max atteinte (12 h)"
 msgstr "Parada automática: duración máxima alcanzada (12 h)"

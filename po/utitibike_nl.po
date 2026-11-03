@@ -267,8 +267,8 @@ msgstr "Bevestigingssignaal"
 msgid "Parcours récupéré après un arrêt brutal"
 msgstr "Route hersteld na een abrupt stop"
 
-msgid "Arrêt auto : batterie faible"
-msgstr "Auto-stop: lage batterij"
+msgid "Arrêt auto : batterie à 20 %"
+msgstr "Auto-stop: batterij op 20 %"
 
 msgid "Arrêt auto : durée max atteinte (12 h)"
 msgstr "Auto-stop: max. duur bereikt (12 u)"
