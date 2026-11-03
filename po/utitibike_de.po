@@ -267,8 +267,8 @@ msgstr "Bestätigungs-Piep"
 msgid "Parcours récupéré après un arrêt brutal"
 msgstr "Track nach abruptem Stopp wiederhergestellt"
 
-msgid "Arrêt auto : batterie faible"
-msgstr "Auto-Stopp: Akku schwach"
+msgid "Arrêt auto : batterie à 20 %"
+msgstr "Auto-Stopp: Akku bei 20 %"
 
 msgid "Arrêt auto : durée max atteinte (12 h)"
 msgstr "Auto-Stopp: maximale Dauer erreicht (12 h)"

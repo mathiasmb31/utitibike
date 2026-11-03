@@ -267,8 +267,8 @@ msgstr "Sygnał potwierdzenia"
 msgid "Parcours récupéré après un arrêt brutal"
 msgstr "Trasa odzyskana po nagłym zatrzymaniu"
 
-msgid "Arrêt auto : batterie faible"
-msgstr "Auto-zatrzymanie: niski poziom baterii"
+msgid "Arrêt auto : batterie à 20 %"
+msgstr "Auto-zatrzymanie: bateria na poziomie 20 %"
 
 msgid "Arrêt auto : durée max atteinte (12 h)"
 msgstr "Auto-zatrzymanie: osiągnięto maks. czas (12 h)"

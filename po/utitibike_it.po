@@ -267,8 +267,8 @@ msgstr "Bip di conferma"
 msgid "Parcours récupéré après un arrêt brutal"
 msgstr "Percorso recuperato dopo un arresto improvviso"
 
-msgid "Arrêt auto : batterie faible"
-msgstr "Arresto automatico: batteria scarica"
+msgid "Arrêt auto : batterie à 20 %"
+msgstr "Arresto automatico: batteria al 20 %"
 
 msgid "Arrêt auto : durée max atteinte (12 h)"
 msgstr "Arresto automatico: durata max raggiunta (12 h)"
