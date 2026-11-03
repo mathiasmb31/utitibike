@@ -83,9 +83,9 @@ target_link_libraries(utitibike-gpsd Qt5::Core Qt5::Positioning Qt5::Multimedia 
 
 install(TARGETS utitibike utitibike-gpsd DESTINATION .)
 install(FILES manifest.json utitibike.apparmor utitibike.desktop logo.png DESTINATION .)
-# beep.wav installé comme fichier séparé (pas dans le qrc) pour que le daemon
-# puisse y accéder via applicationDirPath()/sounds/beep.wav.
-install(FILES sounds/beep.wav DESTINATION sounds/)
+# beep.wav / beep-long.wav installés comme fichiers séparés (pas dans le qrc)
+# pour que le daemon puisse y accéder via applicationDirPath()/sounds/.
+install(FILES sounds/beep.wav sounds/beep-long.wav DESTINATION sounds/)
 
 # --- Tests unitaires ---
 # OFF par défaut : le build clickable (cross-compile ARM64) ne les compile pas.
