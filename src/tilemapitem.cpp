@@ -171,6 +171,18 @@ void TileMapItem::setZoom(int v)
     update();
 }
 
+void TileMapItem::setRotation(double v)
+{
+    // Normalise dans ]-180, 180] pour éviter les sauts d'animation
+    while (v > 180.0) v -= 360.0;
+    while (v <= -180.0) v += 360.0;
+    if (qFuzzyCompare(m_rotation, v))
+        return;
+    m_rotation = v;
+    emit rotationChanged();
+    update();
+}
+
 QVariantList TileMapItem::waypoints() const
 {
     return m_waypoints;
@@ -256,9 +268,19 @@ QVariantMap TileMapItem::itemToLatLon(double x, double y) const
     const double world = worldSize(m_zoom);
     const double ox = lonToWorldX(m_centerLon, world) - width() / 2.0;
     const double oy = latToWorldY(m_centerLat, world) - height() / 2.0;
+    // Si la carte est tournée, ramener le point écran dans le repère monde
+    // non tourné (rotation inverse autour du centre de l'item)
+    double lx = x, ly = y;
+    if (m_rotation != 0.0) {
+        const double rad = qDegreesToRadians(-m_rotation);
+        const double c = std::cos(rad), s = std::sin(rad);
+        const double dx = x - width() / 2.0, dy = y - height() / 2.0;
+        lx = width() / 2.0 + dx * c - dy * s;
+        ly = height() / 2.0 + dx * s + dy * c;
+    }
     QVariantMap m;
-    m.insert(QStringLiteral("lat"), clampLat(worldYToLat(oy + y, world)));
-    m.insert(QStringLiteral("lon"), wrapLon(worldXToLon(ox + x, world)));
+    m.insert(QStringLiteral("lat"), clampLat(worldYToLat(oy + ly, world)));
+    m.insert(QStringLiteral("lon"), wrapLon(worldXToLon(ox + lx, world)));
     return m;
 }
 
@@ -319,6 +341,14 @@ void TileMapItem::paint(QPainter *painter)
     const int n = 1 << m_zoom;
 
     painter->fillRect(boundingRect(), QColor(QStringLiteral("#e0dcd4")));
+
+    // Rotation de la carte autour de son centre (mode suivi GPS : cap en haut).
+    // Le fond reste non tourné pour couvrir les coins ; l'attribution en bas
+    // de l'écran est dessinée après le restore pour rester horizontale.
+    painter->save();
+    painter->translate(width() / 2.0, height() / 2.0);
+    painter->rotate(m_rotation);
+    painter->translate(-width() / 2.0, -height() / 2.0);
 
     const int tx0 = qFloor(ox / kTilePx);
     const int tx1 = qFloor((ox + width()) / kTilePx);
@@ -474,6 +504,8 @@ void TileMapItem::paint(QPainter *painter)
         }
         painter->setRenderHint(QPainter::Antialiasing, false);
     }
+
+    painter->restore();
 
     painter->setPen(QColor(80, 80, 80, 200));
     QFont f = painter->font();

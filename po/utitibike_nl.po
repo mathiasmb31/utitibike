@@ -345,3 +345,12 @@ msgstr "Vermijd onverharde paden"
 
 msgid "Trajet %1 · %2"
 msgstr "Route %1 · %2"
+
+msgid "arrivée %1"
+msgstr "aankomst %1"
+
+msgid "Hors itinéraire — recalcul…"
+msgstr "Van de route — herberekenen…"
+
+msgid "Itinéraire recalculé — %1 · ≈ %2 kcal"
+msgstr "Route herberekend — %1 · ≈ %2 kcal"

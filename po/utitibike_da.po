@@ -345,3 +345,12 @@ msgstr "Undgå ugraderede stier"
 
 msgid "Trajet %1 · %2"
 msgstr "Rute %1 · %2"
+
+msgid "arrivée %1"
+msgstr "ankomst %1"
+
+msgid "Hors itinéraire — recalcul…"
+msgstr "Uden for ruten — genberegner…"
+
+msgid "Itinéraire recalculé — %1 · ≈ %2 kcal"
+msgstr "Rute genberegnet — %1 · ≈ %2 kcal"
