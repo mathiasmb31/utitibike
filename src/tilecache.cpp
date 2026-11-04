@@ -297,55 +297,142 @@ void TileCache::drain()
     }
 }
 
-void TileCache::downloadArea(double lat1, double lon1,
-                             double lat2, double lon2,
-                             int zMin, int zMax)
+void TileCache::beginBatch()
 {
     m_batchDone = 0;
     m_batchTotal = 0;
     m_batchKeys.clear();
+}
 
-    for (int z = zMin; z <= zMax; ++z) {
+// Enfile une tuile (dédupliquée ; les tuiles déjà sur disque sont comptées
+// dans m_batchDone/m_batchTotal pour une progression cohérente).
+// Retourne true si la tuile a été enfilée pour téléchargement.
+bool TileCache::enqueueKey(int z, int x, int y)
+{
+    const int n = 1 << z;
+    if (y < 0 || y >= n)
+        return false;
+    const int wx = ((x % n) + n) % n;
+    const QString key = keyOf(z, wx, y);
+    {
+        QMutexLocker locker(&m_mutex);
+        if (m_pending.contains(key))
+            return false;
+    }
+    if (QFile::exists(tileFilePath(m_dir, m_tileServer, z, wx, y))) {
+        // Tuile déjà sur disque : compte dans le total ET le fait
+        // (progression cohérente, ex. 42/42 si tout est en cache).
+        m_batchDone++;
+        m_batchTotal++;
+        return false;
+    }
+    {
+        QMutexLocker locker(&m_mutex);
+        m_pending.insert(key);
+    }
+    m_batchKeys.insert(key);
+    m_batchTotal++;
+    m_queue.enqueue(key);
+    return true;
+}
+
+int TileCache::enqueueBox(double lat1, double lon1,
+                          double lat2, double lon2, int z)
+{
+    int added = 0;
+    const double world = 256.0 * std::pow(2.0, z);
+    const double xa = lonToWorldX(lon1, world);
+    const double xb = lonToWorldX(lon2, world);
+    const double ya = latToWorldY(lat1, world);
+    const double yb = latToWorldY(lat2, world);
+    const int tx0 = qFloor(std::min(xa, xb) / 256.0);
+    const int tx1 = qFloor(std::max(xa, xb) / 256.0);
+    const int ty0 = qFloor(std::min(ya, yb) / 256.0);
+    const int ty1 = qFloor(std::max(ya, yb) / 256.0);
+    for (int tx = tx0; tx <= tx1; ++tx)
+        for (int ty = ty0; ty <= ty1; ++ty)
+            if (enqueueKey(z, tx, ty))
+                ++added;
+    return added;
+}
+
+void TileCache::downloadArea(double lat1, double lon1,
+                             double lat2, double lon2,
+                             int zMin, int zMax)
+{
+    beginBatch();
+    for (int z = zMin; z <= zMax; ++z)
+        enqueueBox(lat1, lon1, lat2, lon2, z);
+    emitProgress();
+    drain();
+}
+
+void TileCache::downloadRoute(const QVariantList &points, double widthM,
+                              int zMin, int zMax)
+{
+    if (points.size() < 2 || widthM <= 0.0)
+        return;
+    zMin = qBound(3, zMin, 17);
+    zMax = qBound(zMin, zMax, 17);
+    // Échantillonnage du tracé : au plus ~400 pastilles de rayon widthM
+    const int step = qMax(1, static_cast<int>(points.size()) / 400);
+
+    struct Box { double lat1, lon1, lat2, lon2; };
+    QList<Box> boxes;
+    for (int i = 0; i < points.size(); i += step) {
+        const QVariantMap p = points[i].toMap();
+        const double lat = p.value(QStringLiteral("lat")).toDouble();
+        const double lon = p.value(QStringLiteral("lon")).toDouble();
+        const double dLat = widthM / 111320.0;
+        const double dLon = widthM / (111320.0 * qMax(0.01, std::cos(qDegreesToRadians(lat))));
+        Box b = { lat - dLat, lon - dLon, lat + dLat, lon + dLon };
+        boxes.append(b);
+    }
+    // Le dernier point du tracé (si le pas ne tombe pas dessus)
+    if ((points.size() - 1) % step != 0) {
+        const QVariantMap p = points.last().toMap();
+        const double lat = p.value(QStringLiteral("lat")).toDouble();
+        const double lon = p.value(QStringLiteral("lon")).toDouble();
+        const double dLat = widthM / 111320.0;
+        const double dLon = widthM / (111320.0 * qMax(0.01, std::cos(qDegreesToRadians(lat))));
+        Box b = { lat - dLat, lon - dLon, lat + dLat, lon + dLon };
+        boxes.append(b);
+    }
+
+    // Compte les tuiles du corridor pour choisir le zMax sous le plafond
+    auto boxKeys = [](int z, const Box &b, QSet<QString> &out) {
         const double world = 256.0 * std::pow(2.0, z);
-        const double xa = lonToWorldX(lon1, world);
-        const double xb = lonToWorldX(lon2, world);
-        const double ya = latToWorldY(lat1, world);
-        const double yb = latToWorldY(lat2, world);
-        const int tx0 = qFloor(std::min(xa, xb) / 256.0);
-        const int tx1 = qFloor(std::max(xa, xb) / 256.0);
-        const int ty0 = qFloor(std::min(ya, yb) / 256.0);
-        const int ty1 = qFloor(std::max(ya, yb) / 256.0);
+        const double xa = lonToWorldX(b.lon1, world), xb = lonToWorldX(b.lon2, world);
+        const double ya = latToWorldY(b.lat1, world), yb = latToWorldY(b.lat2, world);
+        const int tx0 = qFloor(std::min(xa, xb) / 256.0), tx1 = qFloor(std::max(xa, xb) / 256.0);
+        const int ty0 = qFloor(std::min(ya, yb) / 256.0), ty1 = qFloor(std::max(ya, yb) / 256.0);
         const int n = 1 << z;
-        for (int tx = tx0; tx <= tx1; ++tx) {
+        for (int tx = tx0; tx <= tx1; ++tx)
             for (int ty = ty0; ty <= ty1; ++ty) {
                 if (ty < 0 || ty >= n)
                     continue;
-                const int wx = ((tx % n) + n) % n;
-                const QString key = keyOf(z, wx, ty);
-                {
-                    QMutexLocker locker(&m_mutex);
-                    if (m_pending.contains(key))
-                        continue;
-                }
-                if (QFile::exists(tileFilePath(m_dir, m_tileServer, z, wx, ty))) {
-                    // Tuile déjà sur disque : compte dans le total ET le fait
-                    // (progression cohérente, ex. 42/42 si tout est en cache).
-                    m_batchDone++;
-                    m_batchTotal++;
-                    continue;
-                }
-                {
-                    QMutexLocker locker(&m_mutex);
-                    m_pending.insert(key);
-                }
-                m_batchKeys.insert(key);
-                m_batchTotal++;
-                m_queue.enqueue(key);
+                out.insert(keyOf(z, ((tx % n) + n) % n, ty));
             }
-        }
+    };
+    int zHi = zMax;
+    while (zHi > zMin) {
+        QSet<QString> keys;
+        for (int z = zMin; z <= zHi; ++z)
+            for (const Box &b : boxes)
+                boxKeys(z, b, keys);
+        if (keys.size() <= MaxRouteTiles)
+            break;
+        --zHi;
     }
+
+    beginBatch();
+    for (int z = zMin; z <= zHi; ++z)
+        for (const Box &b : boxes)
+            enqueueBox(b.lat1, b.lon1, b.lat2, b.lon2, z);
     emitProgress();
     drain();
+    qWarning() << "tilecache route corridor:" << boxes.size() << "boxes, z"
+               << zMin << "-" << zHi << "," << m_batchTotal << "tuiles";
 }
 
 void TileCache::cancelAll()

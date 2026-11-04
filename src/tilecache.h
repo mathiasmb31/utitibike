@@ -38,6 +38,12 @@ public:
     Q_INVOKABLE void downloadArea(double lat1, double lon1,
                                   double lat2, double lon2,
                                   int zMin, int zMax);
+    // Précharge un corridor de ±widthM autour d'une polyligne (itinéraire
+    // calculé) pour la navigation hors ligne. Le nombre de tuiles est plafonné
+    // (MaxRouteTiles) : si le corridor dépasse le plafond à zMax, on baisse
+    // zMax jusqu'à rentrer dans le plafond.
+    Q_INVOKABLE void downloadRoute(const QVariantList &points, double widthM,
+                                   int zMin, int zMax);
     Q_INVOKABLE void cancelAll();
 
 signals:
@@ -54,6 +60,12 @@ private:
     void purgeDiskCache();
     void updateOnlineState(int error, bool ok);
     static QString keyOf(int z, int x, int y);
+    // Enfile les tuiles d'une boîte lat/lon au zoom z (dédupliquées, tuiles
+    // déjà sur disque comptées dans m_batchDone). Retourne le nombre de tuiles
+    // enfilées pour cette boîte.
+    int enqueueBox(double lat1, double lon1, double lat2, double lon2, int z);
+    bool enqueueKey(int z, int x, int y);
+    void beginBatch();
 
     QDir m_dir;
     QCache<QString, QImage> m_mem;
@@ -80,6 +92,8 @@ private:
     QTimer m_probeTimer;
 
     static const int MaxActive = 6;
+    // Plafond de tuiles pour un préchargement d'itinéraire (corridor)
+    static const int MaxRouteTiles = 2000;
 };
 
 #endif // TILECACHE_H
