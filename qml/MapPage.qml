@@ -280,6 +280,10 @@ Page {
             page.routeAscent = ascentM
             page.routeGpx = brouter.lastGpx
             page.fitToBounds(points)
+            // Précharge les tuiles le long de l'itinéraire (corridor ±120 m,
+            // zooms autour du zoom courant jusqu'à 17) pour la navigation
+            // hors ligne. Le TileCache gère la file et la pause arrière-plan.
+            cache.downloadRoute(points, 120, Math.max(12, map.zoom - 1), 17)
             // Toast avec difficulté + calories (visible immédiatement)
             var diff = page.difficultyLevel(distanceM, ascentM)
             var kcal = page.estimatedCalories(distanceM, ascentM)
