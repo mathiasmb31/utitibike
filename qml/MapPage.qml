@@ -24,6 +24,11 @@ Page {
     property bool searchOpen: false
     property var searchResults: []
     property bool searchBusy: false
+    // Nommage des trajets enregistrés d'après le lieu de départ (géocodage
+    // inverse Nominatim, asynchrone : l'entrée est d'abord sauvée avec la
+    // date, puis renommée quand le lieu arrive)
+    property int pendingReverseIndex: -1
+    property string pendingReverseDate: ""
     property bool manualStartWarned: false  // vibration déjà envoyée pour le départ manuel
     property real userWeightKg: 70  // poids pour l'estimation des calories
 
@@ -179,10 +184,13 @@ Page {
             // /!\ lastGpxContent est une QString C++ → chaîne JS en QML :
             // pas de méthode isEmpty() (TypeError) → tester length.
             if (gpxContent !== "" && gpxContent.length > 0) {
+                var dateStr = new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm")
                 var name = i18n.tr("Trajet %1 · %2 km")
-                           .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
+                           .arg(dateStr)
                            .arg((distM / 1000).toFixed(1))
                 routeHistory.addEntry(name, distM, ascM, [], gpxContent, daemonController.startTime)
+                // Renomme « Trajet <lieu> · <date> » si Nominatim trouve le lieu
+                page.nameTripFromPlace(0, gpxContent, dateStr)
                 // Affiche le trajet terminé immédiatement sur la carte
                 // (onRouteReady renseigne routePoints + fitToBounds).
                 // loadingFromHistory = true : évite un doublon dans
@@ -226,12 +234,14 @@ Page {
         if (daemonController.recoverOrphanPart()) {
             var gpxContent = daemonController.lastGpxContent
             if (gpxContent !== "" && gpxContent.length > 0) {
+                var dateStr = new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm")
                 var name = i18n.tr("Trajet %1 · %2 km")
-                           .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
+                           .arg(dateStr)
                            .arg((daemonController.distanceM / 1000).toFixed(1))
                 routeHistory.addEntry(name, daemonController.distanceM,
                                       daemonController.ascentM, [], gpxContent,
                                       daemonController.startTime)
+                page.nameTripFromPlace(0, gpxContent, dateStr)
             }
             showToast(i18n.tr("Parcours récupéré après un arrêt brutal"))
             daemonController.notify(i18n.tr("Parcours récupéré après un arrêt brutal"))
@@ -681,6 +691,28 @@ Page {
         searchClient.search(query)
     }
 
+    // Extrait le premier point d'un GPX (trkpt) : [lat, lon] ou null
+    function firstTrkpt(gpx) {
+        var m = /<trkpt[^>]*\blat="(-?\d+(?:\.\d+)?)"[^>]*\blon="(-?\d+(?:\.\d+)?)"/.exec(gpx)
+        if (m)
+            return [parseFloat(m[1]), parseFloat(m[2])]
+        m = /<trkpt[^>]*\blon="(-?\d+(?:\.\d+)?)"[^>]*\blat="(-?\d+(?:\.\d+)?)"/.exec(gpx)
+        if (m)
+            return [parseFloat(m[2]), parseFloat(m[1])]
+        return null
+    }
+
+    // Demande le nom du lieu du point de départ d'un trajet enregistré ;
+    // l'entrée (index) sera renommée quand reverseFinished arrivera.
+    function nameTripFromPlace(index, gpx, dateStr) {
+        var pt = firstTrkpt(gpx)
+        if (!pt)
+            return
+        page.pendingReverseIndex = index
+        page.pendingReverseDate = dateStr
+        searchClient.reverse(pt[0], pt[1])
+    }
+
     Connections {
         target: searchClient
         function onSearchFinished(results) {
@@ -692,6 +724,19 @@ Page {
         function onSearchFailed(message) {
             page.searchBusy = false
             showToast(message)
+        }
+        function onReverseFinished(place) {
+            if (page.pendingReverseIndex < 0)
+                return
+            if (place !== "") {
+                routeHistory.renameEntry(page.pendingReverseIndex,
+                    i18n.tr("Trajet %1 · %2").arg(place).arg(page.pendingReverseDate))
+            }
+            page.pendingReverseIndex = -1
+        }
+        function onReverseFailed() {
+            // Lieu introuvable : on garde le nom date + km déjà sauvegardé
+            page.pendingReverseIndex = -1
         }
     }
 
