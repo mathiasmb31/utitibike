@@ -305,7 +305,7 @@ Page {
             }
         }
         function onOffRoute(dist) {
-            // Écart > 30 m du tracé : recalcul depuis la position courante
+            // Écart > 60 m du tracé : recalcul depuis la position courante
             // jusqu'au dernier waypoint d'origine (debounce 30 s côté C++)
             if (brouter.busy || page.waypoints.length === 0 || !page.liveHasPos)
                 return
