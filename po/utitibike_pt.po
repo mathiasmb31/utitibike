@@ -345,3 +345,12 @@ msgstr "Evitar caminhos não pavimentados"
 
 msgid "Trajet %1 · %2"
 msgstr "Percurso %1 · %2"
+
+msgid "arrivée %1"
+msgstr "chegada %1"
+
+msgid "Hors itinéraire — recalcul…"
+msgstr "Fora da rota — a recalcular…"
+
+msgid "Itinéraire recalculé — %1 · ≈ %2 kcal"
+msgstr "Rota recalculada — %1 · ≈ %2 kcal"

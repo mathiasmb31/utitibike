@@ -345,3 +345,12 @@ msgstr "Unbefestigte Wege meiden"
 
 msgid "Trajet %1 · %2"
 msgstr "Track %1 · %2"
+
+msgid "arrivée %1"
+msgstr "Ankunft %1"
+
+msgid "Hors itinéraire — recalcul…"
+msgstr "Abseits der Route — neu berechnen…"
+
+msgid "Itinéraire recalculé — %1 · ≈ %2 kcal"
+msgstr "Route neu berechnet — %1 · ≈ %2 kcal"

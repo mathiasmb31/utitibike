@@ -345,3 +345,12 @@ msgstr "Éviter les chemins non goudronnés"
 
 msgid "Trajet %1 · %2"
 msgstr "Trajet %1 · %2"
+
+msgid "arrivée %1"
+msgstr "arrivée %1"
+
+msgid "Hors itinéraire — recalcul…"
+msgstr "Hors itinéraire — recalcul…"
+
+msgid "Itinéraire recalculé — %1 · ≈ %2 kcal"
+msgstr "Itinéraire recalculé — %1 · ≈ %2 kcal"
