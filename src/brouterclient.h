@@ -79,7 +79,7 @@ signals:
     void routeFinished();
     // Émis quand on approche d'un virage : severity 0=200m, 1=100m, 2=50m
     void turnAlert(int severity);
-    // Émis quand la position courante s'écarte de plus de 30 m du tracé
+    // Émis quand la position courante s'écarte de plus de 60 m du tracé
     // (déclenche un recalcul d'itinéraire côté QML ; débounce 30 s)
     void offRoute(double distanceM);
     void loadingFromHistoryChanged();
