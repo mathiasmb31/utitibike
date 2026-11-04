@@ -183,7 +183,19 @@ Page {
                            .arg(new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm"))
                            .arg((distM / 1000).toFixed(1))
                 routeHistory.addEntry(name, distM, ascM, [], gpxContent, daemonController.startTime)
-                showToast(i18n.tr("Parcours sauvegardé"))
+                // Affiche le trajet terminé immédiatement sur la carte
+                // (onRouteReady renseigne routePoints + fitToBounds).
+                // loadingFromHistory = true : évite un doublon dans
+                // l'historique quand onRouteReady se déclenche.
+                brouter.loadingFromHistory = true
+                brouter.loadGpxData(gpxContent)
+                // Toast résumé après celui de onRouteReady ("Itinéraire
+                // chargé") qui l'écraserait sinon (toast unique).
+                QTimer.singleShot(700, function() {
+                    showToast(i18n.tr("Parcours sauvegardé : %1 km · D+ %2 m")
+                              .arg((distM / 1000).toFixed(1))
+                              .arg(Math.round(ascM)))
+                })
             }
             // Arrêt automatique du daemon (batterie / durée max / disque)
             if (daemonController.stopReason === "battery") {
