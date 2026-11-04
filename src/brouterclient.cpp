@@ -531,17 +531,17 @@ void BrouterClient::updatePosition(double lat, double lon)
         emit nextInstructionChanged();
     }
 
-    // Hors itinéraire : écart > 30 m du tracé → signal (hystérésis : on
-    // redevient « sur la route » sous 15 m ; max 1 signal toutes les 30 s
+    // Hors itinéraire : écart > 60 m du tracé → signal (hystérésis : on
+    // redevient « sur la route » sous 30 m ; max 1 signal toutes les 30 s
     // pour ne pas spammer un recalcul BRouter)
     const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
-    if (closestDist > 30.0) {
+    if (closestDist > 60.0) {
         if (!m_offRouteActive && nowMs - m_lastOffRouteMs > 30000) {
             m_offRouteActive = true;
             m_lastOffRouteMs = nowMs;
             emit offRoute(closestDist);
         }
-    } else if (closestDist < 15.0) {
+    } else if (closestDist < 30.0) {
         m_offRouteActive = false;
     }
 
