@@ -1153,6 +1153,21 @@ Page {
                     currentIndex: page.profileIndex
                     onSelected: page.profileIndex = index
                 }
+                Row {
+                    width: parent.width
+                    spacing: units.gu(1)
+                    Label {
+                        text: i18n.tr("Éviter les chemins non goudronnés")
+                        color: Theme.textSecondary
+                        fontSize: "small"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Switch {
+                        anchors.verticalCenter: parent.verticalCenter
+                        checked: brouter.avoidUnpaved
+                        onCheckedChanged: brouter.avoidUnpaved = checked
+                    }
+                }
 
                 Label {
                     text: i18n.tr("Dénivelé")
