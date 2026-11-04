@@ -342,3 +342,6 @@ msgstr "Percurso guardado: %1 km · D+ %2 m"
 
 msgid "Éviter les chemins non goudronnés"
 msgstr "Evitar caminhos não pavimentados"
+
+msgid "Trajet %1 · %2"
+msgstr "Percurso %1 · %2"

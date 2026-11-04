@@ -94,6 +94,19 @@ void RouteHistory::removeEntry(int index)
     emit entriesChanged();
 }
 
+void RouteHistory::renameEntry(int index, const QString &name)
+{
+    if (index < 0 || index >= m_entries.size() || name.isEmpty())
+        return;
+    QVariantMap e = m_entries.at(index).toMap();
+    if (e.value(QStringLiteral("name")).toString() == name)
+        return;
+    e.insert(QStringLiteral("name"), name);
+    m_entries.replace(index, e);
+    save();
+    emit entriesChanged();
+}
+
 void RouteHistory::clear()
 {
     for (const QVariant &v : m_entries) {
