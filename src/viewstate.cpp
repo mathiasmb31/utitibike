@@ -27,6 +27,7 @@ ViewState::ViewState(QObject *parent)
         o.insert(QStringLiteral("zoom"), m_zoom);
         o.insert(QStringLiteral("themeMode"), m_themeMode);
         o.insert(QStringLiteral("positioningMode"), m_positioningMode);
+        o.insert(QStringLiteral("avoidUnpaved"), m_avoidUnpaved);
         f.write(QJsonDocument(o).toJson(QJsonDocument::Compact));
         f.commit();
     });
@@ -52,6 +53,15 @@ void ViewState::setPositioningMode(const QString &v)
         return;
     m_positioningMode = mode;
     emit positioningModeChanged();
+    scheduleSave();
+}
+
+void ViewState::setAvoidUnpaved(bool v)
+{
+    if (m_avoidUnpaved == v)
+        return;
+    m_avoidUnpaved = v;
+    emit avoidUnpavedChanged();
     scheduleSave();
 }
 
@@ -109,6 +119,9 @@ void ViewState::load()
     const QJsonValue pos = o.value(QStringLiteral("positioningMode"));
     if (pos.isString())
         m_positioningMode = pos.toString();
+    const QJsonValue au = o.value(QStringLiteral("avoidUnpaved"));
+    if (au.isBool())
+        m_avoidUnpaved = au.toBool();
     m_restored = true;
     qWarning() << "viewstate restored" << m_lat << m_lon << "zoom" << m_zoom
                << "theme" << m_themeMode;

@@ -1165,7 +1165,10 @@ Page {
                     Switch {
                         anchors.verticalCenter: parent.verticalCenter
                         checked: brouter.avoidUnpaved
-                        onCheckedChanged: brouter.avoidUnpaved = checked
+                        onCheckedChanged: {
+                            brouter.avoidUnpaved = checked
+                            viewState.avoidUnpaved = checked  // persisté dans view.json
+                        }
                     }
                 }
 
