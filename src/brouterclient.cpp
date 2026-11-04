@@ -449,6 +449,16 @@ void BrouterClient::startNavigation()
         return;
     m_navigation = true;
     emit navigationChanged();
+    // Distance restante initiale = longueur totale du tracé
+    m_remainingDistanceM = 0.0;
+    for (int i = 0; i + 1 < m_routePoints.size(); ++i) {
+        const QVariantMap a = m_routePoints[i].toMap();
+        const QVariantMap b = m_routePoints[i + 1].toMap();
+        m_remainingDistanceM += haversine(a.value(QStringLiteral("lat")).toDouble(),
+                                          a.value(QStringLiteral("lon")).toDouble(),
+                                          b.value(QStringLiteral("lat")).toDouble(),
+                                          b.value(QStringLiteral("lon")).toDouble());
+    }
     // Première instruction
     if (!m_turnPoints.isEmpty()) {
         const QVariantMap tp = m_turnPoints.first().toMap();
@@ -471,8 +481,18 @@ void BrouterClient::stopNavigation()
     m_navigation = false;
     m_nextInstruction.clear();
     m_nextInstructionDistance = 0.0;
+    m_remainingDistanceM = 0.0;
+    m_offRouteActive = false;
     emit navigationChanged();
     emit nextInstructionChanged();
+}
+
+void BrouterClient::setRecalculating(bool v)
+{
+    if (m_recalculating == v)
+        return;
+    m_recalculating = v;
+    emit recalculatingChanged();
 }
 
 void BrouterClient::updatePosition(double lat, double lon)
@@ -494,6 +514,35 @@ void BrouterClient::updatePosition(double lat, double lon)
             closestDist = d;
             closestIdx = i;
         }
+    }
+
+    // Distance restante le long du tracé (pour l'ETA côté QML)
+    double remaining = 0.0;
+    for (int i = closestIdx; i + 1 < m_routePoints.size(); ++i) {
+        const QVariantMap a = m_routePoints[i].toMap();
+        const QVariantMap b = m_routePoints[i + 1].toMap();
+        remaining += haversine(a.value(QStringLiteral("lat")).toDouble(),
+                               a.value(QStringLiteral("lon")).toDouble(),
+                               b.value(QStringLiteral("lat")).toDouble(),
+                               b.value(QStringLiteral("lon")).toDouble());
+    }
+    if (qAbs(remaining - m_remainingDistanceM) > 5.0) {
+        m_remainingDistanceM = remaining;
+        emit nextInstructionChanged();
+    }
+
+    // Hors itinéraire : écart > 30 m du tracé → signal (hystérésis : on
+    // redevient « sur la route » sous 15 m ; max 1 signal toutes les 30 s
+    // pour ne pas spammer un recalcul BRouter)
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    if (closestDist > 30.0) {
+        if (!m_offRouteActive && nowMs - m_lastOffRouteMs > 30000) {
+            m_offRouteActive = true;
+            m_lastOffRouteMs = nowMs;
+            emit offRoute(closestDist);
+        }
+    } else if (closestDist < 15.0) {
+        m_offRouteActive = false;
     }
 
     // Pas d'instructions de virage (GPX importé sans <rtept>) : guidage
