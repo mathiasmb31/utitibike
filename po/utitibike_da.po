@@ -1,5 +1,5 @@
 # Utitibike translations — Danish.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -241,3 +241,104 @@ msgstr "Slet alle?"
 
 msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
 msgstr "Slet alle ruter fra historikken permanent?"
+
+msgid "Position approximative…"
+msgstr "Omtrentlig position…"
+
+msgid "Recherche du signal GPS…"
+msgstr "Søger efter GPS-signal…"
+
+msgid "GPS déjà géré par l'enregistrement en cours"
+msgstr "GPS håndteres allerede af den igangværende optagelse"
+
+
+msgid "Pause auto (arrêt détecté)"
+msgstr "Auto-pause (stop registreret)"
+
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Intet GPS-signal — tryk på kortet for at sætte start"
+
+msgid "Départ défini sur la carte"
+msgstr "Start sat på kortet"
+
+msgid "Bip de confirmation"
+msgstr "Bekræftelses-bip"
+
+msgid "Parcours récupéré après un arrêt brutal"
+msgstr "Rute gendannet efter et brat stop"
+
+msgid "Arrêt auto : batterie à 20 %"
+msgstr "Auto-stop: batteri ved 20 %"
+
+msgid "Arrêt auto : durée max atteinte (12 h)"
+msgstr "Auto-stop: maks. varighed nået (12 t)"
+
+
+msgid "Arrêt auto : disque plein"
+msgstr "Auto-stop: disken er fuld"
+
+msgid "Arrêt auto : erreur d'écriture disque"
+msgstr "Auto-stop: skrivefejl på disk"
+
+msgid "Arrêt après un crash — parcours sauvegardé"
+msgstr "Stoppet efter et nedbrud — rute gemt"
+
+msgid "Enregistrement repris après un crash du daemon"
+msgstr "Optagelse genoptaget efter et daemon-nedbrud"
+
+msgid "Erreur d'écriture disque"
+msgstr "Skrivefejl på disk"
+
+
+msgid "Apparence"
+msgstr "Udseende"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Clair"
+msgstr "Lys"
+
+msgid "Stats"
+msgstr "Stats"
+
+msgid "Statistiques"
+msgstr "Statistik"
+
+msgid "Cette semaine"
+msgstr "Denne uge"
+
+msgid "Ce mois-ci"
+msgstr "Denne måned"
+
+msgid "Depuis le début"
+msgstr "Siden begyndelsen"
+
+msgid "Sorties"
+msgstr "Ture"
+
+msgid "Record de distance"
+msgstr "Distancerekord"
+
+msgid "D+ total"
+msgstr "D+ i alt"
+
+msgid "Distance"
+msgstr "Afstand"
+
+msgid "D+"
+msgstr "D+"
+
+
+msgid "Source GPS"
+msgstr "GPS-kilde"
+
+msgid "Réseau"
+msgstr "Netværk"
+
+
+msgid "Parcours sauvegardé : %1 km · D+ %2 m"
+msgstr "Rute gemt: %1 km · D+ %2 m"
+
+msgid "Éviter les chemins non goudronnés"
+msgstr "Undgå ugraderede stier"

@@ -48,3 +48,23 @@ add_executable(tst_persistence tst_persistence.cpp
 target_include_directories(tst_persistence PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(tst_persistence Qt5::Test Qt5::Core)
 add_test(NAME persistence COMMAND tst_persistence)
+
+# DaemonController : récupération en-cours.part après crash, départ manuel,
+# option bip persistée (gpsd.conf)
+add_executable(tst_daemoncontroller tst_daemoncontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/daemoncontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/routehistory.cpp
+    ${CMAKE_SOURCE_DIR}/src/appdata.cpp
+)
+target_include_directories(tst_daemoncontroller PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(tst_daemoncontroller Qt5::Test Qt5::Core Qt5::DBus)
+add_test(NAME daemoncontroller COMMAND tst_daemoncontroller)
+
+# RouteHistory::profileAt — mini profil d'altitude depuis le GPX
+add_executable(tst_profile tst_profile.cpp
+    ${CMAKE_SOURCE_DIR}/src/routehistory.cpp
+    ${CMAKE_SOURCE_DIR}/src/appdata.cpp
+)
+target_include_directories(tst_profile PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(tst_profile Qt5::Test Qt5::Core)
+add_test(NAME profile COMMAND tst_profile)

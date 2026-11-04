@@ -22,6 +22,8 @@ class GpsTracker : public QObject
     Q_PROPERTY(double speedKmh READ speedKmh NOTIFY positionUpdated) // km/h
     Q_PROPERTY(double direction READ direction NOTIFY positionUpdated) // degrés
     Q_PROPERTY(bool hasFix READ hasFix NOTIFY positionUpdated)
+    // true = position affichée = dernière position connue (pas un fix satellite)
+    Q_PROPERTY(bool hasApprox READ hasApprox NOTIFY positionUpdated)
     Q_PROPERTY(QString statusText READ statusText NOTIFY statusChanged)
 
 public:
@@ -40,10 +42,14 @@ public:
     double speedKmh() const { return m_speed * 3.6; }
     double direction() const { return m_direction; }
     bool hasFix() const { return m_hasFix; }
+    bool hasApprox() const { return m_hasApprox; }
     QString statusText() const;
 
     Q_INVOKABLE void start();
     Q_INVOKABLE void stop();
+    // "auto" (satellite + réseau WiFi/cell), "satellite" (GPS seul),
+    // "network" (WiFi/cell uniquement, pas de satellite)
+    Q_INVOKABLE void setPositioningMode(const QString &mode);
 
 signals:
     void activeChanged();
@@ -61,6 +67,8 @@ private:
     double m_speed = 0.0;
     double m_direction = 0.0;
     bool m_hasFix = false;
+    bool m_hasApprox = false;
+    QString m_positioningMode = QStringLiteral("auto");
 };
 
 #endif // GPSTRACKER_H

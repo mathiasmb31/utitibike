@@ -1,5 +1,5 @@
 # Utitibike translations — German.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -241,3 +241,104 @@ msgstr "Alles löschen?"
 
 msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
 msgstr "Alle Routen endgültig aus dem Verlauf löschen?"
+
+msgid "Position approximative…"
+msgstr "Ungefähre Position…"
+
+msgid "Recherche du signal GPS…"
+msgstr "GPS-Signal wird gesucht…"
+
+msgid "GPS déjà géré par l'enregistrement en cours"
+msgstr "GPS wird bereits von der laufenden Aufzeichnung verwaltet"
+
+
+msgid "Pause auto (arrêt détecté)"
+msgstr "Auto-Pause (Stillstand erkannt)"
+
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Kein GPS-Signal – tippe auf die Karte, um den Start zu setzen"
+
+msgid "Départ défini sur la carte"
+msgstr "Start auf der Karte gesetzt"
+
+msgid "Bip de confirmation"
+msgstr "Bestätigungs-Piep"
+
+msgid "Parcours récupéré après un arrêt brutal"
+msgstr "Track nach abruptem Stopp wiederhergestellt"
+
+msgid "Arrêt auto : batterie à 20 %"
+msgstr "Auto-Stopp: Akku bei 20 %"
+
+msgid "Arrêt auto : durée max atteinte (12 h)"
+msgstr "Auto-Stopp: maximale Dauer erreicht (12 h)"
+
+
+msgid "Arrêt auto : disque plein"
+msgstr "Auto-Stopp: Datenträger voll"
+
+msgid "Arrêt auto : erreur d'écriture disque"
+msgstr "Auto-Stopp: Schreibfehler auf Datenträger"
+
+msgid "Arrêt après un crash — parcours sauvegardé"
+msgstr "Nach einem Absturz gestoppt – Track gespeichert"
+
+msgid "Enregistrement repris après un crash du daemon"
+msgstr "Aufzeichnung nach Daemon-Absturz fortgesetzt"
+
+msgid "Erreur d'écriture disque"
+msgstr "Schreibfehler auf Datenträger"
+
+
+msgid "Apparence"
+msgstr "Erscheinungsbild"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Clair"
+msgstr "Hell"
+
+msgid "Stats"
+msgstr "Stats"
+
+msgid "Statistiques"
+msgstr "Statistiken"
+
+msgid "Cette semaine"
+msgstr "Diese Woche"
+
+msgid "Ce mois-ci"
+msgstr "Dieser Monat"
+
+msgid "Depuis le début"
+msgstr "Gesamt"
+
+msgid "Sorties"
+msgstr "Fahrten"
+
+msgid "Record de distance"
+msgstr "Streckenrekord"
+
+msgid "D+ total"
+msgstr "D+ gesamt"
+
+msgid "Distance"
+msgstr "Distanz"
+
+msgid "D+"
+msgstr "D+"
+
+
+msgid "Source GPS"
+msgstr "GPS-Quelle"
+
+msgid "Réseau"
+msgstr "Netzwerk"
+
+
+msgid "Parcours sauvegardé : %1 km · D+ %2 m"
+msgstr "Track gespeichert: %1 km · D+ %2 m"
+
+msgid "Éviter les chemins non goudronnés"
+msgstr "Unbefestigte Wege meiden"

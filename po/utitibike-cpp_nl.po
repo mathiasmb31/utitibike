@@ -1,5 +1,5 @@
 # Utitibike translations (C++/Qt) — nl.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -59,4 +59,52 @@ msgstr "GPS actief"
 msgctxt "RouteHistory"
 msgid "Itinéraire %1"
 msgstr "Route %1"
+
+
+msgctxt "GpsTracker"
+msgid "Position approximative…"
+msgstr "Geschatte positie…"
+
+
+msgctxt "DaemonController"
+msgid "Parcours sauvegardé : %1 km · D+ %2 m"
+msgstr "Route opgeslagen: %1 km · D+ %2 m"
+
+
+msgctxt "DaemonController"
+msgid "Trajet %1 · %2 km"
+msgstr "Route %1 · %2 km"
+
+msgctxt "DaemonController"
+msgid "Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"
+msgstr "Batterij op 20 % — opname gestopt, route opgeslagen"
+
+
+msgctxt "GpsDaemon"
+msgid "Enregistrement démarré"
+msgstr "Opname gestart"
+
+msgctxt "GpsDaemon"
+msgid "Enregistrement repris après un crash"
+msgstr "Opname hervat na crash"
+
+msgctxt "GpsDaemon"
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Geen GPS-signaal — tik op de kaart om het startpunt te bepalen"
+
+msgctxt "GpsDaemon"
+msgid "Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"
+msgstr "Batterij op 20 % — opname gestopt, route opgeslagen"
+
+msgctxt "GpsDaemon"
+msgid "Disque plein — enregistrement arrêté, parcours sauvegardé"
+msgstr "Schijf vol — opname gestopt, route opgeslagen"
+
+msgctxt "GpsDaemon"
+msgid "Erreur d'écriture disque — enregistrement arrêté, parcours sauvegardé"
+msgstr "Schrijffout — opname gestopt, route opgeslagen"
+
+msgctxt "GpsDaemon"
+msgid "Durée max (12 h) atteinte — enregistrement arrêté, parcours sauvegardé"
+msgstr "Max. duur (12 u) bereikt — opname gestopt, route opgeslagen"
 
