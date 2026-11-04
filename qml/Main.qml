@@ -28,6 +28,9 @@ MainView {
         Theme.mode = Qt.binding(function() { return viewState.themeMode })
         // Source GPS persistée (auto/satellite/réseau) appliquée au tracker UI
         gpsTracker.setPositioningMode(viewState.positioningMode)
+        // Préférence persistée « éviter les chemins non goudronnés » appliquée
+        // au client BRouter (le Switch de MapPage écrit ensuite viewState).
+        brouter.setAvoidUnpaved(viewState.avoidUnpaved)
     }
 
     PageStack {
