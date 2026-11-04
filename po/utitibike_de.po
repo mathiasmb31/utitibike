@@ -339,3 +339,6 @@ msgstr "Netzwerk"
 
 msgid "Parcours sauvegardé : %1 km · D+ %2 m"
 msgstr "Track gespeichert: %1 km · D+ %2 m"
+
+msgid "Éviter les chemins non goudronnés"
+msgstr "Unbefestigte Wege meiden"

@@ -339,3 +339,6 @@ msgstr "Réseau"
 
 msgid "Parcours sauvegardé : %1 km · D+ %2 m"
 msgstr "Parcours sauvegardé : %1 km · D+ %2 m"
+
+msgid "Éviter les chemins non goudronnés"
+msgstr "Éviter les chemins non goudronnés"
