@@ -25,6 +25,8 @@ public:
                               const QVariantList &waypoints, const QString &gpx,
                               const QString &dateIso = QString());
     Q_INVOKABLE void removeEntry(int index);
+    // Renomme une entrée (ex. après géocodage inverse du point de départ)
+    Q_INVOKABLE void renameEntry(int index, const QString &name);
     Q_INVOKABLE void clear();
     // Retourne le GPX d'une entrée, ou QString vide
     Q_INVOKABLE QString gpxAt(int index) const;

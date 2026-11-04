@@ -342,3 +342,6 @@ msgstr "Route opgeslagen: %1 km · D+ %2 m"
 
 msgid "Éviter les chemins non goudronnés"
 msgstr "Vermijd onverharde paden"
+
+msgid "Trajet %1 · %2"
+msgstr "Route %1 · %2"

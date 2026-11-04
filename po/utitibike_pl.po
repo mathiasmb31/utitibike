@@ -342,3 +342,6 @@ msgstr "Trasa zapisana: %1 km · D+ %2 m"
 
 msgid "Éviter les chemins non goudronnés"
 msgstr "Unikaj nieutwardzonych dróg"
+
+msgid "Trajet %1 · %2"
+msgstr "Trasa %1 · %2"
