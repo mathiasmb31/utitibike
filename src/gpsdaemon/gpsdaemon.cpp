@@ -2,6 +2,7 @@
 #include "geo.h"
 
 #include <QCoreApplication>
+#include <QProcess>
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
@@ -56,7 +57,7 @@ GpsDaemon::GpsDaemon(QObject *parent)
     // Beep : fichiers installés à côté de l'exécutable dans le click.
     m_beep.setSource(QUrl::fromLocalFile(
         QCoreApplication::applicationDirPath() + QStringLiteral("/sounds/beep.wav")));
-    m_beep.setVolume(0.5f);
+    m_beep.setVolume(1.0f);
     // Beep long d'alerte « action requise » (départ manuel proposé)
     m_beepLong.setSource(QUrl::fromLocalFile(
         QCoreApplication::applicationDirPath() + QStringLiteral("/sounds/beep-long.wav")));
@@ -65,6 +66,14 @@ GpsDaemon::GpsDaemon(QObject *parent)
     m_alarm.setSource(QUrl::fromLocalFile(
         QCoreApplication::applicationDirPath() + QStringLiteral("/sounds/beep-5s.wav")));
     m_alarm.setVolume(0.8f);
+
+    // Diagnostic : logue le chargement de chaque effet (Null/Loading/Ready/Error)
+    for (QSoundEffect *e : { &m_beep, &m_beepLong, &m_alarm }) {
+        connect(e, &QSoundEffect::statusChanged, this, [e]() {
+            qWarning() << "[gpsd] sound status:" << e->source().fileName()
+                       << "status=" << static_cast<int>(e->status());
+        });
+    }
 
     // GPS
     m_gps = QGeoPositionInfoSource::createDefaultSource(this);
@@ -539,17 +548,23 @@ bool GpsDaemon::screenIsOn() const
             }
         }
     }
-    // Fallback sysfs si le bus est bloqué par AppArmor : luminosité > 0 = allumé
+    // Fallback sysfs si le bus est bloqué par AppArmor : luminosité > 0 = allumé.
+    // Un téléphone peut exposer plusieurs backlights (ex. acpi_video0 à 0 +
+    // le vrai rétroéclairage) : on prend le MAX de tous, pas le premier,
+    // sinon un entrée à 0 fait croire à tort que l'écran est éteint.
     const QDir blDir(QStringLiteral("/sys/class/backlight"));
     const QStringList entries = blDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    int maxBrightness = -1;
     for (const QString &e : entries) {
         QFile f(blDir.filePath(e + QStringLiteral("/actual_brightness")));
         if (f.open(QIODevice::ReadOnly)) {
             const int v = QString::fromLatin1(f.readAll().trimmed()).toInt();
             f.close();
-            return v > 0;
+            maxBrightness = qMax(maxBrightness, v);
         }
     }
+    if (maxBrightness >= 0)
+        return maxBrightness > 0;
     return true;  // inconnu → on considère l'écran allumé (beep actif, sûr)
 }
 
@@ -616,7 +631,8 @@ void GpsDaemon::onSafetyTick()
 // c'est une alarme d'arrêt de l'enregistrement, pas une confirmation.
 void GpsDaemon::playAlarm()
 {
-    m_alarm.play();
+    playSound(m_alarm, QCoreApplication::applicationDirPath()
+                       + QStringLiteral("/sounds/beep-5s.wav"));
 }
 
 // Notification système (session bus, async — échoue silencieusement si
@@ -649,17 +665,40 @@ void GpsDaemon::onStatsTick()
         stopOnDiskIssue("writeerror");
 }
 
+// Joue un wav : QSoundEffect si son backend est prêt, sinon paplay
+// (PulseAudio) en fallback — le daemon détaché peut avoir un backend
+// Qt Multimedia qui ne charge pas, et un play() silencieux n'est pas
+// acceptable pour un bip de confirmation.
+void GpsDaemon::playSound(QSoundEffect &effect, const QString &wavPath)
+{
+    if (effect.status() == QSoundEffect::Ready || effect.status() == QSoundEffect::Loading) {
+        effect.play();
+        qWarning() << "[gpsd] sound played via QSoundEffect:" << wavPath
+                   << "status=" << static_cast<int>(effect.status());
+        return;
+    }
+    qWarning() << "[gpsd] QSoundEffect status=" << static_cast<int>(effect.status())
+               << "— fallback paplay:" << wavPath;
+    QProcess::startDetached(QStringLiteral("paplay"), { wavPath });
+}
+
 void GpsDaemon::onBeepTick()
 {
     if (!m_recording)
         return;
     // Bip désactivable par l'utilisateur (gpsd.conf), et coupé quand
     // l'écran est éteint (inutile et réveille la stack audio).
-    if (!readBeepConf())
+    const bool beepOn = readBeepConf();
+    const bool screenOn = screenIsOn();
+    qWarning() << "[gpsd] beep tick: beepConf=" << beepOn << "screenOn=" << screenOn
+               << "beepStatus=" << static_cast<int>(m_beep.status())
+               << "muted=" << m_beep.isMuted();
+    if (!beepOn)
         return;
-    if (!screenIsOn())
+    if (!screenOn)
         return;
-    m_beep.play();
+    playSound(m_beep, QCoreApplication::applicationDirPath()
+                       + QStringLiteral("/sounds/beep.wav"));
 }
 
 // Beep long d'alerte : joue MEME si l'écran est éteint — c'est une alerte
@@ -670,9 +709,11 @@ void GpsDaemon::playLongBeep()
     if (!readBeepConf())
         return;
     qWarning() << "[gpsd] LONG BEEP — départ manuel proposé";
-    m_beepLong.play();
+    const QString longPath = QCoreApplication::applicationDirPath()
+                             + QStringLiteral("/sounds/beep-long.wav");
+    playSound(m_beepLong, longPath);
     // 2e coup après 1,4 s (QSoundEffect Qt5 n'a pas setLoops)
-    QTimer::singleShot(1400, this, [this]() { m_beepLong.play(); });
+    QTimer::singleShot(1400, this, [this, longPath]() { playSound(m_beepLong, longPath); });
 }
 
 void GpsDaemon::onControlTick()
