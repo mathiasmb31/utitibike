@@ -14,6 +14,8 @@ class TileMapItem : public QQuickPaintedItem
     Q_PROPERTY(double centerLat READ centerLat WRITE setCenterLat NOTIFY centerLatChanged)
     Q_PROPERTY(double centerLon READ centerLon WRITE setCenterLon NOTIFY centerLonChanged)
     Q_PROPERTY(int zoom READ zoom WRITE setZoom NOTIFY zoomChanged)
+    // Rotation de la carte en degrés (mode suivi GPS : cap vers le haut)
+    Q_PROPERTY(double rotation READ rotation WRITE setRotation NOTIFY rotationChanged)
     Q_PROPERTY(QVariantList waypoints READ waypoints WRITE setWaypoints NOTIFY waypointsChanged)
     Q_PROPERTY(QVariantList route READ route WRITE setRoute NOTIFY routeChanged)
     Q_PROPERTY(TileCache *cache READ cache WRITE setCache NOTIFY cacheChanged)
@@ -35,6 +37,8 @@ public:
     void setCenterLon(double v);
     int zoom() const;
     void setZoom(int v);
+    double rotation() const { return m_rotation; }
+    void setRotation(double v);
     QVariantList waypoints() const;
     void setWaypoints(const QVariantList &w);
     QVariantList route() const;
@@ -65,6 +69,7 @@ signals:
     void centerLatChanged();
     void centerLonChanged();
     void zoomChanged();
+    void rotationChanged();
     void waypointsChanged();
     void routeChanged();
     void cacheChanged();
@@ -76,6 +81,7 @@ private:
     double m_centerLat = 43.6044;
     double m_centerLon = 1.4442;
     int m_zoom = 12;
+    double m_rotation = 0.0;
     QVariantList m_waypoints;
     QVariantList m_route;
     TileCache *m_cache = nullptr;

@@ -26,6 +26,11 @@ class BrouterClient : public QObject
     // Prochaine instruction de virage (ex: "Dans 200 m, tourner à gauche")
     Q_PROPERTY(QString nextInstruction READ nextInstruction NOTIFY nextInstructionChanged)
     Q_PROPERTY(double nextInstructionDistance READ nextInstructionDistance NOTIFY nextInstructionChanged)
+    // Distance restante le long de l'itinéraire depuis la position courante (m)
+    Q_PROPERTY(double remainingDistanceM READ remainingDistanceM NOTIFY nextInstructionChanged)
+    // true pendant un recalcul automatique (hors itinéraire) : la route
+    // recalculée ne doit pas être re-sauvegardée dans l'historique
+    Q_PROPERTY(bool recalculating READ recalculating WRITE setRecalculating NOTIFY recalculatingChanged)
     // Vrai pendant le chargement d'un GPX depuis l'historique
     // (évite le re-sauvegarde automatique dans l'historique)
     Q_PROPERTY(bool loadingFromHistory READ loadingFromHistory WRITE setLoadingFromHistory NOTIFY loadingFromHistoryChanged)
@@ -44,6 +49,9 @@ public:
     bool navigation() const { return m_navigation; }
     QString nextInstruction() const { return m_nextInstruction; }
     double nextInstructionDistance() const { return m_nextInstructionDistance; }
+    double remainingDistanceM() const { return m_remainingDistanceM; }
+    bool recalculating() const { return m_recalculating; }
+    void setRecalculating(bool v);
     bool loadingFromHistory() const { return m_loadingFromHistory; }
     void setLoadingFromHistory(bool v);
 
@@ -71,7 +79,11 @@ signals:
     void routeFinished();
     // Émis quand on approche d'un virage : severity 0=200m, 1=100m, 2=50m
     void turnAlert(int severity);
+    // Émis quand la position courante s'écarte de plus de 30 m du tracé
+    // (déclenche un recalcul d'itinéraire côté QML ; débounce 30 s)
+    void offRoute(double distanceM);
     void loadingFromHistoryChanged();
+    void recalculatingChanged();
 
 private:
     void parseGpx(const QString &gpx);
@@ -91,11 +103,16 @@ private:
     QVariantList m_turnPoints;        // points de virage avec instructions
     QString m_nextInstruction;
     double m_nextInstructionDistance = 0.0;
+    double m_remainingDistanceM = 0.0;
+    bool m_recalculating = false;
     bool m_loadingFromHistory = false;
     // Seuils d'alerte virage déjà atteints (évite les vibrations répétées)
     bool m_alert200 = false;
     bool m_alert100 = false;
     bool m_alert50 = false;
+    // Debounce « hors itinéraire » : hystérésis 30 m / 15 m, max 1 signal / 30 s
+    bool m_offRouteActive = false;
+    qint64 m_lastOffRouteMs = 0;
 };
 
 #endif // BROUTERCLIENT_H

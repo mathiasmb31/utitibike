@@ -345,3 +345,12 @@ msgstr "Unikaj nieutwardzonych dróg"
 
 msgid "Trajet %1 · %2"
 msgstr "Trasa %1 · %2"
+
+msgid "arrivée %1"
+msgstr "przyjazd %1"
+
+msgid "Hors itinéraire — recalcul…"
+msgstr "Poza trasą — przeliczanie…"
+
+msgid "Itinéraire recalculé — %1 · ≈ %2 kcal"
+msgstr "Trasa przeliczona — %1 · ≈ %2 kcal"
