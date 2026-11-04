@@ -284,14 +284,31 @@ Page {
             var diff = page.difficultyLevel(distanceM, ascentM)
             var kcal = page.estimatedCalories(distanceM, ascentM)
             // Sauvegarde automatique dans l'historique (sauf si on
-            // charge un itinéraire depuis l'historique — sinon doublon)
-            if (!brouter.loadingFromHistory) {
+            // charge un itinéraire depuis l'historique — sinon doublon —
+            // ou si c'est un recalcul auto hors itinéraire)
+            if (!brouter.loadingFromHistory && !brouter.recalculating) {
                 showToast(i18n.tr("Itinéraire calculé — %1 · ≈ %2 kcal").arg(diff).arg(kcal))
                 routeHistory.addEntry("", distanceM, ascentM, page.waypoints, brouter.lastGpx)
             } else {
-                brouter.loadingFromHistory = false
-                showToast(i18n.tr("Itinéraire chargé — %1 · ≈ %2 kcal").arg(diff).arg(kcal))
+                var wasRecalc = brouter.recalculating
+                if (wasRecalc)
+                    brouter.recalculating = false
+                else
+                    brouter.loadingFromHistory = false
+                showToast(wasRecalc
+                          ? i18n.tr("Itinéraire recalculé — %1 · ≈ %2 kcal").arg(diff).arg(kcal)
+                          : i18n.tr("Itinéraire chargé — %1 · ≈ %2 kcal").arg(diff).arg(kcal))
             }
+        }
+        function onOffRoute(dist) {
+            // Écart > 30 m du tracé : recalcul depuis la position courante
+            // jusqu'au dernier waypoint d'origine (debounce 30 s côté C++)
+            if (brouter.busy || page.waypoints.length === 0 || !page.liveHasPos)
+                return
+            showToast(i18n.tr("Hors itinéraire — recalcul…"))
+            brouter.recalculating = true
+            var last = page.waypoints[page.waypoints.length - 1]
+            brouter.requestRoute([{ lat: page.liveLat, lon: page.liveLon }, last])
         }
         function onRouteFailed(message) {
             page.routePoints = []
@@ -320,6 +337,12 @@ Page {
         route: page.routePoints
         currentPosition: page.liveHasPos ? { "lat": page.liveLat, "lon": page.liveLon } : ({})
         favoritePoints: favorites.entries
+        // Mode navigation + suivi GPS : la carte tourne pour que le cap soit
+        // en haut (rotation douce). Hors suivi, la carte reste au nord en haut.
+        rotation: (page.followGps && brouter.navigation && !daemonController.recording
+                   && gpsTracker.hasFix && gpsTracker.direction >= 0)
+                  ? -gpsTracker.direction : 0
+        Behavior on rotation { NumberAnimation { duration: 250 } }
 
         // Vue persistée (view.json via viewState) : restaurée au démarrage,
         // puis chaque pan/zoom est remonté pour sauvegarde (debouncée 1 s).
@@ -411,28 +434,41 @@ Page {
             Behavior on y { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
         }
 
-        Column {
+        Row {
             id: navCol
             anchors {
                 left: parent.left
                 right: parent.right
                 top: parent.top
             }
-            spacing: units.gu(0.3)
+            spacing: units.gu(1)
             Label {
-                width: parent.width
+                id: turnArrow
+                width: units.gu(4)
+                height: navCol.height
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
                 color: Theme.textOnAccent
-                fontSize: "medium"
+                fontSize: "x-large"
                 font.bold: true
-                wrapMode: Text.Wrap
-                text: brouter.nextInstruction || "…"
+                text: page.turnIcon(brouter.nextInstruction)
             }
-            Label {
-                color: "#ccffffff"
-                fontSize: "small"
-                text: brouter.nextInstructionDistance > 0
-                      ? i18n.tr("dans %1 m").arg(Math.round(brouter.nextInstructionDistance))
-                      : ""
+            Column {
+                width: parent.width - turnArrow.width - parent.spacing
+                spacing: units.gu(0.3)
+                Label {
+                    width: parent.width
+                    color: Theme.textOnAccent
+                    fontSize: "medium"
+                    font.bold: true
+                    wrapMode: Text.Wrap
+                    text: brouter.nextInstruction || "…"
+                }
+                Label {
+                    color: "#ccffffff"
+                    fontSize: "small"
+                    text: page.navSubText()
+                }
             }
         }
     }
@@ -702,6 +738,37 @@ Page {
         return null
     }
 
+    // Flèche de la prochaine manœuvre d'après le texte de l'instruction
+    // BRouter (anglais par défaut, français si locale fr)
+    function turnIcon(instr) {
+        var s = (instr || "").toLowerCase()
+        if (s.indexOf("u-turn") >= 0 || s.indexOf("demi-tour") >= 0
+                || s.indexOf("demi tour") >= 0)
+            return "↩"
+        if (s.indexOf("roundabout") >= 0 || s.indexOf("rond-point") >= 0
+                || s.indexOf("rond point") >= 0)
+            return "⟳"
+        if (s.indexOf("left") >= 0 || s.indexOf("gauche") >= 0)
+            return "↰"
+        if (s.indexOf("right") >= 0 || s.indexOf("droite") >= 0)
+            return "↱"
+        return "↑"
+    }
+
+    // Sous-texte de la bannière de navigation : « dans X m · arrivée HH:mm »
+    // (l'ETA n'est affiché que si la vitesse courante est crédible)
+    function navSubText() {
+        var parts = []
+        if (brouter.nextInstructionDistance > 0)
+            parts.push(i18n.tr("dans %1 m").arg(Math.round(brouter.nextInstructionDistance)))
+        var v = page.liveSpeedKmh / 3.6  // m/s
+        if (brouter.navigation && brouter.remainingDistanceM > 0 && v > 1.0) {
+            var eta = new Date(Date.now() + brouter.remainingDistanceM / v * 1000)
+            parts.push(i18n.tr("arrivée %1").arg(eta.toLocaleString(Qt.locale(), "HH:mm")))
+        }
+        return parts.join(" · ")
+    }
+
     // Demande le nom du lieu du point de départ d'un trajet enregistré ;
     // l'entrée (index) sera renommée quand reverseFinished arrivera.
     function nameTripFromPlace(index, gpx, dateStr) {
@@ -819,6 +886,10 @@ Page {
                         || Math.abs(mouse.y - pressY) > units.gu(1)) {
                     warnTimer.stop()
                     addTimer.stop()
+                    // Un drag manuel quitte le suivi GPS (et donc la rotation
+                    // de carte) : le pan redevient dans le repère de l'écran
+                    if (page.followGps)
+                        page.followGps = false
                 }
                 if (!longPressDone) {
                     map.panBy(mouse.x - lastX, mouse.y - lastY)

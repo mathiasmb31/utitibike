@@ -345,3 +345,12 @@ msgstr "Undvik oasfalterade vägar"
 
 msgid "Trajet %1 · %2"
 msgstr "Rutt %1 · %2"
+
+msgid "arrivée %1"
+msgstr "ankomst %1"
+
+msgid "Hors itinéraire — recalcul…"
+msgstr "Utanför rutten — beräknar om…"
+
+msgid "Itinéraire recalculé — %1 · ≈ %2 kcal"
+msgstr "Rutt omberäknad — %1 · ≈ %2 kcal"
