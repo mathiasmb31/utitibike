@@ -342,3 +342,6 @@ msgstr "Track saved: %1 km · D+ %2 m"
 
 msgid "Éviter les chemins non goudronnés"
 msgstr "Avoid unpaved paths"
+
+msgid "Trajet %1 · %2"
+msgstr "Track %1 · %2"

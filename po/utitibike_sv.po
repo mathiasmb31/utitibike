@@ -342,3 +342,6 @@ msgstr "Rutt sparad: %1 km · D+ %2 m"
 
 msgid "Éviter les chemins non goudronnés"
 msgstr "Undvik oasfalterade vägar"
+
+msgid "Trajet %1 · %2"
+msgstr "Rutt %1 · %2"
