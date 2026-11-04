@@ -5,6 +5,7 @@
         <file>qml/ExportPage.qml</file>
         <file>qml/ElevationProfile.qml</file>
         <file>qml/HistoryPage.qml</file>
+        <file>qml/StatsPage.qml</file>
         <file>qml/AboutPage.qml</file>
         <file>qml/HelpPage.qml</file>
         <file>qml/HelpSection.qml</file>

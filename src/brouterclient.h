@@ -18,6 +18,10 @@ class BrouterClient : public QObject
     // BRouter uphill cost: higher avoids hills (flatter route),
     // negative seeks elevation (more climbing). 0 ignores elevation.
     Q_PROPERTY(int uphillCost READ uphillCost WRITE setUphillCost NOTIFY uphillCostChanged)
+    // true = pénalise fortement les chemins non goudronnés (paramètre
+    // unpavedPenalty du profil BRouter, ignoré par les profils qui ne
+    // le définissent pas).
+    Q_PROPERTY(bool avoidUnpaved READ avoidUnpaved WRITE setAvoidUnpaved NOTIFY avoidUnpavedChanged)
     Q_PROPERTY(bool navigation READ navigation NOTIFY navigationChanged)
     // Prochaine instruction de virage (ex: "Dans 200 m, tourner à gauche")
     Q_PROPERTY(QString nextInstruction READ nextInstruction NOTIFY nextInstructionChanged)
@@ -35,6 +39,8 @@ public:
     QString lastGpx() const;
     int uphillCost() const;
     void setUphillCost(int v);
+    bool avoidUnpaved() const { return m_avoidUnpaved; }
+    void setAvoidUnpaved(bool v);
     bool navigation() const { return m_navigation; }
     QString nextInstruction() const { return m_nextInstruction; }
     double nextInstructionDistance() const { return m_nextInstructionDistance; }
@@ -57,6 +63,7 @@ signals:
     void profileChanged();
     void lastGpxChanged();
     void uphillCostChanged();
+    void avoidUnpavedChanged();
     void routeReady(const QVariantList &points, double distanceM, double ascentM);
     void routeFailed(const QString &message);
     void navigationChanged();
@@ -76,6 +83,7 @@ private:
     QString m_profile;
     QString m_lastGpx;
     int m_uphillCost = 50;
+    bool m_avoidUnpaved = false;
 
     // Navigation turn-by-turn
     bool m_navigation = false;
