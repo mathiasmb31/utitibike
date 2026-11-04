@@ -1,5 +1,5 @@
 # Utitibike translations (C++/Qt) — pt.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -59,4 +59,52 @@ msgstr "GPS ativo"
 msgctxt "RouteHistory"
 msgid "Itinéraire %1"
 msgstr "Rota %1"
+
+
+msgctxt "GpsTracker"
+msgid "Position approximative…"
+msgstr "Posição aproximada…"
+
+
+msgctxt "DaemonController"
+msgid "Parcours sauvegardé : %1 km · D+ %2 m"
+msgstr "Percurso guardado: %1 km · D+ %2 m"
+
+
+msgctxt "DaemonController"
+msgid "Trajet %1 · %2 km"
+msgstr "Percurso %1 · %2 km"
+
+msgctxt "DaemonController"
+msgid "Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"
+msgstr "Bateria a 20 % — gravação parada, percurso guardado"
+
+
+msgctxt "GpsDaemon"
+msgid "Enregistrement démarré"
+msgstr "Gravação iniciada"
+
+msgctxt "GpsDaemon"
+msgid "Enregistrement repris après un crash"
+msgstr "Gravação retomada após uma falha"
+
+msgctxt "GpsDaemon"
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Sem sinal GPS — toque no mapa para definir a partida"
+
+msgctxt "GpsDaemon"
+msgid "Batterie à 20 % — enregistrement arrêté, parcours sauvegardé"
+msgstr "Bateria a 20 % — gravação parada, percurso guardado"
+
+msgctxt "GpsDaemon"
+msgid "Disque plein — enregistrement arrêté, parcours sauvegardé"
+msgstr "Disco cheio — gravação parada, percurso guardado"
+
+msgctxt "GpsDaemon"
+msgid "Erreur d'écriture disque — enregistrement arrêté, parcours sauvegardé"
+msgstr "Erro de escrita — gravação parada, percurso guardado"
+
+msgctxt "GpsDaemon"
+msgid "Durée max (12 h) atteinte — enregistrement arrêté, parcours sauvegardé"
+msgstr "Duração máx. (12 h) atingida — gravação parada, percurso guardado"
 

@@ -1,5 +1,5 @@
 # Utitibike translations — Italian.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -241,3 +241,104 @@ msgstr "Eliminare tutto?"
 
 msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
 msgstr "Eliminare definitivamente tutti i percorsi dalla cronologia?"
+
+msgid "Position approximative…"
+msgstr "Posizione approssimativa…"
+
+msgid "Recherche du signal GPS…"
+msgstr "Ricerca del segnale GPS…"
+
+msgid "GPS déjà géré par l'enregistrement en cours"
+msgstr "GPS già gestito dalla registrazione in corso"
+
+
+msgid "Pause auto (arrêt détecté)"
+msgstr "Pausa automatica (fermo rilevato)"
+
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Nessun segnale GPS: tocca la mappa per impostare la partenza"
+
+msgid "Départ défini sur la carte"
+msgstr "Partenza impostata sulla mappa"
+
+msgid "Bip de confirmation"
+msgstr "Bip di conferma"
+
+msgid "Parcours récupéré après un arrêt brutal"
+msgstr "Percorso recuperato dopo un arresto improvviso"
+
+msgid "Arrêt auto : batterie à 20 %"
+msgstr "Arresto automatico: batteria al 20 %"
+
+msgid "Arrêt auto : durée max atteinte (12 h)"
+msgstr "Arresto automatico: durata max raggiunta (12 h)"
+
+
+msgid "Arrêt auto : disque plein"
+msgstr "Arresto automatico: disco pieno"
+
+msgid "Arrêt auto : erreur d'écriture disque"
+msgstr "Arresto automatico: errore di scrittura su disco"
+
+msgid "Arrêt après un crash — parcours sauvegardé"
+msgstr "Arresto dopo un crash — percorso salvato"
+
+msgid "Enregistrement repris après un crash du daemon"
+msgstr "Registrazione ripresa dopo un crash del daemon"
+
+msgid "Erreur d'écriture disque"
+msgstr "Errore di scrittura su disco"
+
+
+msgid "Apparence"
+msgstr "Aspetto"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Clair"
+msgstr "Chiaro"
+
+msgid "Stats"
+msgstr "Stats"
+
+msgid "Statistiques"
+msgstr "Statistiche"
+
+msgid "Cette semaine"
+msgstr "Questa settimana"
+
+msgid "Ce mois-ci"
+msgstr "Questo mese"
+
+msgid "Depuis le début"
+msgstr "Da sempre"
+
+msgid "Sorties"
+msgstr "Uscite"
+
+msgid "Record de distance"
+msgstr "Record di distanza"
+
+msgid "D+ total"
+msgstr "D+ totale"
+
+msgid "Distance"
+msgstr "Distanza"
+
+msgid "D+"
+msgstr "D+"
+
+
+msgid "Source GPS"
+msgstr "Fonte GPS"
+
+msgid "Réseau"
+msgstr "Rete"
+
+
+msgid "Parcours sauvegardé : %1 km · D+ %2 m"
+msgstr "Percorso salvato: %1 km · D+ %2 m"
+
+msgid "Éviter les chemins non goudronnés"
+msgstr "Evita i sentieri non asfaltati"

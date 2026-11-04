@@ -9,25 +9,43 @@ import QtQuick 2.12
 // Le singleton est instancié dans le contexte racine de l'engine : on
 // n'utilise ni units.gu() (indisponible hors MainView) ni Ubuntu.Components.
 // Les dimensions sont en dp (1 gu Ubuntu Touch = 8 dp).
+//
+// Thème clair/sombre : mode "auto" suit le thème système Lomiri (palette
+// propagée par le QPA, lue via le context property paletteWatcher),
+// "dark"/"light" forcent. Le mode est persisté dans viewState.themeMode
+// et bindé sur Theme.mode depuis Main.qml.
 QtObject {
+    property string mode: "auto"
+    readonly property bool systemDark: typeof paletteWatcher !== "undefined"
+                                       ? paletteWatcher.dark : true
+    readonly property bool dark: mode === "dark" || (mode === "auto" && systemDark)
+
     // Fonds
-    readonly property color bgCard: "#1a1a2e"
-    // Bordure subtile : blanc à 8 % — littéral #AARRGGBB (alpha d'abord),
-    // PAS "#ffffff15" que Qt lirait comme du jaune opaque (#ffff15).
-    readonly property color bgCardBorder: "#15ffffff"
-    // Fond de page « Ubuntu dark » #2C001E (même couleur que
-    // X-Ubuntu-Splash-Color dans utitibike.desktop et le splash in-app).
-    readonly property color bgPage: "#2C001E"
-    readonly property color bgSection: "#252540"
-    readonly property color bgInput: "#1e1e38"
+    readonly property color bgCard: dark ? "#1a1a2e" : "#ffffff"
+    // Bordure subtile : blanc à 8 % en sombre, noir à 8 % en clair —
+    // littéral #AARRGGBB (alpha d'abord), PAS "#ffffff15" que Qt lirait
+    // comme du jaune opaque (#ffff15).
+    readonly property color bgCardBorder: dark ? "#15ffffff" : "#15000000"
+    // Fond de page : « Ubuntu dark » #2C001E en sombre (même couleur que
+    // X-Ubuntu-Splash-Color dans utitibike.desktop et le splash in-app),
+    // blanc cassé chaud en clair.
+    readonly property color bgPage: dark ? "#2C001E" : "#F8F5F2"
+    readonly property color bgSection: dark ? "#252540" : "#ececf1"
+    readonly property color bgInput: dark ? "#1e1e38" : "#ffffff"
 
     // Texte
-    readonly property color textPrimary: "#e8e8e8"
-    readonly property color textSecondary: "#888899"
+    readonly property color textPrimary: dark ? "#e8e8e8" : "#2C001E"
+    readonly property color textSecondary: dark ? "#888899" : "#6d6d7c"
     readonly property color textOnAccent: "#ffffff"
-    readonly property color textMuted: "#555566"
+    readonly property color textMuted: dark ? "#555566" : "#9a9aa5"
 
-    // Accents
+    // En-tête des pages (AppHeader) : fond sombre Ubuntu / blanc, texte
+    // inversé, séparateur discret.
+    readonly property color headerBg: dark ? ubuntuDark : "#ffffff"
+    readonly property color headerFg: dark ? "#ffffff" : "#2C001E"
+    readonly property color headerDivider: dark ? "#33ffffff" : "#33000000"
+
+    // Accents — identiques en clair et sombre
     // Orange Ubuntu officiel (#E95420) + aubergine Ubuntu (#772953) :
     // le duo de couleurs de la marque Ubuntu Touch.
     readonly property color accentOrange: "#E95420"

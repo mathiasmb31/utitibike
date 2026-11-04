@@ -1,5 +1,5 @@
 # Utitibike translations — French.
-# Copyright (C) 2026 Mathias Brethous
+# Copyright (C) 2026 XXXX
 # This file is distributed under the same license as the Utitibike package.
 #
 msgid ""
@@ -241,3 +241,104 @@ msgstr "Tout effacer ?"
 
 msgid "Supprimer définitivement tous les itinéraires de l'historique ?"
 msgstr "Supprimer définitivement tous les itinéraires de l'historique ?"
+
+msgid "Position approximative…"
+msgstr "Position approximative…"
+
+msgid "Recherche du signal GPS…"
+msgstr "Recherche du signal GPS…"
+
+msgid "GPS déjà géré par l'enregistrement en cours"
+msgstr "GPS déjà géré par l'enregistrement en cours"
+
+
+msgid "Pause auto (arrêt détecté)"
+msgstr "Pause auto (arrêt détecté)"
+
+msgid "Pas de signal GPS — touchez la carte pour définir le départ"
+msgstr "Pas de signal GPS — touchez la carte pour définir le départ"
+
+msgid "Départ défini sur la carte"
+msgstr "Départ défini sur la carte"
+
+msgid "Bip de confirmation"
+msgstr "Bip de confirmation"
+
+msgid "Parcours récupéré après un arrêt brutal"
+msgstr "Parcours récupéré après un arrêt brutal"
+
+msgid "Arrêt auto : batterie à 20 %"
+msgstr "Arrêt auto : batterie à 20 %"
+
+msgid "Arrêt auto : durée max atteinte (12 h)"
+msgstr "Arrêt auto : durée max atteinte (12 h)"
+
+
+msgid "Arrêt auto : disque plein"
+msgstr "Arrêt auto : disque plein"
+
+msgid "Arrêt auto : erreur d'écriture disque"
+msgstr "Arrêt auto : erreur d'écriture disque"
+
+msgid "Arrêt après un crash — parcours sauvegardé"
+msgstr "Arrêt après un crash — parcours sauvegardé"
+
+msgid "Enregistrement repris après un crash du daemon"
+msgstr "Enregistrement repris après un crash du daemon"
+
+msgid "Erreur d'écriture disque"
+msgstr "Erreur d'écriture disque"
+
+
+msgid "Apparence"
+msgstr "Apparence"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Clair"
+msgstr "Clair"
+
+msgid "Stats"
+msgstr "Stats"
+
+msgid "Statistiques"
+msgstr "Statistiques"
+
+msgid "Cette semaine"
+msgstr "Cette semaine"
+
+msgid "Ce mois-ci"
+msgstr "Ce mois-ci"
+
+msgid "Depuis le début"
+msgstr "Depuis le début"
+
+msgid "Sorties"
+msgstr "Sorties"
+
+msgid "Record de distance"
+msgstr "Record de distance"
+
+msgid "D+ total"
+msgstr "D+ total"
+
+msgid "Distance"
+msgstr "Distance"
+
+msgid "D+"
+msgstr "D+"
+
+
+msgid "Source GPS"
+msgstr "Source GPS"
+
+msgid "Réseau"
+msgstr "Réseau"
+
+
+msgid "Parcours sauvegardé : %1 km · D+ %2 m"
+msgstr "Parcours sauvegardé : %1 km · D+ %2 m"
+
+msgid "Éviter les chemins non goudronnés"
+msgstr "Éviter les chemins non goudronnés"
