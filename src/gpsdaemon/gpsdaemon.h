@@ -65,6 +65,9 @@ private:
     void applyPositioningMode(); // gpsd.conf : positioning=auto|satellite|network
     void playLongBeep();         // alerte départ manuel (joue même écran éteint)
     void playAlarm();            // sonnerie 5 s arrêt batterie (joue toujours)
+    // Joue un effet sonore : QSoundEffect si prêt, sinon paplay en fallback
+    // (le backend Qt Multimedia du daemon peut ne pas charger le wav).
+    void playSound(QSoundEffect &effect, const QString &wavPath);
     // Notification système (org.freedesktop.Notifications, session bus)
     void sendNotification(const QString &body) const;
     bool screenIsOn() const;    // logind : la session seat0 est-elle active ?
