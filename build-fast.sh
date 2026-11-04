@@ -5,7 +5,8 @@ set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$PROJECT_DIR/build-ninja"
-JOBS="${1:-$(nproc)}"
+# Plafond mémoire (hôte 11,5 Go RAM, crash OOM 2026-11-04) : -j4 max par défaut, surcharge via $1
+JOBS="${1:-4}"
 
 # Dépendances Qt5 locales (téléchargées si /tmp vidé)
 QT5_LOCAL=/tmp/qt5-full

@@ -8,6 +8,8 @@
         "-DCMAKE_C_COMPILER_LAUNCHER=ccache"
     ],
     "env_vars": {
-        "CCACHE_DIR": "/home/mathias/vibeworkspace/velo-touch/.ccache"
+        "CCACHE_DIR": "/home/mathias/vibeworkspace/velo-touch/.ccache",
+        "MAKEFLAGS": "-j4",
+        "CMAKE_BUILD_PARALLEL_LEVEL": "4"
     }
 }
