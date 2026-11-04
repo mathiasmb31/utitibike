@@ -336,3 +336,6 @@ msgstr "GPS-kilde"
 msgid "Réseau"
 msgstr "Netværk"
 
+
+msgid "Parcours sauvegardé : %1 km · D+ %2 m"
+msgstr "Rute gemt: %1 km · D+ %2 m"
