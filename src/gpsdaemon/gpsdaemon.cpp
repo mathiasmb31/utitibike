@@ -187,10 +187,28 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
     if (m_stopping)
         return;
 
+    const QDateTime fixTime = info.timestamp().isValid()
+                              ? info.timestamp()
+                              : QDateTime::currentDateTimeUtc();
+
+    // Vitesse implicite depuis le dernier point accepté (km/h) : distingue un
+    // vrai saut aberrant (téléportation, fix corrompu) d'une perte de signal
+    // GPS suivie d'un déplacement normal (tunnel, forêt, bâtiments) :
+    // 500 m en 5 s = 360 km/h (impossible, on rejette), 500 m en 5 min =
+    // 6 km/h (crédible à vélo, on accepte).
+    double impliedKmh = 0.0;
+    if (m_hasLast && m_lastTime.isValid()) {
+        const qint64 dtMs = m_lastTime.msecsTo(fixTime);
+        const double d0 = haversine(m_lastLat, m_lastLon, lat, lon);
+        impliedKmh = dtMs > 0 ? (d0 / 1000.0) / (dtMs / 3600000.0) : 999.0;
+    }
+    const bool plausible = impliedKmh <= 50.0;  // seuil vélo + marge
+
     // Filtre qualité AVANT de publier la position : un fix à > 50 m de
-    // précision n'écrase pas la dernière bonne position affichée (sauf au
-    // tout début, où on accepte pour avoir un point de départ).
-    if (hAcc > kMaxAccuracyM && m_hasLast) {
+    // précision n'écrase pas la dernière bonne position affichée — sauf au
+    // tout début, ou si le déplacement depuis le dernier point reste crédible
+    // (zone de réception dégradée, pas une téléportation).
+    if (hAcc > kMaxAccuracyM && m_hasLast && !plausible) {
         ++m_rejected;
         return;
     }
@@ -222,10 +240,15 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
     if (m_paused)
         return;
 
-    // Ignore les sauts GPS aberrants (> 200 m entre 2 fixes)
+    // Ignore les sauts GPS aberrants : un écart > 200 m entre 2 points n'est
+    // rejeté que si la vitesse implicite est impossible à vélo (> 50 km/h).
+    // Après une perte de fix (tunnel, forêt), le prochain fix peut être
+    // légitimement loin : sans ce garde-fou temporel, tous les points suivants
+    // seraient rejetés (comparés à l'ancien dernier point, jamais mis à jour)
+    // et l'enregistrement s'arrêterait définitivement à la sortie de la zone.
     if (m_hasLast) {
         const double d = haversine(m_lastLat, m_lastLon, lat, lon);
-        if (d > 200.0)
+        if (d > 200.0 && !plausible)
             return;
         m_distance += d;
         // D+ lissé : médiane des 3 dernières altitudes valides, pour ne pas
@@ -255,6 +278,7 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
 
     m_lastLat = lat;
     m_lastLon = lon;
+    m_lastTime = fixTime;
     m_hasLast = true;
 }
 
@@ -382,6 +406,7 @@ bool GpsDaemon::loadPartFile()
     double lastLat = 0.0, lastLon = 0.0, lastAlt = 0.0;
     bool hasAlt = false;
     QDateTime start;
+    QDateTime lastTime;
     for (int li = first; li < rawLines.size(); ++li) {
         const QByteArray &line = rawLines.at(li);
         if (line.trimmed().isEmpty() || line.startsWith('#'))
@@ -412,6 +437,8 @@ bool GpsDaemon::loadPartFile()
         p.insert(QStringLiteral("time"), time);
         points.append(p);
         lastLat = lat; lastLon = lon; lastAlt = ele; hasAlt = eleOk; hasLast = true;
+        if (!time.isEmpty())
+            lastTime = QDateTime::fromString(time, Qt::ISODateWithMs);
     }
     if (points.isEmpty())
         return false;
@@ -423,6 +450,7 @@ bool GpsDaemon::loadPartFile()
     m_hasLast = true;
     m_lastLat = lastLat;
     m_lastLon = lastLon;
+    m_lastTime = lastTime;
     // D+ : on repart de la dernière altitude connue du tracé repris
     if (hasAlt) {
         m_lastAltEff = lastAlt;
@@ -668,6 +696,7 @@ void GpsDaemon::onControlTick()
         m_distance = 0.0;
         m_ascent = 0.0;
         m_hasLast = false;
+        m_lastTime = QDateTime();
         m_paused = false;
         m_lastMoveMs = elapsedMs();  // init au start : la pause auto fonctionne
                                       // même si on démarre à l'arrêt

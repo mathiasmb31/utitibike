@@ -113,6 +113,7 @@ private:
     QDateTime m_startTime;
     double m_lastLat = 0.0;
     double m_lastLon = 0.0;
+    QDateTime m_lastTime;  // timestamp du dernier point accepté (filtre anti-saut)
     bool m_hasLast = false;
 
     // Position courante publiée dans le JSON (fix réel ou dernière position
