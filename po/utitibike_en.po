@@ -336,3 +336,6 @@ msgstr "GPS source"
 msgid "Réseau"
 msgstr "Network"
 
+
+msgid "Parcours sauvegardé : %1 km · D+ %2 m"
+msgstr "Track saved: %1 km · D+ %2 m"

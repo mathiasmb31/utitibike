@@ -336,3 +336,6 @@ msgstr "GPS-källa"
 msgid "Réseau"
 msgstr "Nätverk"
 
+
+msgid "Parcours sauvegardé : %1 km · D+ %2 m"
+msgstr "Rutt sparad: %1 km · D+ %2 m"
