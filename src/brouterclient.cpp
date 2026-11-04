@@ -129,6 +129,14 @@ void BrouterClient::setUphillCost(int v)
     emit uphillCostChanged();
 }
 
+void BrouterClient::setAvoidUnpaved(bool v)
+{
+    if (m_avoidUnpaved == v)
+        return;
+    m_avoidUnpaved = v;
+    emit avoidUnpavedChanged();
+}
+
 void BrouterClient::setLoadingFromHistory(bool v)
 {
     if (m_loadingFromHistory == v)
@@ -195,6 +203,12 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
     q.addQueryItem(QStringLiteral("turnInstructionFormat"), QStringLiteral("turn"));
     // Pass uphill cost so the user can prefer flat or hilly routes.
     q.addQueryItem(QStringLiteral("uphillcost"), QString::number(m_uphillCost));
+    // Éviter les chemins non goudronnés : unpavedPenalty est un multiplicateur
+    // de pénalité défini dans le profil trekking de BRouter (les profils qui
+    // ne le définissent pas l'ignorent silencieusement). 10 = forte pénalité,
+    // les surfaces non goudronnées deviennent quasiment inaccessibles.
+    if (m_avoidUnpaved)
+        q.addQueryItem(QStringLiteral("unpavedPenalty"), QStringLiteral("10"));
     url.setQuery(q);
     qWarning() << "brouter URL:" << url.toString();
 
