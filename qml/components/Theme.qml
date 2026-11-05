@@ -45,6 +45,13 @@ QtObject {
     readonly property color headerFg: dark ? "#ffffff" : "#2C001E"
     readonly property color headerDivider: dark ? "#33ffffff" : "#33000000"
 
+    // Bandeau de mode sur la carte principale : gris clair en mode vélo,
+    // terre en mode randonnée (marche) — avec le texte/pictogramme adapté.
+    readonly property color headerModeBike: "#E4E4E4"
+    readonly property color headerModeBikeFg: "#2C001E"
+    readonly property color headerModeFoot: "#8A6642"
+    readonly property color headerModeFootFg: "#ffffff"
+
     // Accents — identiques en clair et sombre
     // Orange Ubuntu officiel (#E95420) + aubergine Ubuntu (#772953) :
     // le duo de couleurs de la marque Ubuntu Touch.

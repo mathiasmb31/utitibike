@@ -14,6 +14,8 @@
         <file>qml/components/SportCard.qml</file>
         <file>qml/components/SegmentedControl.qml</file>
         <file>qml/components/AppHeader.qml</file>
+        <file>qml/icons/mode-bike.svg</file>
+        <file>qml/icons/mode-hike.svg</file>
         <file>logo.png</file>
     </qresource>
 </RCC>

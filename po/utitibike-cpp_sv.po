@@ -108,3 +108,9 @@ msgctxt "GpsDaemon"
 msgid "Durée max (12 h) atteinte — enregistrement arrêté, parcours sauvegardé"
 msgstr "Max tid (12 t) uppnådd — inspelning stoppad, rutt sparad"
 
+
+msgid "Réponse illisible du serveur de suggestions."
+msgstr "Oläsbart svar från förslags-servern."
+
+msgid "Tracé introuvable ou sans géométrie."
+msgstr "Leden hittades inte eller saknar geometri."

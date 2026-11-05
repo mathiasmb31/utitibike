@@ -335,3 +335,54 @@ msgstr ""
 msgid "Réseau"
 msgstr ""
 
+
+msgid "Mode de déplacement"
+msgstr ""
+
+msgid "Vélo"
+msgstr ""
+
+msgid "Marche"
+msgstr ""
+
+msgid "Suggestions à proximité"
+msgstr ""
+
+msgid "Recherche de tracés…"
+msgstr ""
+
+msgid "Aucun tracé trouvé à proximité"
+msgstr ""
+
+msgid "Durée max"
+msgstr ""
+
+msgid "Toutes"
+msgstr ""
+
+msgid "≤ %1 h"
+msgstr ""
+
+msgid "≈ %1 min"
+msgstr ""
+
+msgid "≈ %1 h"
+msgstr ""
+
+msgid "≈ %1 h %2"
+msgstr ""
+
+msgid "Randonnée"
+msgstr ""
+
+msgid "à %1 km"
+msgstr ""
+
+msgid "C'est quoi, UT WheelTrek ?"
+msgstr ""
+
+msgid "UT WheelTrek est une application pour le vélo et la randonnée à pied. Elle affiche une carte, calcule des itinéraires, suggère des tracés à proximité, enregistre vos parcours et les exporte. Tout fonctionne hors ligne une fois les cartes téléchargées."
+msgstr ""
+
+msgid "À propos d'UT WheelTrek"
+msgstr ""

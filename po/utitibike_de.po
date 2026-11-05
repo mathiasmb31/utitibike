@@ -354,3 +354,54 @@ msgstr "Abseits der Route — neu berechnen…"
 
 msgid "Itinéraire recalculé — %1 · ≈ %2 kcal"
 msgstr "Route neu berechnet — %1 · ≈ %2 kcal"
+
+msgid "Mode de déplacement"
+msgstr "Verkehrsmittel"
+
+msgid "Vélo"
+msgstr "Rad"
+
+msgid "Marche"
+msgstr "Wandern"
+
+msgid "Suggestions à proximité"
+msgstr "Vorschläge in der Nähe"
+
+msgid "Recherche de tracés…"
+msgstr "Suche nach Wegen…"
+
+msgid "Aucun tracé trouvé à proximité"
+msgstr "Kein Weg in der Nähe gefunden"
+
+msgid "Durée max"
+msgstr "Max. Dauer"
+
+msgid "Toutes"
+msgstr "Alle"
+
+msgid "≤ %1 h"
+msgstr "≤ %1 Std."
+
+msgid "≈ %1 min"
+msgstr "≈ %1 Min."
+
+msgid "≈ %1 h"
+msgstr "≈ %1 Std."
+
+msgid "≈ %1 h %2"
+msgstr "≈ %1 Std. %2"
+
+msgid "Randonnée"
+msgstr "Wandern"
+
+msgid "à %1 km"
+msgstr "%1 km entfernt"
+
+msgid "C'est quoi, UT WheelTrek ?"
+msgstr "Was ist UT WheelTrek?"
+
+msgid "UT WheelTrek est une application pour le vélo et la randonnée à pied. Elle affiche une carte, calcule des itinéraires, suggère des tracés à proximité, enregistre vos parcours et les exporte. Tout fonctionne hors ligne une fois les cartes téléchargées."
+msgstr "UT WheelTrek ist eine App für Radfahren und Wandern. Sie zeigt eine Karte, berechnet Routen, schlägt Wege in der Nähe vor, zeichnet Touren auf und exportiert sie. Alles funktioniert offline, sobald die Karten heruntergeladen sind."
+
+msgid "À propos d'UT WheelTrek"
+msgstr "Über UT WheelTrek"

@@ -16,11 +16,12 @@ MainView {
     property string translationDomain: (i18n.domain = "utitibike", "utitibike")
 
     // Fond de la bande haute (zone sous les indicateurs, au-dessus du
-    // PageStack) : même couleur que l'en-tête des pages — la bande ne se
-    // voit plus comme une bande blanche.
+    // PageStack) : couleur du mode de déplacement — gris clair à vélo,
+    // terre en randonnée (comme le bandeau de la carte).
     Rectangle {
         anchors.fill: parent
-        color: Theme.headerBg
+        color: viewState.transportMode === "foot" ? Theme.headerModeFoot
+                                                  : Theme.headerModeBike
     }
 
     Component.onCompleted: {
@@ -89,7 +90,7 @@ MainView {
                     var ctx = getContext("2d")
                     ctx.reset()
                     ctx.clearRect(0, 0, width, height)
-                    var text = "UTITIBIKE · CONÇU POUR UBUNTU TOUCH · "
+                    var text = "UT WHEELTREK · CONÇU POUR UBUNTU TOUCH · "
                     var r = width / 2 - width * 0.055
                     ctx.fillStyle = Theme.accentOrange
                     ctx.font = "bold " + Math.round(width * 0.042) + "px Ubuntu"
@@ -120,7 +121,7 @@ MainView {
             Label {
                 x: splashContent.cx - width / 2
                 y: splashLogo.y + splashLogo.height + units.gu(2)
-                text: "Utitibike"
+                text: "UT WheelTrek"
                 fontSize: "x-large"
                 font.weight: Font.Bold
                 color: Theme.accentOrange
