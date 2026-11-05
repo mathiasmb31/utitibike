@@ -354,3 +354,54 @@ msgstr "Hors itinéraire — recalcul…"
 
 msgid "Itinéraire recalculé — %1 · ≈ %2 kcal"
 msgstr "Itinéraire recalculé — %1 · ≈ %2 kcal"
+
+msgid "Mode de déplacement"
+msgstr "Mode de déplacement"
+
+msgid "Vélo"
+msgstr "Vélo"
+
+msgid "Marche"
+msgstr "Marche"
+
+msgid "Suggestions à proximité"
+msgstr "Suggestions à proximité"
+
+msgid "Recherche de tracés…"
+msgstr "Recherche de tracés…"
+
+msgid "Aucun tracé trouvé à proximité"
+msgstr "Aucun tracé trouvé à proximité"
+
+msgid "Durée max"
+msgstr "Durée max"
+
+msgid "Toutes"
+msgstr "Toutes"
+
+msgid "≤ %1 h"
+msgstr "≤ %1 h"
+
+msgid "≈ %1 min"
+msgstr "≈ %1 min"
+
+msgid "≈ %1 h"
+msgstr "≈ %1 h"
+
+msgid "≈ %1 h %2"
+msgstr "≈ %1 h %2"
+
+msgid "Randonnée"
+msgstr "Randonnée"
+
+msgid "à %1 km"
+msgstr "à %1 km"
+
+msgid "C'est quoi, UT WheelTrek ?"
+msgstr "C'est quoi, UT WheelTrek ?"
+
+msgid "UT WheelTrek est une application pour le vélo et la randonnée à pied. Elle affiche une carte, calcule des itinéraires, suggère des tracés à proximité, enregistre vos parcours et les exporte. Tout fonctionne hors ligne une fois les cartes téléchargées."
+msgstr "UT WheelTrek est une application pour le vélo et la randonnée à pied. Elle affiche une carte, calcule des itinéraires, suggère des tracés à proximité, enregistre vos parcours et les exporte. Tout fonctionne hors ligne une fois les cartes téléchargées."
+
+msgid "À propos d'UT WheelTrek"
+msgstr "À propos d'UT WheelTrek"
