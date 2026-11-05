@@ -34,7 +34,7 @@ Page {
             Label {
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
-                text: "Utitibike"
+                text: "UT WheelTrek"
                 fontSize: "large"
                 font.bold: true
                 color: Theme.accentOrange
