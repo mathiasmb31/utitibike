@@ -427,7 +427,9 @@ Page {
     Binding {
         target: brouter
         property: "profile"
-        value: page.modeIndex === 1 ? "foot" : page.profiles[page.profileIndex]
+        // « hiking-beta » : profil piéton exposé par brouter.de (vérifié sur
+        // téléphone — « foot » n'existe pas sur ce serveur, HTTP 500)
+        value: page.modeIndex === 1 ? "hiking-beta" : page.profiles[page.profileIndex]
     }
 
     TileMapItem {
@@ -1482,7 +1484,7 @@ Page {
                     font.bold: true
                     color: Theme.textPrimary
                 }
-                // Vélo : profils BRouter vélo ; Marche : profil BRouter « foot »
+                // Vélo : profils BRouter vélo ; Marche : profil BRouter « hiking-beta »
                 // + couche OSM (sentiers visibles). Le bandeau haut d'écran
                 // et son pictogramme suivent ce choix.
                 SegmentedControl {
