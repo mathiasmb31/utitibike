@@ -1226,6 +1226,28 @@ Page {
             verticalCenter: parent.verticalCenter
         }
         spacing: units.gu(1)
+        // Bouton recherche (était dans le bandeau haut, supprimé) :
+        // ouvre la barre de recherche en haut de la carte.
+        SportCard {
+            width: units.gu(6)
+            height: units.gu(6)
+            radius: width / 2
+            padding: 0
+            Icon {
+                anchors.centerIn: parent
+                name: "search"
+                width: units.gu(3)
+                height: width
+                color: Theme.accentOrange
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    haptics.vibrate(20)
+                    page.searchOpen = !page.searchOpen
+                }
+            }
+        }
         // Bouton suggestions : tracés nommés à proximité (Overpass),
         // filtrés selon le mode courant (rando à pied / vélo).
         SportCard {
@@ -1322,7 +1344,7 @@ Page {
         z: 15
         anchors {
             top: parent.top
-            topMargin: units.gu(8)
+            topMargin: units.gu(1)
             horizontalCenter: parent.horizontalCenter
         }
         width: hintLabel.width + units.gu(2)
@@ -2125,51 +2147,11 @@ Page {
         }
     }
 
-    header: AppHeader {
-        id: mapHeader
-        title: "UT WheelTrek"
-        // Bandeau de mode : gris clair à vélo, terre en randonnée
-        customColors: true
-        bgColor: page.modeIndex === 1 ? Theme.headerModeFoot : Theme.headerModeBike
-        fgColor: page.modeIndex === 1 ? Theme.headerModeFootFg : Theme.headerModeBikeFg
-        // Pictogramme de mode à côté du titre : vélo ou petit randonneur
-        contents: Row {
-            anchors {
-                left: parent.left
-                leftMargin: units.gu(2)
-                verticalCenter: parent.verticalCenter
-            }
-            spacing: units.gu(1)
-            Image {
-                source: page.modeIndex === 1 ? "qrc:/qml/icons/mode-hike.svg"
-                                              : "qrc:/qml/icons/mode-bike.svg"
-                width: units.gu(3.2)
-                height: width
-                sourceSize.width: width * 2
-                sourceSize.height: height * 2
-                anchors.verticalCenter: parent.verticalCenter
-            }
-            Label {
-                text: mapHeader.title
-                color: mapHeader.fgColor
-                fontSize: "large"
-                font.bold: true
-                anchors.verticalCenter: parent.verticalCenter
-            }
-        }
-        trailingActionBar.actions: [
-            Action {
-                text: i18n.tr("Rechercher")
-                iconName: "search"
-                onTriggered: page.searchOpen = !page.searchOpen
-            },
-            Action {
-                text: i18n.tr("Itinéraire")
-                iconName: "navigation-menu"
-                onTriggered: page.panelOpen = !page.panelOpen
-            }
-        ]
-    }
+    // Pas de bandeau de menu en haut de la carte : toutes les actions passent
+    // en boutons flottants (colonne de droite + FAB bas-droite). On définit
+    // quand même un header invisible pour que MainView masque son bandeau
+    // applicatif (il n'apparaît que si la page n'a pas de propriété header).
+    header: Item { visible: false; height: 0; width: 0 }
 
     Connections {
         target: cache
