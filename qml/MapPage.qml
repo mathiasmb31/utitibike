@@ -1711,7 +1711,7 @@ Page {
                     onSelected: {
                         viewState.positioningMode = value
                         gpsTracker.setPositioningMode(value)
-                        daemonController.setPositioningMode(value)
+                        daemonController.positioningMode = value
                     }
                 }
                 Row {

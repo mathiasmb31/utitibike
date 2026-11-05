@@ -31,7 +31,7 @@ MainView {
         gpsTracker.setPositioningMode(viewState.positioningMode)
         // Préférence persistée « éviter les chemins non goudronnés » appliquée
         // au client BRouter (le Switch de MapPage écrit ensuite viewState).
-        brouter.setAvoidUnpaved(viewState.avoidUnpaved)
+        brouter.avoidUnpaved = viewState.avoidUnpaved
     }
 
     PageStack {
