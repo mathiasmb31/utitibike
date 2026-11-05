@@ -19,6 +19,8 @@ class ViewState : public QObject
     Q_PROPERTY(QString positioningMode READ positioningMode WRITE setPositioningMode NOTIFY positioningModeChanged)
     // Éviter les chemins non goudronnés dans le calcul d'itinéraire BRouter
     Q_PROPERTY(bool avoidUnpaved READ avoidUnpaved WRITE setAvoidUnpaved NOTIFY avoidUnpavedChanged)
+    // Mode de déplacement : "bike" (vélo) ou "foot" (marche / randonnée)
+    Q_PROPERTY(QString transportMode READ transportMode WRITE setTransportMode NOTIFY transportModeChanged)
     // true si une vue sauvegardée a été restaurée. Sinon (premier lancement)
     // le QML centre la carte sur le premier fix GPS.
     Q_PROPERTY(bool restored READ restored CONSTANT)
@@ -38,6 +40,8 @@ public:
     void setPositioningMode(const QString &v);
     bool avoidUnpaved() const { return m_avoidUnpaved; }
     void setAvoidUnpaved(bool v);
+    QString transportMode() const { return m_transportMode; }
+    void setTransportMode(const QString &v);
     bool restored() const { return m_restored; }
 
 signals:
@@ -47,6 +51,7 @@ signals:
     void themeModeChanged();
     void positioningModeChanged();
     void avoidUnpavedChanged();
+    void transportModeChanged();
 
 private:
     void load();
@@ -58,6 +63,7 @@ private:
     QString m_themeMode = QStringLiteral("auto");
     QString m_positioningMode = QStringLiteral("auto");
     bool m_avoidUnpaved = false;
+    QString m_transportMode = QStringLiteral("bike");
     bool m_restored = false;
     QTimer m_saveTimer;
 };

@@ -30,7 +30,7 @@ Page {
             Label {
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
-                text: "Utitibike"
+                text: "UT WheelTrek"
                 fontSize: "x-large"
                 font.bold: true
                 color: Theme.accentOrange
@@ -45,11 +45,11 @@ Page {
 
             // ── C'est quoi ? ─────────────────────────────────────
             HelpSection {
-                title: i18n.tr("C'est quoi, Utitibike ?")
-                body: i18n.tr("Utitibike est une application pour faire du vélo. "
+                title: i18n.tr("C'est quoi, UT WheelTrek ?")
+                body: i18n.tr("UT WheelTrek est une application pour le vélo et la randonnée à pied. "
                             + "Elle affiche une carte, calcule des itinéraires, "
-                            + "enregistre vos parcours et les exporte. "
-                            + "Tout fonctionne hors ligne une fois les cartes téléchargées.")
+                            + "suggère des tracés à proximité, enregistre vos parcours "
+                            + "et les exporte. Tout fonctionne hors ligne une fois les cartes téléchargées.")
             }
 
             // ── La carte ─────────────────────────────────────────
@@ -137,7 +137,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: "│  Utitibike   │────▶│  Daemon GPS          │"
+                        text: "│ UT WheelTrek │────▶│  Daemon GPS          │"
                     }
                     Label {
                         width: parent.width
@@ -280,7 +280,7 @@ Page {
             Button {
                 width: parent.width
                 height: units.gu(6)
-                text: i18n.tr("À propos d'Utitibike")
+                text: i18n.tr("À propos d'UT WheelTrek")
                 color: Theme.bgSection
                 onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
             }
