@@ -354,3 +354,54 @@ msgstr "Uden for ruten — genberegner…"
 
 msgid "Itinéraire recalculé — %1 · ≈ %2 kcal"
 msgstr "Rute genberegnet — %1 · ≈ %2 kcal"
+
+msgid "Mode de déplacement"
+msgstr "Transportmåde"
+
+msgid "Vélo"
+msgstr "Cykel"
+
+msgid "Marche"
+msgstr "Vandring"
+
+msgid "Suggestions à proximité"
+msgstr "Forslag i nærheden"
+
+msgid "Recherche de tracés…"
+msgstr "Leder efter stier…"
+
+msgid "Aucun tracé trouvé à proximité"
+msgstr "Ingen sti fundet i nærheden"
+
+msgid "Durée max"
+msgstr "Maks. varighed"
+
+msgid "Toutes"
+msgstr "Alle"
+
+msgid "≤ %1 h"
+msgstr "≤ %1 t"
+
+msgid "≈ %1 min"
+msgstr "≈ %1 min"
+
+msgid "≈ %1 h"
+msgstr "≈ %1 t"
+
+msgid "≈ %1 h %2"
+msgstr "≈ %1 t %2"
+
+msgid "Randonnée"
+msgstr "Vandretur"
+
+msgid "à %1 km"
+msgstr "%1 km væk"
+
+msgid "C'est quoi, UT WheelTrek ?"
+msgstr "Hvad er UT WheelTrek?"
+
+msgid "UT WheelTrek est une application pour le vélo et la randonnée à pied. Elle affiche une carte, calcule des itinéraires, suggère des tracés à proximité, enregistre vos parcours et les exporte. Tout fonctionne hors ligne une fois les cartes téléchargées."
+msgstr "UT WheelTrek er en app til cykling og vandring. Den viser et kort, beregner ruter, foreslår stier i nærheden, optager dine ture og eksporterer dem. Alt virker offline, når kortene er downloadet."
+
+msgid "À propos d'UT WheelTrek"
+msgstr "Om UT WheelTrek"

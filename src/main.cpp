@@ -27,6 +27,7 @@
 #include "viewstate.h"
 #include "appdata.h"
 #include "searchclient.h"
+#include "suggestclient.h"
 #include "daemoncontroller.h"
 #include "deviceinfo.h"
 #include "palettewatcher.h"
@@ -88,6 +89,7 @@ int main(int argc, char *argv[])
     Favorites favorites;
     ViewState viewState;
     SearchClient searchClient;
+    SuggestClient suggestClient;
     BrouterClient brouter;
     QQuickView view;
     // Redirige XDG_CACHE_HOME vers ~/.cache/mathias.utitibike/ pour que le
@@ -115,6 +117,7 @@ int main(int argc, char *argv[])
     view.rootContext()->setContextProperty(QStringLiteral("favorites"), &favorites);
     view.rootContext()->setContextProperty(QStringLiteral("viewState"), &viewState);
     view.rootContext()->setContextProperty(QStringLiteral("searchClient"), &searchClient);
+    view.rootContext()->setContextProperty(QStringLiteral("suggestClient"), &suggestClient);
     // brouter en context property pour que HistoryPage puisse appeler
     // loadGpxData() directement (pageStack.get(0) n'est pas fiable).
     view.rootContext()->setContextProperty(QStringLiteral("brouter"), &brouter);

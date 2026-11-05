@@ -7,7 +7,7 @@ import "components"
 
 Page {
     id: page
-    title: i18n.tr("Utitibike")
+    title: "UT WheelTrek"
 
     property var waypoints: []
     property var routePoints: []
@@ -15,6 +15,13 @@ Page {
     property real routeDistance: 0
     property real routeAscent: 0
     property int profileIndex: 0
+    // Mode de déplacement : 0 = vélo, 1 = marche (randonnée) — persisté
+    // dans view.json via viewState.transportMode.
+    property int modeIndex: viewState.transportMode === "foot" ? 1 : 0
+    property bool suggOpen: false
+    property var suggestions: []
+    property bool suggBusy: false
+    property real suggMaxH: 0   // durée max souhaitée (h) pour filtrer les suggestions ; 0 = toutes
     property int dlDone: 0
     property int dlTotal: 0
     property bool panelOpen: false
@@ -56,6 +63,13 @@ Page {
     function difficultyLevel(distanceM, ascentM) {
         if (distanceM <= 0) return ""
         var mPerKm = ascentM / (distanceM / 1000)
+        // Seuils différents à pied (la marche monte plus lentement) et à vélo
+        if (page.modeIndex === 1) {
+            if (mPerKm < 8)  return i18n.tr("Plat")
+            if (mPerKm < 15) return i18n.tr("Vallonné")
+            if (mPerKm < 25) return i18n.tr("Sportif")
+            return i18n.tr("Montagne")
+        }
         if (mPerKm < 5)  return i18n.tr("Plat")
         if (mPerKm < 10) return i18n.tr("Vallonné")
         if (mPerKm < 20) return i18n.tr("Sportif")
@@ -80,10 +94,68 @@ Page {
         if (distanceM <= 0) return 0
         var distKm = distanceM / 1000
         var mPerKm = ascentM / distKm
+        if (page.modeIndex === 1) {
+            // Marche : règle de Naismith (~5 km/h + 1 h pour 600 m de D+),
+            // MET marche ~3.5
+            var walkH = distKm / 5 + ascentM / 600
+            return Math.round(3.5 * page.userWeightKg * walkH * 1.05)
+        }
         var speed = Math.max(18 - mPerKm * 0.8, 8)  // km/h
         var durationH = distKm / speed
         var met = Math.min(6 + mPerKm * 0.15, 10)
         return Math.round(met * page.userWeightKg * durationH * 1.05)
+    }
+
+    // Bascule vélo/marche : profil BRouter « foot », couche de carte adaptée
+    // (OSM standard montre les sentiers, Cyclosm est orienté vélo), et
+    // recalcul de l'itinéraire en cours avec le nouveau profil.
+    function setMode(i) {
+        if (page.modeIndex === i)
+            return
+        page.modeIndex = i
+        viewState.transportMode = i === 1 ? "foot" : "bike"
+        cache.tileServer = i === 1 ? "osm" : "cyclosm"
+        if (page.waypoints.length >= 2 && !brouter.busy)
+            brouter.requestRoute(page.waypoints)
+    }
+
+    // Bouton « Sug » : propose les tracés nommés (relations OSM
+    // route=rando/vélo) autour de la position GPS courante, ou du centre
+    // de carte si pas de fix.
+    function openSuggestions() {
+        var lat = page.liveHasPos ? page.liveLat : map.centerLat
+        var lon = page.liveHasPos ? page.liveLon : map.centerLon
+        page.suggOpen = true
+        page.suggBusy = true
+        page.suggMaxH = 0
+        page.suggestions = []
+        suggestClient.suggest(lat, lon, page.modeIndex === 1 ? "foot" : "bike")
+    }
+
+    // Suggestions filtrées par la durée max choisie (estH < 0 = durée
+    // inconnue → exclue dès qu'un filtre est actif)
+    function suggFiltered() {
+        if (page.suggMaxH === 0)
+            return page.suggestions
+        return page.suggestions.filter(function(s) {
+            return s.estH >= 0 && s.estH <= page.suggMaxH
+        })
+    }
+
+    // "≈ 45 min" / "≈ 2 h" / "≈ 2 h 30"
+    function formatEstH(h) {
+        if (h < 0) return ""
+        var totalMin = Math.round(h * 60)
+        var hh = Math.floor(totalMin / 60)
+        var mm = totalMin % 60
+        if (hh === 0) return i18n.tr("≈ %1 min").arg(mm)
+        if (mm === 0) return i18n.tr("≈ %1 h").arg(hh)
+        return i18n.tr("≈ %1 h %2").arg(hh).arg(mm)
+    }
+
+    function pickSuggestion(item) {
+        page.suggBusy = true
+        suggestClient.fetchTrail(item.id)
     }
 
     function addWaypoint(lat, lon) {
@@ -326,11 +398,38 @@ Page {
             else haptics.vibrate(100)
         }
     }
+    // Suggestions de tracés à proximité (Overpass) — liste + chargement GPX
+    Connections {
+        target: suggestClient
+        function onSuggestionsReady(items) {
+            page.suggBusy = false
+            page.suggestions = items
+        }
+        function onSuggestionsFailed(message) {
+            page.suggBusy = false
+            page.suggestions = []
+            showToast(message)
+        }
+        function onTrailReady(gpx) {
+            page.suggBusy = false
+            page.suggOpen = false
+            // loadGpxData déclenche routeReady : tracé affiché, statistiques
+            // calculées et entrée ajoutée à l'historique.
+            brouter.loadGpxData(gpx)
+        }
+        function onTrailFailed(message) {
+            page.suggBusy = false
+            showToast(message)
+        }
+    }
+
     // Binding du profil BRouter (le context property n'a pas de binding QML)
     Binding {
         target: brouter
         property: "profile"
-        value: page.profiles[page.profileIndex]
+        // « hiking-beta » : profil piéton exposé par brouter.de (vérifié sur
+        // téléphone — « foot » n'existe pas sur ce serveur, HTTP 500)
+        value: page.modeIndex === 1 ? "hiking-beta" : page.profiles[page.profileIndex]
     }
 
     TileMapItem {
@@ -382,7 +481,7 @@ Page {
             margins: units.gu(1)
             topMargin: units.gu(8)
         }
-        text: "Utitibike v" + appVersion
+        text: "UT WheelTrek v" + appVersion
         fontSize: "x-small"
         font.bold: true
         // Texte clair + outline sombre : lisible sur tuiles claires ou sombres
@@ -721,6 +820,128 @@ Page {
         }
     }
 
+    // Panneau des suggestions de tracés à proximité (bouton « Sug »)
+    SportCard {
+        id: suggCard
+        z: 20
+        anchors {
+            left: parent.left
+            right: parent.right
+            margins: units.gu(1)
+        }
+        y: page.searchOpen ? searchBar.y + searchBar.height + units.gu(0.5) : units.gu(1)
+        height: suggCol.height + units.gu(1)
+        padding: units.gu(0.5)
+        visible: page.suggOpen
+        Behavior on y { NumberAnimation { duration: 250 } }
+
+        Column {
+            id: suggCol
+            width: parent.width - units.gu(2)
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: units.gu(0.5)
+
+            Row {
+                width: parent.width
+                Label {
+                    width: parent.width - units.gu(6)
+                    text: i18n.tr("Suggestions à proximité")
+                    fontSize: "medium"
+                    font.bold: true
+                    color: Theme.textPrimary
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Button {
+                    width: units.gu(5)
+                    height: units.gu(4)
+                    iconName: "close"
+                    color: Theme.bgSection
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: page.suggOpen = false
+                }
+            }
+            // Filtre par durée souhaitée (temps estimé du tracé)
+            Row {
+                width: parent.width
+                spacing: units.gu(1)
+                Label {
+                    text: i18n.tr("Durée max")
+                    fontSize: "small"
+                    color: Theme.textSecondary
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                SegmentedControl {
+                    width: parent.width - units.gu(11)
+                    property var hourKeys: [0, 1, 2, 3, 5]
+                    model: [
+                        { label: i18n.tr("Toutes"), value: 0 },
+                        { label: i18n.tr("≤ %1 h").arg(1), value: 1 },
+                        { label: i18n.tr("≤ %1 h").arg(2), value: 2 },
+                        { label: i18n.tr("≤ %1 h").arg(3), value: 3 },
+                        { label: i18n.tr("≤ %1 h").arg(5), value: 5 }
+                    ]
+                    currentIndex: Math.max(0, hourKeys.indexOf(page.suggMaxH))
+                    onSelected: page.suggMaxH = value
+                }
+            }
+            Label {
+                visible: page.suggBusy
+                text: i18n.tr("Recherche de tracés…")
+                fontSize: "small"
+                color: Theme.textSecondary
+            }
+            Label {
+                visible: !page.suggBusy && page.suggFiltered().length === 0
+                text: i18n.tr("Aucun tracé trouvé à proximité")
+                fontSize: "small"
+                color: Theme.textSecondary
+            }
+            ListView {
+                width: parent.width
+                height: Math.min(units.gu(24), Math.max(1, page.suggFiltered().length) * units.gu(5))
+                visible: page.suggFiltered().length > 0
+                model: page.suggFiltered()
+                spacing: units.gu(0.2)
+                clip: true
+                delegate: Rectangle {
+                    width: parent.width
+                    height: units.gu(4.5)
+                    color: index % 2 === 0 ? Theme.bgSection : Theme.bgInput
+                    Column {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            verticalCenter: parent.verticalCenter
+                            margins: units.gu(0.5)
+                        }
+                        Label {
+                            width: parent.width
+                            fontSize: "small"
+                            font.bold: true
+                            color: Theme.textPrimary
+                            elide: Text.ElideRight
+                            text: modelData.name
+                        }
+                        Label {
+                            width: parent.width
+                            fontSize: "x-small"
+                            color: Theme.textSecondary
+                            text: (modelData.route === "hiking" || modelData.route === "foot"
+                                   ? i18n.tr("Randonnée") : i18n.tr("Vélo"))
+                                  + " · " + i18n.tr("à %1 km").arg((modelData.distM / 1000).toFixed(1))
+                                  + (modelData.estH >= 0 ? " · " + page.formatEstH(modelData.estH) : "")
+                        }
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        enabled: !page.suggBusy
+                        onClicked: page.pickSuggestion(modelData)
+                    }
+                }
+            }
+        }
+    }
+
     // Recherche via SearchClient (C++/QNetworkAccessManager) — le
     // XMLHttpRequest QML ne pose pas le User-Agent correctement sur
     // Ubuntu Touch, Nominatim renvoie HTTP 403.
@@ -1005,6 +1226,28 @@ Page {
             verticalCenter: parent.verticalCenter
         }
         spacing: units.gu(1)
+        // Bouton suggestions : tracés nommés à proximité (Overpass),
+        // filtrés selon le mode courant (rando à pied / vélo).
+        SportCard {
+            width: units.gu(6)
+            height: units.gu(6)
+            radius: width / 2
+            padding: 0
+            Label {
+                anchors.centerIn: parent
+                text: "Sug"
+                color: Theme.accentOrange
+                fontSize: "x-small"
+                font.bold: true
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    haptics.vibrate(20)
+                    page.openSuggestions()
+                }
+            }
+        }
         // Bouton couche de carte : cycle OSM → Cyclable → Sombre → Satellite
         // (accès direct, sans ouvrir le panneau). Nom court = pas dépendant
         // des icônes du thème.
@@ -1235,8 +1478,27 @@ Page {
                     }
                 }
 
+                Label {
+                    text: i18n.tr("Mode de déplacement")
+                    fontSize: "small"
+                    font.bold: true
+                    color: Theme.textPrimary
+                }
+                // Vélo : profils BRouter vélo ; Marche : profil BRouter « hiking-beta »
+                // + couche OSM (sentiers visibles). Le bandeau haut d'écran
+                // et son pictogramme suivent ce choix.
+                SegmentedControl {
+                    width: parent.width
+                    model: [
+                        { label: i18n.tr("Vélo"), value: "bike" },
+                        { label: i18n.tr("Marche"), value: "foot" }
+                    ]
+                    currentIndex: page.modeIndex
+                    onSelected: page.setMode(index)
+                }
                 Row {
                     width: parent.width
+                    visible: page.modeIndex === 0
                     Label {
                         text: i18n.tr("Profil BRouter")
                         fontSize: "small"
@@ -1264,6 +1526,7 @@ Page {
                 }
                 SegmentedControl {
                     width: parent.width
+                    visible: page.modeIndex === 0
                     model: [
                         { label: i18n.tr("Rando"), value: "trekking" },
                         { label: i18n.tr("Rapide"), value: "fastbike" },
@@ -1276,6 +1539,7 @@ Page {
                 Row {
                     width: parent.width
                     spacing: units.gu(1)
+                    visible: page.modeIndex === 0
                     Label {
                         text: i18n.tr("Éviter les chemins non goudronnés")
                         color: Theme.textSecondary
@@ -1297,10 +1561,12 @@ Page {
                     fontSize: "small"
                     font.bold: true
                     color: Theme.textPrimary
+                    visible: page.modeIndex === 0
                 }
                 SegmentedControl {
                     width: parent.width
                     activeColor: Theme.accentAmber
+                    visible: page.modeIndex === 0
                     model: [
                         { label: i18n.tr("Facile"), value: 500 },
                         { label: i18n.tr("Normal"), value: 50 },
@@ -1319,6 +1585,7 @@ Page {
                 Slider {
                     id: difficultySlider
                     width: parent.width
+                    visible: page.modeIndex === 0
                     minimumValue: 500
                     maximumValue: -200
                     stepSize: 10
@@ -1339,6 +1606,7 @@ Page {
                     width: parent.width
                     wrapMode: Text.Wrap
                     color: Theme.textPrimary
+                    visible: page.modeIndex === 0
                     text: brouter.uphillCost < 0
                           ? i18n.tr("Sportif : cherche les côtes (bonus D+ %1)").arg(-brouter.uphillCost)
                           : brouter.uphillCost === 0
@@ -1858,7 +2126,37 @@ Page {
     }
 
     header: AppHeader {
-        title: i18n.tr("Utitibike")
+        id: mapHeader
+        title: "UT WheelTrek"
+        // Bandeau de mode : gris clair à vélo, terre en randonnée
+        customColors: true
+        bgColor: page.modeIndex === 1 ? Theme.headerModeFoot : Theme.headerModeBike
+        fgColor: page.modeIndex === 1 ? Theme.headerModeFootFg : Theme.headerModeBikeFg
+        // Pictogramme de mode à côté du titre : vélo ou petit randonneur
+        contents: Row {
+            anchors {
+                left: parent.left
+                leftMargin: units.gu(2)
+                verticalCenter: parent.verticalCenter
+            }
+            spacing: units.gu(1)
+            Image {
+                source: page.modeIndex === 1 ? "qrc:/qml/icons/mode-hike.svg"
+                                              : "qrc:/qml/icons/mode-bike.svg"
+                width: units.gu(3.2)
+                height: width
+                sourceSize.width: width * 2
+                sourceSize.height: height * 2
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            Label {
+                text: mapHeader.title
+                color: mapHeader.fgColor
+                fontSize: "large"
+                font.bold: true
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
         trailingActionBar.actions: [
             Action {
                 text: i18n.tr("Rechercher")
