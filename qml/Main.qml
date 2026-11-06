@@ -22,6 +22,22 @@ MainView {
         anchors.fill: parent
         color: viewState.transportMode === "foot" ? Theme.headerModeFoot
                                                   : Theme.headerModeBike
+
+        // Version de l'app dans la bande haute (seule zone visible de ce fond,
+        // sous les indicateurs système : hauteur = safeTop).
+        Label {
+            anchors {
+                top: parent.top
+                right: parent.right
+                rightMargin: units.gu(1)
+            }
+            height: deviceInfo.safeTop
+            verticalAlignment: Text.AlignVCenter
+            text: i18n.tr("Version %1").arg(appVersion)
+            fontSize: "x-small"
+            color: viewState.transportMode === "foot" ? Theme.headerModeFootFg
+                                                       : Theme.headerModeBikeFg
+        }
     }
 
     Component.onCompleted: {
