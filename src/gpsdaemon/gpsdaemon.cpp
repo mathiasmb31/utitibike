@@ -176,6 +176,27 @@ void GpsDaemon::run()
 
 void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
 {
+    // Transition de fix pendant l'enregistrement : son distinct « GPS actif »
+    // (fix acquis, bip court) / « GPS perdu » (fix perdu, bip long). Le bip
+    // long est une alerte : il sonne même écran éteint (comme playLongBeep) ;
+    // les deux respectent l'option gpsd.conf (bip désactivé = aucun son).
+    if (m_recording) {
+        const bool fix = info.isValid() && info.coordinate().isValid();
+        if (fix != m_gotFix) {
+            m_gotFix = fix;
+            if (readBeepConf()) {
+                const QString sndDir = QCoreApplication::applicationDirPath()
+                                       + QStringLiteral("/sounds/");
+                if (fix) {
+                    qWarning() << "[gpsd] GPS ACTIF — bip court";
+                    playSound(m_beep, sndDir + QStringLiteral("beep.wav"));
+                } else {
+                    qWarning() << "[gpsd] GPS PERDU — bip long";
+                    playSound(m_beepLong, sndDir + QStringLiteral("beep-long.wav"));
+                }
+            }
+        }
+    }
     if (!m_recording || !info.isValid())
         return;
 
@@ -190,7 +211,6 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
     const double hAcc = info.hasAttribute(QGeoPositionInfo::HorizontalAccuracy)
                         ? info.attribute(QGeoPositionInfo::HorizontalAccuracy) : 0.0;
 
-    m_gotFix = true;
 
     // Pendant la sonnerie d'arrêt batterie (5 s), on n'ajoute plus de points
     if (m_stopping)
@@ -601,9 +621,19 @@ void GpsDaemon::applyPositioningMode()
     }
     if (mode == QLatin1String("satellite"))
         m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::SatellitePositioningMethods);
-    else if (mode == QLatin1String("network"))
+    else if (mode == QLatin1String("network")) {
         m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::NonSatellitePositioningMethods);
-    else
+        // Secours : si le mode réseau seul ne fournit aucun fix après 30 s
+        // (le provider réseau de UT peut être indisponible), on retombe sur
+        // toutes les méthodes (satellite inclus) — sinon aucune position
+        // n'est jamais trouvée en mode « réseau ».
+        QTimer::singleShot(30000, this, [this]() {
+            if (!m_gotFix) {
+                qWarning() << "[gpsd] mode réseau sans fix après 30 s — secours satellite (AllPositioningMethods)";
+                m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
+            }
+        });
+    } else
         m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
     qWarning() << "[gpsd] positioning mode:" << mode;
 }
@@ -671,21 +701,27 @@ void GpsDaemon::onStatsTick()
         stopOnDiskIssue("writeerror");
 }
 
-// Joue un wav : QSoundEffect si son backend est prêt, sinon paplay
-// (PulseAudio) en fallback — le daemon détaché peut avoir un backend
-// Qt Multimedia qui ne charge pas, et un play() silencieux n'est pas
-// acceptable pour un bip de confirmation.
+// Joue un wav : paplay (PulseAudio) en PRIORITÉ — dans le daemon détaché
+// (QCoreApplication), QSoundEffect charge le wav (status Ready) mais ne sort
+// AUCUN son audible (backend audio Qt Multimedia non initialisé hors
+// QGuiApplication) : constaté sur téléphone, aucun bip entendu alors que le
+// log disait « played via QSoundEffect ». paplay seul est fiable ici.
+// Fallback QSoundEffect si paplay est absent du système.
 void GpsDaemon::playSound(QSoundEffect &effect, const QString &wavPath)
 {
+    static const QString paplay = QStandardPaths::findExecutable(QStringLiteral("paplay"));
+    if (!paplay.isEmpty()) {
+        QProcess::startDetached(paplay, { wavPath });
+        qWarning() << "[gpsd] sound played via paplay:" << wavPath;
+        return;
+    }
     if (effect.status() == QSoundEffect::Ready || effect.status() == QSoundEffect::Loading) {
         effect.play();
-        qWarning() << "[gpsd] sound played via QSoundEffect:" << wavPath
+        qWarning() << "[gpsd] sound played via QSoundEffect (fallback):" << wavPath
                    << "status=" << static_cast<int>(effect.status());
         return;
     }
-    qWarning() << "[gpsd] QSoundEffect status=" << static_cast<int>(effect.status())
-               << "— fallback paplay:" << wavPath;
-    QProcess::startDetached(QStringLiteral("paplay"), { wavPath });
+    qWarning() << "[gpsd] no audio path available for:" << wavPath;
 }
 
 void GpsDaemon::onBeepTick()
