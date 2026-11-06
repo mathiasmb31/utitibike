@@ -3,7 +3,7 @@
     "title": "UT WheelTrek",
     "description": "Itinéraires vélo et randonnée à pied : carte OpenStreetMap hors ligne, calcul BRouter, suggestions de tracés et export GPX.",
     "architecture": "",
-    "version": "0.2.2",
+    "version": "0.99",
     "maintainer": "XXXX <user@localhost>",
     "framework": "ubuntu-touch-24.04-1.x",
     "hooks": {
