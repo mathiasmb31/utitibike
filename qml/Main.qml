@@ -23,16 +23,17 @@ MainView {
         color: viewState.transportMode === "foot" ? Theme.headerModeFoot
                                                   : Theme.headerModeBike
 
-        // Version de l'app dans la bande haute (seule zone visible de ce fond,
-        // sous les indicateurs système : hauteur = safeTop).
+        // Version de l'app collée tout en haut à droite de la bande haute
+        // (seule zone visible de ce fond, sous les indicateurs système).
+        // Masquée pendant un enregistrement GPS (bande réservée à l'état du
+        // trajet) ; quand l'app est fermée elle n'existe tout simplement plus.
         Label {
             anchors {
                 top: parent.top
                 right: parent.right
                 rightMargin: units.gu(1)
             }
-            height: deviceInfo.safeTop
-            verticalAlignment: Text.AlignVCenter
+            visible: !daemonController.recording
             text: i18n.tr("Version %1").arg(appVersion)
             fontSize: "x-small"
             color: viewState.transportMode === "foot" ? Theme.headerModeFootFg
