@@ -232,20 +232,26 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
                  ? info.attribute(QGeoPositionInfo::GroundSpeed) : 0.0;
     if (m_curSpeed < 0) m_curSpeed = 0.0;
     m_curAccuracy = hAcc;
-    // Intervalle adaptatif : à l'arrêt (vitesse < 1 m/s), on espace les
-    // fixes à 30 s pour ne pas solliciter le récepteur GPS inutilement ;
-    // dès que ça roule, retour à 5 s.
-    m_gps->setUpdateInterval(m_curSpeed < 1.0 ? kIntervalIdleMs : kIntervalMovingMs);
-
-    // Auto-pause : à l'arrêt (vitesse < 1 m/s) depuis plus de 3 min, on cesse
-    // d'ajouter des points (tracé propre, batterie économisée). Reprise
-    // automatique dès qu'un fix indique un mouvement.
-    if (m_curSpeed >= 1.0) {
+    // Auto-pause : à l'arrêt depuis plus de 3 min, on cesse d'ajouter des
+    // points (tracé propre, batterie économisée). Reprise automatique dès
+    // qu'un mouvement est détecté — par la vitesse GPS (GroundSpeed) OU par
+    // la vitesse implicite (déplacement réel depuis le dernier point) : le
+    // récepteur renvoie souvent vitesse 0/absente alors qu'on roule, la
+    // vitesse seule ne doit pas décider (sinon la pause reste bloquée et
+    // le tracé s'arrête avant la fin).
+    const bool moving = m_curSpeed >= 1.0 || impliedKmh > 4.0;
+    if (moving) {
         m_lastMoveMs = elapsedMs();
         m_paused = false;
     } else if (elapsedMs() - m_lastMoveMs > kPauseAfterMs) {
         m_paused = true;
     }
+    // Intervalle adaptatif : à l'arrêt (vitesse < 1 m/s), on espace les
+    // fixes à 30 s pour ne pas solliciter le récepteur GPS inutilement ;
+    // dès que ça roule, retour à 5 s. Tant qu'on est en pause, on garde
+    // 5 s : la reprise de mouvement doit être détectée vite, pas 30 s plus tard.
+    m_gps->setUpdateInterval((m_curSpeed < 1.0 && !m_paused) ? kIntervalIdleMs
+                                                             : kIntervalMovingMs);
     if (m_paused)
         return;
 
