@@ -6,6 +6,14 @@ Itinéraires vélo pour Ubuntu Touch : carte OpenStreetMap (tuiles OSM, CyclOSM,
 CARTO sombre, satellite Esri), calcul d'itinéraire BRouter, enregistrement GPS,
 profil d'altitude, export/import GPX, favoris, historique, recherche Nominatim.
 
+## Tailles d'écran
+
+L'interface s'adapte à toutes les tailles d'écran de téléphone : layout 100 % fluide
+(ancres + unités relatives, aucun pixel fixe dans les pages), safe areas du poinçon
+détectées et mises à l'échelle automatiquement (ratio hauteur/largeur ≥ 2,0, profondeur
+proportionnelle à la hauteur de l'écran, portrait et paysage gérés), carte plein écran
+avec zoom/pan.
+
 ## Build & install
 
 ```sh
