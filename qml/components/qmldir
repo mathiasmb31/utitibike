@@ -3,3 +3,4 @@ singleton Theme 1.0 Theme.qml
 SportCard 1.0 SportCard.qml
 SegmentedControl 1.0 SegmentedControl.qml
 AppHeader 1.0 AppHeader.qml
+MapFab 1.0 MapFab.qml

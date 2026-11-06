@@ -1226,111 +1226,74 @@ Page {
             verticalCenter: parent.verticalCenter
         }
         spacing: units.gu(1)
-        // Bouton recherche (était dans le bandeau haut, supprimé) :
-        // ouvre la barre de recherche en haut de la carte.
-        SportCard {
-            width: units.gu(6)
-            height: units.gu(6)
-            radius: width / 2
-            padding: 0
+        // Boutons flottants de la carte : cercles dégradé orange→aubergine
+        // avec ombre (MapFab) — loupe recherche, suggestions, couche de
+        // carte, zoom.
+        MapFab {
+            // Recherche (barre de recherche en haut de la carte)
             Icon {
                 anchors.centerIn: parent
                 name: "search"
                 width: units.gu(3)
                 height: width
-                color: Theme.accentOrange
+                color: Theme.textOnAccent
             }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    haptics.vibrate(20)
-                    page.searchOpen = !page.searchOpen
-                }
+            onClicked: {
+                haptics.vibrate(20)
+                page.searchOpen = !page.searchOpen
             }
         }
-        // Bouton suggestions : tracés nommés à proximité (Overpass),
-        // filtrés selon le mode courant (rando à pied / vélo).
-        SportCard {
-            width: units.gu(6)
-            height: units.gu(6)
-            radius: width / 2
-            padding: 0
+        MapFab {
+            // Suggestions : tracés nommés à proximité (Overpass)
             Label {
                 anchors.centerIn: parent
                 text: "Sug"
-                color: Theme.accentOrange
+                color: Theme.textOnAccent
                 fontSize: "x-small"
                 font.bold: true
             }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    haptics.vibrate(20)
-                    page.openSuggestions()
-                }
+            onClicked: {
+                haptics.vibrate(20)
+                page.openSuggestions()
             }
         }
-        // Bouton couche de carte : cycle OSM → Cyclable → Sombre → Satellite
-        // (accès direct, sans ouvrir le panneau). Nom court = pas dépendant
-        // des icônes du thème.
-        SportCard {
-            id: tileLayerCard
-            width: units.gu(6)
-            height: units.gu(6)
-            radius: width / 2
-            padding: 0
+        MapFab {
+            // Couche de carte : cycle OSM → Cyclable → Sombre → Satellite
+            id: tileLayerFab
             property var keys: ["osm", "cyclosm", "dark", "satellite"]
             property var shortNames: ({ "osm": "OSM", "cyclosm": "Cyc", "dark": "Nuit", "satellite": "Sat" })
             Label {
                 anchors.centerIn: parent
-                // SportCard reparent les enfants dans inner : référencer par id
-                text: tileLayerCard.shortNames[cache.tileServer] || "OSM"
-                color: Theme.accentOrange
+                text: tileLayerFab.shortNames[cache.tileServer] || "OSM"
+                color: Theme.textOnAccent
                 fontSize: "x-small"
                 font.bold: true
             }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    var i = tileLayerCard.keys.indexOf(cache.tileServer)
-                    cache.tileServer = tileLayerCard.keys[(i + 1) % tileLayerCard.keys.length]
-                    haptics.vibrate(20)
-                }
+            onClicked: {
+                var i = tileLayerFab.keys.indexOf(cache.tileServer)
+                cache.tileServer = tileLayerFab.keys[(i + 1) % tileLayerFab.keys.length]
+                haptics.vibrate(20)
             }
         }
-        SportCard {
-            width: units.gu(6)
-            height: units.gu(6)
-            radius: width / 2
-            padding: 0
+        MapFab {
             Icon {
                 anchors.centerIn: parent
                 name: "zoom-in"
                 width: units.gu(3)
                 height: width
-                color: Theme.textPrimary
+                color: Theme.textOnAccent
             }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: map.zoomAbout(1, map.width / 2, map.height / 2)
-            }
+            onClicked: map.zoomAbout(1, map.width / 2, map.height / 2)
         }
-        SportCard {
-            width: units.gu(6)
-            height: units.gu(6)
-            radius: width / 2
-            padding: 0
+        MapFab {
             Icon {
                 anchors.centerIn: parent
                 name: "zoom-out"
                 width: units.gu(3)
                 height: width
-                color: Theme.textPrimary
+                color: Theme.textOnAccent
             }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: map.zoomAbout(-1, map.width / 2, map.height / 2)
-            }
+            onClicked: map.zoomAbout(-1, map.width / 2, map.height / 2)
         }
     }
 
@@ -1430,11 +1393,39 @@ Page {
                 width: parent.width
                 spacing: units.gu(1)
 
-                Label {
-                    text: i18n.tr("Itinéraire — %1 point(s)").arg(page.waypoints.length)
-                    fontSize: "medium"
-                    font.bold: true
-                    color: Theme.textPrimary
+                Row {
+                    width: parent.width
+                    spacing: units.gu(1)
+                    Label {
+                        width: parent.width - closeBtn.width - units.gu(1)
+                        text: i18n.tr("Itinéraire — %1 point(s)").arg(page.waypoints.length)
+                        fontSize: "medium"
+                        font.bold: true
+                        color: Theme.textPrimary
+                        elide: Text.ElideRight
+                    }
+                    // Croix de fermeture DANS le panneau (en haut à droite) :
+                    // ne recouvre aucun autre élément. Le FAB est masqué quand
+                    // le panneau est ouvert.
+                    Rectangle {
+                        id: closeBtn
+                        width: units.gu(5)
+                        height: width
+                        radius: width / 2
+                        color: Theme.accentRed
+                        anchors.verticalCenter: parent.verticalCenter
+                        Icon {
+                            anchors.centerIn: parent
+                            name: "close"
+                            width: units.gu(2.5)
+                            height: width
+                            color: Theme.textOnAccent
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: page.panelOpen = false
+                        }
+                    }
                 }
 
                 SportCard {
@@ -2106,16 +2097,17 @@ Page {
     }
 
     // FAB : cercle dégradé orange→ambre avec ombre simulée (pas de
-    // DropShadow fiable sur UT arm64 — rectangle décalé derrière)
+    // DropShadow fiable sur UT arm64 — rectangle décalé derrière).
+    // Masqué quand le panneau est ouvert : la croix de fermeture est dans
+    // le panneau (closeBtn), le FAB ne remonte pas et ne recouvre rien.
     Item {
         id: panelToggle
+        visible: !page.panelOpen
         anchors {
             right: parent.right
             bottom: parent.bottom
             rightMargin: units.gu(2)
-            // Panneau ouvert : le FAB remonte au-dessus du panneau (sinon il
-            // est recouvert/rogne en bas à droite).
-            bottomMargin: page.panelOpen ? panel.height + units.gu(2) : units.gu(2)
+            bottomMargin: units.gu(2)
         }
         width: Theme.fabSize
         height: Theme.fabSize
@@ -2138,7 +2130,7 @@ Page {
             }
             Icon {
                 anchors.centerIn: parent
-                name: page.panelOpen ? "close" : "navigation-menu"
+                name: "navigation-menu"
                 width: Theme.fabIconSize
                 height: Theme.fabIconSize
                 color: Theme.textOnAccent
