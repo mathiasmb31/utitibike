@@ -1351,7 +1351,10 @@ Page {
         height: hintLabel.height + units.gu(1)
         padding: units.gu(0.5)
         radius: height / 2
-        visible: page.waypoints.length === 0
+        // Cachée dès qu'un itinéraire est posé, une navigation ou un
+        // enregistrement est en cours : plus besoin de l'aide à ce stade.
+        visible: page.waypoints.length === 0 && !brouter.navigation
+                 && !daemonController.recording
         Label {
             id: hintLabel
             anchors.centerIn: parent
