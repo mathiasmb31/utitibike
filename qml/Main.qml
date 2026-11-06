@@ -20,8 +20,22 @@ MainView {
     // terre en randonnée (comme le bandeau de la carte).
     Rectangle {
         anchors.fill: parent
-        color: viewState.transportMode === "foot" ? Theme.headerModeFoot
-                                                  : Theme.headerModeBike
+        // Pendant un enregistrement GPS : la bande clignote entre la couleur
+        // du mode (terre rando / gris vélo) et le vert.
+        property bool recBlink: false
+        color: {
+            var base = viewState.transportMode === "foot" ? Theme.headerModeFoot
+                                                         : Theme.headerModeBike
+            return (daemonController.recording && recBlink) ? Theme.accentGreen
+                                                            : base
+        }
+
+        Timer {
+            interval: 600
+            repeat: true
+            running: daemonController.recording
+            onTriggered: parent.recBlink = !parent.recBlink
+        }
 
         // Version de l'app collée tout en haut à droite de la bande haute
         // (seule zone visible de ce fond, sous les indicateurs système).
