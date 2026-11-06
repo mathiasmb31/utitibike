@@ -107,8 +107,17 @@ void GpsTracker::setPositioningMode(const QString &mode)
         return;
     if (m_positioningMode == QLatin1String("satellite"))
         m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::SatellitePositioningMethods);
-    else if (m_positioningMode == QLatin1String("network"))
+    else if (m_positioningMode == QLatin1String("network")) {
         m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::NonSatellitePositioningMethods);
-    else
+        // Secours : pas de fix réseau après 30 s → toutes méthodes (satellite
+        // inclus), sinon aucune position en mode « réseau » sur certains
+        // appareils où le provider réseau est indisponible.
+        QTimer::singleShot(30000, this, [this]() {
+            if (!m_hasFix) {
+                qWarning() << "GpsTracker: mode réseau sans fix après 30 s — secours satellite";
+                m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
+            }
+        });
+    } else
         m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
 }
