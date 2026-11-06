@@ -37,19 +37,20 @@ MainView {
             onTriggered: parent.recBlink = !parent.recBlink
         }
 
-        // Version de l'app collée tout en haut à droite de la bande haute
-        // (seule zone visible de ce fond, sous les indicateurs système).
-        // Masquée pendant un enregistrement GPS (bande réservée à l'état du
-        // trajet) ; quand l'app est fermée elle n'existe tout simplement plus.
+        // Nom + version de l'app collés tout en haut à GAUCHE de la bande
+        // haute (seule zone visible de ce fond, sous les indicateurs système).
+        // Masqués pendant un enregistrement GPS ; quand l'app est fermée ils
+        // n'existent tout simplement plus.
         Label {
             anchors {
                 top: parent.top
-                right: parent.right
-                rightMargin: units.gu(1)
+                left: parent.left
+                leftMargin: units.gu(1)
             }
             visible: !daemonController.recording
-            text: i18n.tr("Version %1").arg(appVersion)
+            text: "UT WheelTrek · " + i18n.tr("Version %1").arg(appVersion)
             fontSize: "x-small"
+            font.bold: true
             color: viewState.transportMode === "foot" ? Theme.headerModeFootFg
                                                        : Theme.headerModeBikeFg
         }
