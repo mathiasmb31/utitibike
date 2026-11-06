@@ -472,23 +472,8 @@ Page {
         }
     }
 
-    // Nom du projet en permanence (haut gauche, sous le header)
-    Label {
-        z: 15
-        anchors {
-            top: parent.top
-            left: parent.left
-            margins: units.gu(1)
-            topMargin: units.gu(8)
-        }
-        text: "UT WheelTrek v" + appVersion
-        fontSize: "x-small"
-        font.bold: true
-        // Texte clair + outline sombre : lisible sur tuiles claires ou sombres
-        color: Theme.textPrimary
-        style: Text.Outline
-        styleColor: "#000000"
-    }
+    // Le nom + version de l'app sont affichés en permanence dans la bande
+    // haute (Main.qml) — plus de label flottant ici (doublon supprimé).
 
     // Indicateur hors ligne (auto-détection réseau dans TileCache : 3 échecs
     // réseau consécutifs -> hors ligne, sonde toutes les 30 s pour le retour)
