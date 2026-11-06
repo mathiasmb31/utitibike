@@ -74,3 +74,8 @@ chemins de données de l'app (`~/.cache|config|local/share/utitibike/**`),
 écrits via QSaveFile (écriture atomique). Ils sont nécessaires au cache de
 tuiles, à l'historique, aux favoris et à la vue persistée — à documenter dans
 la description de l'OpenStore.
+
+## Bugs
+
+Tout bug doit être déclaré sur l'URL GitHub du projet :
+**https://github.com/mathiasmb31/utitibike/issues**
