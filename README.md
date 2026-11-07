@@ -87,3 +87,12 @@ la description de l'OpenStore.
 
 Tout bug doit être déclaré sur l'URL GitHub du projet :
 **https://github.com/mathiasmb31/utitibike/issues**
+
+## Consommation constatée (batterie / CPU)
+
+Mesures du 2026-11-07 sur téléphone 71b90fee (Ubuntu Touch 24.04.5, arm64), applis en attente/arrière-plan :
+
+- **En attente (mode daemon)** : Lomiri gèle l'appli en arrière-plan (SIGSTOP, état `T`) → **0,0 % CPU mesuré**, empreinte mémoire résiduelle ~50–90 Mo. La conso batterie en attente est donc **négligeable** ; seuls les éventuels daemons comptent.
+
+- **Daemon d'enregistrement GPS** (en mode recording) : ~0 % CPU en idle entre deux points, ~25–30 Mo RSS.
+- Appli au premier plan (carte OSM) : conso ponctuelle normale d'une appli QML carte ; en arrière-plan gelée → 0 % CPU.
