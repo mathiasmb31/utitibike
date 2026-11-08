@@ -5,6 +5,7 @@
 Toute release publique d'une app est livrée dans `vibeworkspace/livraison/<app>-<version>/` :
 
 - `utoutlook.mathias_X.Y.Z_arm64.click` (ou le .click de l'app) — commité avec `git add -f` (les .click sont gitignorés)
+- **JAMAIS de push des .click sur un dépôt distant** (règle Mathias 2026-11-06, TOUS projets) : les .click sont reconstructibles (build reproductible), ils restent en **local uniquement** et ne partent jamais sur GitHub. Garde-fou : hook `githooks/pre-push` (activer avec `git config core.hooksPath githooks`) qui bloque tout push contenant un fichier `.click` ; procédure de push filtré documentée dans `base-de-connaissances/restauration-workspace-vibe-2026-11-06.md`.
 - `CHANGELOG.md` — release notes en **anglais**, langage non-développeur, titré, condensé (pas 10 pages) ; couvre depuis la dernière release majeure connue
 - `README.txt` (ou LISEZMOI.txt) — instructions d'installation (adb install / clickable install / transfert du .click), prérequis, nouveautés en 3 lignes
 - Version synchronisée dans `manifest.json` ET `package.json` (si Electron) avant le build
