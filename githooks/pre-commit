@@ -1,0 +1,23 @@
+#!/bin/bash
+# Garde-fou taille (règle Mathias 2026-11-08) — TOUS projets
+# Bloque au commit tout fichier NON .click de plus de MAX_COMMIT_FILE_MB Mo
+# (défaut 50). Les .click sont exemptés ici : permis en local (git add -f,
+# livraison/) et bloqués au push par githooks/pre-push.
+# Surcharger le seuil : MAX_COMMIT_FILE_MB=100 git commit ...
+MAX_MB="${MAX_COMMIT_FILE_MB:-50}"
+MAX_BYTES=$((MAX_MB * 1024 * 1024))
+tmp=$(mktemp)
+git ls-files -s | awk '{print $2, $4}' | while read -r sha path; do
+    case "$path" in *.click|*.click.*) continue ;; esac
+    size=$(git cat-file -s "$sha" 2>/dev/null) || continue
+    [ "$size" -gt "$MAX_BYTES" ] && printf '%s %s\n' "$path" "$size" >> "$tmp"
+done
+if [ -s "$tmp" ]; then
+    echo "ERREUR (garde-fou taille, ${MAX_MB} Mo max hors .click) :" >&2
+    awk -v m=1048576 '{printf "  %s : %.1f Mo\n", $1, $2/m}' "$tmp" >&2
+    echo "  Surcharger : MAX_COMMIT_FILE_MB=<Mo> git commit" >&2
+    rm -f "$tmp"
+    exit 1
+fi
+rm -f "$tmp"
+exit 0
