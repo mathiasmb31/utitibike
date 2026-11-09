@@ -153,12 +153,20 @@ void TileCache::setTileServer(const QString &s)
     const QString base = appDataDir();
     QDir newDir(base + QStringLiteral("/tiles/") + s);
     newDir.mkpath(QStringLiteral("."));
+    // Annule les téléchargements en vol de l'ancienne couche : leurs tuiles ne
+    // doivent ni être écrites dans le répertoire du nouveau serveur, ni
+    // occuper m_pending (ce qui empêcherait le re-fetch des tuiles de la
+    // nouvelle couche).
+    cancelAll();
     {
         QMutexLocker locker(&m_mutex);
         m_tileServer = s;
         m_dir = newDir;
-        // Les tuiles en cache mémoire appartiennent à l'ancien serveur.
+        // Les tuiles en cache mémoire et en attente appartiennent à l'ancien
+        // serveur.
         m_mem.clear();
+        m_pending.clear();
+        ++m_serverGeneration;
     }
     emit tileServerChanged();
 }
@@ -231,7 +239,12 @@ void TileCache::drain()
         const int x = parts.at(1).toInt();
         const int y = parts.at(2).toInt();
 
-        QNetworkRequest req{ QUrl{ tileUrl(m_tileServer, z, x, y) } };
+        // Taguer la requête avec la couche et la génération courantes : si
+        // l'utilisateur change de couche pendant le téléchargement, la réponse
+        // est ignorée (pas d'écriture disque dans le mauvais répertoire).
+        const QString server = m_tileServer;
+        const int generation = m_serverGeneration;
+        QNetworkRequest req{ QUrl{ tileUrl(server, z, x, y) } };
         // OSM redirige vers des CDN : suivre les redirections (le mode manuel
         // par défaut les bloquerait).
         req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
@@ -251,9 +264,12 @@ void TileCache::drain()
         timeout->start();
         m_active.insert(key, reply);
 
-        connect(reply, &QNetworkReply::finished, this, [this, reply, key]() {
+        connect(reply, &QNetworkReply::finished, this, [this, reply, key, server, generation]() {
             m_active.remove(key);
-            {
+            // Génération obsolète (changement de couche entre-temps) : la
+            // tuile appartient à l'ancienne couche, on l'ignore totalement.
+            const bool current = (generation == m_serverGeneration);
+            if (current) {
                 QMutexLocker locker(&m_mutex);
                 m_pending.remove(key);
             }
@@ -269,7 +285,7 @@ void TileCache::drain()
 
             updateOnlineState(error, ok);
 
-            if (ok) {
+            if (ok && current) {
                 const QStringList parts = key.split(QLatin1Char('/'));
                 const int z = parts.at(0).toInt();
                 const int x = parts.at(1).toInt();
@@ -288,7 +304,7 @@ void TileCache::drain()
                 emit tileReady(z, x, y);
             }
 
-            if (m_batchKeys.remove(key)) {
+            if (current && m_batchKeys.remove(key)) {
                 m_batchDone++;
                 emitProgress();
             }
