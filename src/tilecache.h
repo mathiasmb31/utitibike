@@ -81,6 +81,11 @@ private:
     int m_batchDone = 0;
     bool m_online = true;
     bool m_paused = false;
+    // Incrémenté à chaque setTileServer : les réponses réseau en vol sont
+    // taguées avec la génération de leur requête et ignorées si la couche a
+    // changé entre-temps (sinon une tuile de l'ancienne couche serait écrite
+    // dans le répertoire du nouveau serveur).
+    int m_serverGeneration = 0;
     // CARTO dark_all exige désormais une clé API (tuiles « API KEY REQUIRED »),
     // donc on garde OSM standard par défaut. Le style n'est pas persisté
     // (session uniquement) : aucun risque d'écraser un choix utilisateur.
