@@ -9,7 +9,7 @@ Toute release publique d'une app est livrée dans `vibeworkspace/livraison/<app>
 - `README.txt` (ou LISEZMOI.txt) — instructions d'installation (adb install / clickable install / transfert du .click), prérequis, nouveautés en 3 lignes
 - Version synchronisée dans `manifest.json` ET `package.json` (si Electron) avant le build
 - Pied de commit Vibe obligatoire sur le commit de livraison
-- Ligne de crédit obligatoire dans le `CHANGELOG.md` **et** le `README.txt` de livraison : « Co-worked by Mathias & Vibe — verified and tested by Mathias. » (règle Mathias, 2026-11-02) — jamais « validated by Vibe » (Vibe est l'outil, Mathias vérifie et teste)
+- Ligne de crédit obligatoire dans le `CHANGELOG.md` **et** le `README.txt` de livraison : « Built and tested by Mathias — code written by Vibe, reviewed and controlled by Mathias. » (règle Mathias, 2026-11-02, reformulée 2026-11-17) — jamais « validated by Vibe » (Vibe est l'outil, Mathias vérifie et teste)
 
 ## Internationalisation (OBLIGATOIRE — règle de Mathias, 2026-11-02, tous les projets d'app)
 
