@@ -66,6 +66,11 @@ git checkout -b feature/ma-fonctionnalite
 - Les PR vers `main` déclenchent la CI (tests + lint + build)
 - Ne merger que si la CI est verte
 
+
+## Build manuel (OBLIGATOIRE — règle Mathias, 2026-11-17)
+
+**Ne jamais lancer de build depuis l'agent IA** (économie de tokens/API) : Mathias fait les builds lui-même via les scripts `build-deploy.sh` / `build-fast.sh` du projet. L'agent prépare le code, les tests et les scripts ; Mathias lance le build + déploiement + test device.
+
 ## Pied de commit (OBLIGATOIRE)
 
 Tout commit fait par l'agent Mistral Vibe porte systématiquement ce pied de message :
