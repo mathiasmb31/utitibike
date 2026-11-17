@@ -37,7 +37,7 @@ while true; do
   read -r -p "Choix (numéro, ou 'h <script>' pour son --help) : " choice
   case "$choice" in
     0|q|quit) exit 0 ;;
-    h:*) s="${choice#h:}"; [ -f "$s" ] && "$s" --help || echo "script inconnu: $s" ;;
+    h:*|h\ *) s="${choice#h:}"; s="${s# }"; [ -f "$s" ] && "$s" --help || echo "script inconnu: $s" ;;
     h) for s in "${scripts[@]}"; do echo "--- $s"; "$s" --help 2>/dev/null | head -5; done ;;
     ''|*[!0-9]*) echo "choix invalide" ;;
     *)
