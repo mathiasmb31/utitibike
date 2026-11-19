@@ -18,7 +18,7 @@ if [ -f package.json ] && grep -q '"test"' package.json; then npm test 2>&1 | ta
   for d in */; do [ -f "$d/package.json" ] && grep -q '"test"' "$d/package.json" && { (cd "$d" && npm test 2>&1 | tail -4); }; done
 fi
 echo "== 4/5 confidentialite (brethous)"
-if grep -ri brethous --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude-dir=dist . 2>/dev/null | grep -q .; then
+if grep -ri brethous --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude-dir=dist --exclude=AGENTS.md --exclude=check.sh --exclude=git-auto.sh --exclude=menu.sh . 2>/dev/null | grep -q .; then
   echo "  ERREUR: 'brethous' detecte — commit interdit"; exit 1
 else echo "  OK aucun"; fi
 echo "== 5/5 i18n (chaines accentuees hors catalogue)"

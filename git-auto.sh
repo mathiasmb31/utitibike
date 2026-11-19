@@ -14,7 +14,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ] || [ -z "$1" ]; then
   exit 0
 fi
 
-CMD="${1:?Usage: $0 {commit|push|pr|newfix|status} ...}"
+CMD="${1:?Usage: $0 commit|push|pr|newfix|status ...}"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 APP_PREFIX="utitibike"
 cd "$ROOT"
@@ -27,7 +27,7 @@ case "$CMD" in
     MSG="${2:?message requis}"
     git add -A
     # Garde-fou confidentialité (règle Mathias 2026-11-01)
-    if grep -ri <NOM-PROSCRIT> --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude-dir=dist . 2>/dev/null | grep -v "AGENTS.md" | grep -q .; then
+    if grep -ri <NOM-PROSCRIT> --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude-dir=dist --exclude=AGENTS.md --exclude=check.sh --exclude=git-auto.sh --exclude=menu.sh . 2>/dev/null | grep -q .; then
       echo "ERREUR: '<NOM-PROSCRIT>' détecté dans le working tree — commit annulé (règle confidentialité)"
       exit 1
     fi
