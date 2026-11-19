@@ -13,8 +13,11 @@ BRANCH="$(git branch --show-current 2>/dev/null || printf '?')"
 
 version_from_repo() {
   local f v=""
-  for f in package.json manifest.json; do
-    [ -f "$f" ] || continue
+  # v4.1.0: les projets ont leur manifest/package dans un sous-dossier
+  # (utoutlook: utoulookmail/manifest.json et utoutlookmail/package.json).
+  for f in $(find . -maxdepth 4 \( -name package.json -o -name manifest.json \) \
+      -not -path '*/node_modules/*' -not -path '*/build/*' -not -path '*/dist/*' \
+      2>/dev/null | sort); do
     v=$(grep -m1 '"version"' "$f" 2>/dev/null | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
     [ -n "$v" ] && { printf '%s' "$v"; return; }
   done
@@ -31,7 +34,7 @@ DEVICE="${DEVICE:-${ADB_DEVICE:-<serial>}}"
 COMMIT_MSG="${COMMIT_MSG:-}"
 PR_TITLE="${PR_TITLE:-}"
 FIX_NAME="${FIX_NAME:-}"
-LOG_FILTER="${LOG_FILTER:-error}"
+LOG_FILTER="${LOG_FILTER:-all}"
 
 desc() {
   case "$1" in
@@ -43,7 +46,7 @@ desc() {
     check.sh)               echo "CHECK pré-vol : syntaxe, lint, tests, confidentialité, i18n" ;;
     git-auto.sh)            echo "GIT : status/commit/push/pr/newfix/livraison (sous-menu, valeurs du contexte)" ;;
     bump-version.sh)        echo "VERSION : sync manifest.json + package.json (défaut: $VERSION)" ;;
-    watch-log.sh)           echo "LOGS device en direct (filtre défaut: $LOG_FILTER)" ;;
+    watch-log.sh)           echo "LOGS device via adb -s $DEVICE (filtre défaut: $LOG_FILTER)" ;;
     openstore-prepare.sh)   echo "RELEASE : kit OpenStore, AUCUN upload sans OK explicite (défaut: $VERSION)" ;;
     install-python-deps.sh) echo "OUTILS : installe les dépendances Python du projet" ;;
     release-all.sh)         echo "RELEASE transverse : clicks + notes dans /home/mathias/build" ;;
