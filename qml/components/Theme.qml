@@ -37,7 +37,8 @@ QtObject {
     readonly property color textPrimary: dark ? "#e8e8e8" : "#2C001E"
     readonly property color textSecondary: dark ? "#888899" : "#6d6d7c"
     readonly property color textOnAccent: "#ffffff"
-    readonly property color textMuted: dark ? "#555566" : "#9a9aa5"
+    // v0.99.1: contraste WCAG AA (avant ~2,3:1 sur fond sombre).
+    readonly property color textMuted: dark ? "#8a8a9c" : "#6d6d7c"
 
     // En-tête des pages (AppHeader) : fond sombre Ubuntu / blanc, texte
     // inversé, séparateur discret.
@@ -77,6 +78,8 @@ QtObject {
     readonly property real radiusFab: 28        // 3,5 gu
 
     // Espacements (dp)
+    // v0.99.1: separable sub-pixel (gu(0.05) ≈ 0,4 dp) -> 1 px device net.
+    readonly property real dividerHeight: 1
     readonly property real padCard: 12          // 1,5 gu
     readonly property real padSection: 8        // 1 gu
 

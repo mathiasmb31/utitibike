@@ -92,7 +92,7 @@ Page {
                 wrapMode: Text.Wrap
             }
 
-            Rectangle { width: parent.width; height: units.gu(0.1); color: Theme.bgCardBorder }
+            Rectangle { width: parent.width; height: Theme.dividerHeight; color: Theme.bgCardBorder }
 
             Label {
                 text: i18n.tr("Crédits")
@@ -113,7 +113,7 @@ Page {
                     + "Tuiles satellite — Esri"
             }
 
-            Rectangle { width: parent.width; height: units.gu(0.1); color: Theme.bgCardBorder }
+            Rectangle { width: parent.width; height: Theme.dividerHeight; color: Theme.bgCardBorder }
 
             Label {
                 text: i18n.tr("Astuces")

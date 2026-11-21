@@ -408,3 +408,42 @@ msgstr "Sobre o UT WheelTrek"
 
 msgid "Conçu pour Ubuntu Touch"
 msgstr ""
+
+msgid "Arrêter et enregistrer"
+msgstr "Stop and save"
+
+msgid "Arrêter l'enregistrement ?"
+msgstr "Stop recording?"
+
+msgid "Le parcours sera sauvegardé dans l'historique."
+msgstr "The track will be saved to history."
+
+msgid "Sug"
+msgstr "Sug"
+
+msgid "Nuit"
+msgstr "Dark"
+
+msgid "Ajouté aux favoris"
+msgstr "Added to favorites"
+
+msgid "Suivi GPS activé"
+msgstr "GPS tracking enabled"
+
+msgid "Aucun parcours pour l'instant — enregistrez votre première sortie depuis la carte."
+msgstr "No tracks yet — record your first ride from the map."
+
+msgid "Glissez → charger · ← supprimer"
+msgstr "Swipe → load · ← delete"
+
+msgid "km/h"
+msgstr "km/h"
+
+msgid "kg"
+msgstr "kg"
+
+msgid "%1 km"
+msgstr "%1 km"
+
+msgid "%1 km · D+ %2 m"
+msgstr "%1 km · D+ %2 m"

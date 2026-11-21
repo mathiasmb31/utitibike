@@ -25,5 +25,5 @@ Column {
         text: body
         lineHeight: 1.3
     }
-    Rectangle { width: parent.width; height: units.gu(0.05); color: Theme.bgCardBorder }
+    Rectangle { width: parent.width; height: Theme.dividerHeight; color: Theme.bgCardBorder }
 }

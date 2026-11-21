@@ -39,10 +39,15 @@ Item {
 
                 Label {
                     anchors.centerIn: parent
+                    width: parent.width - units.gu(0.5)
                     text: modelData.label
                     color: root.currentIndex === index ? Theme.textOnAccent : Theme.textSecondary
                     fontSize: "medium"
                     font.bold: root.currentIndex === index
+                    // v0.99.1: les libelles longs (DE/AR) ne doivent pas deborder.
+                    elide: Text.ElideRight
+                    maximumLineCount: 1
+                    wrapMode: Text.NoWrap
                 }
 
                 MouseArea {

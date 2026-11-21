@@ -275,7 +275,7 @@ Page {
             }
 
             // ── Lien vers À propos ───────────────────────────────
-            Rectangle { width: parent.width; height: units.gu(0.1); color: Theme.bgCardBorder }
+            Rectangle { width: parent.width; height: Theme.dividerHeight; color: Theme.bgCardBorder }
 
             Button {
                 width: parent.width

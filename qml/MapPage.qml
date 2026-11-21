@@ -1,6 +1,7 @@
 
 import QtQuick 2.12
 import Ubuntu.Components 1.3
+import Ubuntu.Components.Popups 1.3
 import Ubuntu.Content 1.3
 import Utitibike 1.0
 import "components"
@@ -300,6 +301,10 @@ Page {
         }
     }
     Component.onCompleted: {
+        // v0.99.1: la couche de tuiles suit le mode de deplacement restaure —
+        // sinon l'app redemarre en OSM alors que le dernier choix etait Cyc.
+        // Ici et pas dans Main.qml : `cache` est un objet de MapPage.
+        cache.tileServer = viewState.transportMode === "foot" ? "osm" : "cyclosm"
         // Vérifie si un enregistrement daemon était en cours (app redémarrée)
         daemonController.checkExistingRecording()
         // Récupère un éventuel en-cours.part laissé par un daemon tué brutalement
@@ -613,7 +618,7 @@ Page {
                 Label {
                     color: Theme.accentCyan
                     fontSize: "small"
-                    text: "km/h"
+                    text: i18n.tr("km/h")
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
@@ -783,14 +788,46 @@ Page {
                             right: parent.right
                             verticalCenter: parent.verticalCenter
                             margins: units.gu(0.5)
+                            rightMargin: units.gu(6)
                         }
                         fontSize: "small"
                         color: Theme.textPrimary
                         elide: Text.ElideRight
                         text: modelData.display_name
                     }
+                    // v0.99.1: l'aide promet une etoile pour ajouter aux
+                    // favoris — elle n'existait pas dans ce delegue.
+                    Button {
+                        anchors {
+                            right: parent.right
+                            verticalCenter: parent.verticalCenter
+                            margins: units.gu(0.3)
+                        }
+                        width: units.gu(5)
+                        height: units.gu(5)
+                        color: favorites.isFavorite(modelData.lat, modelData.lon)
+                               ? Theme.accentOrange : Theme.bgSection
+                        onClicked: {
+                            haptics.vibrate(10)
+                            favorites.add(modelData.display_name, modelData.lat,
+                                          modelData.lon, "search")
+                            showToast(i18n.tr("Ajouté aux favoris"))
+                        }
+                        Icon {
+                            anchors.centerIn: parent
+                            name: "star"
+                            width: units.gu(2.5)
+                            height: units.gu(2.5)
+                            color: parent.color === Theme.accentOrange
+                                   ? Theme.textOnAccent : Theme.textSecondary
+                        }
+                    }
                     MouseArea {
-                        anchors.fill: parent
+                        // v0.99.1: ne pas recouvrir le bouton etoile.
+                        anchors {
+                            fill: parent
+                            rightMargin: units.gu(6)
+                        }
                         onClicked: {
                             map.centerLat = modelData.lat
                             map.centerLon = modelData.lon
@@ -1184,7 +1221,7 @@ Page {
             }
             Label {
                 anchors.verticalCenter: parent.verticalCenter
-                text: (page.routeDistance / 1000).toFixed(1) + " km"
+                text: i18n.tr("%1 km").arg((page.routeDistance / 1000).toFixed(1))
                 color: Theme.textPrimary
                 fontSize: "small"
             }
@@ -1232,7 +1269,7 @@ Page {
             // Suggestions : tracés nommés à proximité (Overpass)
             Label {
                 anchors.centerIn: parent
-                text: "Sug"
+                text: i18n.tr("Sug")
                 color: Theme.textOnAccent
                 fontSize: "x-small"
                 font.bold: true
@@ -1246,7 +1283,8 @@ Page {
             // Couche de carte : cycle OSM → Cyclable → Sombre → Satellite
             id: tileLayerFab
             property var keys: ["osm", "cyclosm", "dark", "satellite"]
-            property var shortNames: ({ "osm": "OSM", "cyclosm": "Cyc", "dark": "Nuit", "satellite": "Sat" })
+            property var shortNames: ({ "osm": "OSM", "cyclosm": "Cyc",
+                                         "dark": i18n.tr("Nuit"), "satellite": "Sat" })
             Label {
                 anchors.centerIn: parent
                 text: tileLayerFab.shortNames[cache.tileServer] || "OSM"
@@ -1268,7 +1306,10 @@ Page {
                 height: width
                 color: Theme.textOnAccent
             }
-            onClicked: map.zoomAbout(1, map.width / 2, map.height / 2)
+            onClicked: {
+                haptics.vibrate(10)   // v0.99.1: retour uniforme avec les autres FAB
+                map.zoomAbout(1, map.width / 2, map.height / 2)
+            }
         }
         MapFab {
             Icon {
@@ -1278,7 +1319,10 @@ Page {
                 height: width
                 color: Theme.textOnAccent
             }
-            onClicked: map.zoomAbout(-1, map.width / 2, map.height / 2)
+            onClicked: {
+                haptics.vibrate(10)
+                map.zoomAbout(-1, map.width / 2, map.height / 2)
+            }
         }
     }
 
@@ -1415,7 +1459,7 @@ Page {
 
                 SportCard {
                     width: parent.width
-                    height: Math.min(units.gu(16), units.gu(3.4) * page.waypoints.length + units.gu(1))
+                    height: Math.min(units.gu(24), units.gu(6.2) * page.waypoints.length + units.gu(1))
                     padding: units.gu(0.5)
                     visible: page.waypoints.length > 0
                     ListView {
@@ -1426,7 +1470,9 @@ Page {
                         model: page.waypoints
                         delegate: Row {
                             width: wpList.width
-                            height: units.gu(3)
+                            // v0.99.1: 48 dp minimum — le bouton supprimer
+                            // faisait 40 dp et debordait de la ligne (24 dp).
+                            height: units.gu(6)
                             spacing: units.gu(0.5)
                             Label {
                                 width: parent.width - units.gu(6.5)
@@ -1638,7 +1684,7 @@ Page {
                         }
                     }
                     Label {
-                        text: "kg"
+                        text: i18n.tr("kg")
                         fontSize: "small"
                         color: Theme.textSecondary
                         anchors.verticalCenter: parent.verticalCenter
@@ -1647,7 +1693,7 @@ Page {
 
                 Rectangle {
                     width: parent.width
-                    height: units.gu(0.1)
+                    height: Theme.dividerHeight
                     color: Theme.bgCardBorder
                 }
 
@@ -1670,7 +1716,7 @@ Page {
                 }
                 Rectangle {
                     width: parent.width
-                    height: units.gu(0.1)
+                    height: Theme.dividerHeight
                     color: Theme.bgCardBorder
                 }
 
@@ -1806,20 +1852,19 @@ Page {
                     Button {
                         width: (parent.width - units.gu(0.5)) / 2
                         height: units.gu(6)
-                        text: i18n.tr("Effacer tracé")
-                        iconName: "edit-clear"
+                        // v0.99.1: libelle exact — ce bouton ARRETE et SAUVE,
+                        // il n'efface rien (l'ancien libelle etait trompeur).
+                        text: i18n.tr("Arrêter et enregistrer")
+                        iconName: "save"
                         color: Theme.bgSection
-                        enabled: daemonController.pointCount > 0
-                        onClicked: {
-                            if (daemonController.recording)
-                                daemonController.stopRecording()
-                        }
+                        enabled: daemonController.recording
+                        onClicked: PopupUtils.open(stopRecordDialog)
                     }
                 }
 
                 Rectangle {
                     width: parent.width
-                    height: units.gu(0.1)
+                    height: Theme.dividerHeight
                     color: Theme.bgCardBorder
                 }
 
@@ -1890,7 +1935,7 @@ Page {
 
                 Rectangle {
                     width: parent.width
-                    height: units.gu(0.1)
+                    height: Theme.dividerHeight
                     color: Theme.bgCardBorder
                 }
 
@@ -1961,7 +2006,7 @@ Page {
 
                 Rectangle {
                     width: parent.width
-                    height: units.gu(0.1)
+                    height: Theme.dividerHeight
                     color: Theme.bgCardBorder
                 }
 
@@ -1995,7 +2040,7 @@ Page {
                     fontSize: "medium"
                     font.bold: true
                     color: Theme.textPrimary
-                    text: "%1 km  ·  D+ %2 m".arg((page.routeDistance / 1000).toFixed(1)).arg(Math.round(page.routeAscent))
+                    text: i18n.tr("%1 km · D+ %2 m").arg((page.routeDistance / 1000).toFixed(1)).arg(Math.round(page.routeAscent))
                 }
 
                 // Difficulté estimée + calories (apparaît avec l'itinéraire)
@@ -2017,7 +2062,7 @@ Page {
 
                 Rectangle {
                     width: parent.width
-                    height: units.gu(0.1)
+                    height: Theme.dividerHeight
                     color: Theme.bgCardBorder
                 }
 
@@ -2078,6 +2123,33 @@ Page {
                     text: i18n.tr("Tuiles : %1 / %2").arg(page.dlDone).arg(page.dlTotal)
                 }
             }
+        }
+    }
+
+    // v0.99.1: recentrage visible des qu'on panne manuellement la carte —
+    // avant, le bouton etait enfoui dans le panneau et invisible en navigation.
+    MapFab {
+        id: recenterFab
+        visible: !page.panelOpen && !page.followGps && page.liveHasPos
+        anchors {
+            right: parent.right
+            bottom: panelToggle.top
+            rightMargin: units.gu(2)
+            bottomMargin: units.gu(1)
+        }
+        Icon {
+            anchors.centerIn: parent
+            name: "location"
+            width: units.gu(3)
+            height: width
+            color: Theme.textOnAccent
+        }
+        onClicked: {
+            haptics.vibrate(20)
+            page.followGps = true
+            map.centerLat = page.liveLat
+            map.centerLon = page.liveLon
+            showToast(i18n.tr("Suivi GPS activé"))
         }
     }
 
@@ -2295,6 +2367,28 @@ Page {
                 showToast(i18n.tr("Échec du chargement du GPX"))
                 page.activeTransfer = null
             }
+        }
+    }
+
+    // v0.99.1: confirmation avant d'arreter un enregistrement en cours.
+    Dialog {
+        id: stopRecordDialog
+        title: i18n.tr("Arrêter l'enregistrement ?")
+        text: i18n.tr("Le parcours sera sauvegardé dans l'historique.")
+        Button {
+            height: units.gu(6)
+            text: i18n.tr("Arrêter et enregistrer")
+            color: Theme.accentOrange
+            onClicked: {
+                if (daemonController.recording)
+                    daemonController.stopRecording()
+                PopupUtils.close(stopRecordDialog)
+            }
+        }
+        Button {
+            height: units.gu(6)
+            text: i18n.tr("Annuler")
+            onClicked: PopupUtils.close(stopRecordDialog)
         }
     }
 }

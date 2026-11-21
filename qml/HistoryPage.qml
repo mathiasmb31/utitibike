@@ -61,7 +61,21 @@ Page {
         model: routeHistory.entries
         spacing: 0   // les dividers des ListItem gèrent la séparation
         header: ListItem {
-            height: headerRow.height + units.gu(2)
+            height: headerCol.height + units.gu(2)
+            Column {
+                id: headerCol
+                width: parent.width - units.gu(2)
+                anchors.centerIn: parent
+                spacing: units.gu(0.5)
+                // v0.99.1: les gestes n'etaient pas discoverables.
+                Label {
+                    width: parent.width
+                    text: i18n.tr("Glissez → charger · ← supprimer")
+                    fontSize: "x-small"
+                    color: Theme.textMuted
+                    horizontalAlignment: Text.AlignHCenter
+                    visible: routeHistory.entries.length > 0
+                }
             Row {
                 id: headerRow
                 anchors.centerIn: parent
@@ -81,6 +95,7 @@ Page {
                     onClicked: PopupUtils.open(clearDialog)
                 }
             }
+            }  // Column headerCol
         }
         // ListItem natif Ubuntu Touch : divider, highlight au tap, swipe
         // gauche = supprimer, swipe droite = charger sur la carte.

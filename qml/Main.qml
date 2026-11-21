@@ -182,7 +182,7 @@ MainView {
 
         Timer {
             id: splashTimer
-            interval: 1500
+            interval: 800   // v0.99.1: splash natif deja present — 1,5 s etait trop long
             onTriggered: splash.hide()
         }
 

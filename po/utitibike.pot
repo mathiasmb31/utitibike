@@ -389,3 +389,42 @@ msgstr ""
 
 msgid "Conçu pour Ubuntu Touch"
 msgstr ""
+
+msgid "Arrêter et enregistrer"
+msgstr ""
+
+msgid "Arrêter l'enregistrement ?"
+msgstr ""
+
+msgid "Le parcours sera sauvegardé dans l'historique."
+msgstr ""
+
+msgid "Sug"
+msgstr ""
+
+msgid "Nuit"
+msgstr ""
+
+msgid "Ajouté aux favoris"
+msgstr ""
+
+msgid "Suivi GPS activé"
+msgstr ""
+
+msgid "Aucun parcours pour l'instant — enregistrez votre première sortie depuis la carte."
+msgstr ""
+
+msgid "Glissez → charger · ← supprimer"
+msgstr ""
+
+msgid "km/h"
+msgstr "km/h"
+
+msgid "kg"
+msgstr "kg"
+
+msgid "%1 km"
+msgstr "%1 km"
+
+msgid "%1 km · D+ %2 m"
+msgstr "%1 km · D+ %2 m"

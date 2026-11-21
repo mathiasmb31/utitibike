@@ -83,6 +83,17 @@ Page {
             y: units.gu(2)
             spacing: units.gu(1.5)
 
+            // v0.99.1: etat vide oriente l'utilisateur au lieu d'afficher
+            // quatre cartes de zeros sans explication.
+            Label {
+                visible: routeHistory.entries.length === 0
+                width: parent.width
+                text: i18n.tr("Aucun parcours pour l'instant — enregistrez votre première sortie depuis la carte.")
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+                fontSize: "small"
+                color: Theme.textMuted
+            }
             Label {
                 text: i18n.tr("Depuis le début")
                 fontSize: "small"
