@@ -405,3 +405,6 @@ msgstr "UT WheelTrek to aplikacja do jazdy rowerem i pieszych wędrówek. Pokazu
 
 msgid "À propos d'UT WheelTrek"
 msgstr "O UT WheelTrek"
+
+msgid "Conçu pour Ubuntu Touch"
+msgstr ""

@@ -60,7 +60,9 @@ po/                 catalogues gettext (QML) + Qt (C++), 10 langues
 
 ## Internationalisation
 
-10 langues : en, fr, es, de, it, pt, nl, pl, sv, da.
+14 langues : en, fr, es, de, it, pt, nl, pl, sv, da, zh, ar, ca, eu
+(les 10 de la convention transverse + nl/pl/sv/da hérités du projet). Les 4
+nouveaux catalogues (zh/ar/ca/eu) démarrent avec un fallback anglais, à traduire.
 
 - QML (`i18n.tr`) = gettext/libintl : `po/utitibike_<lang>.po` → `.mo` installé
   dans `share/locale/<lang>/LC_MESSAGES/utitibike.mo` (domaine posé dans

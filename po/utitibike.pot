@@ -386,3 +386,6 @@ msgstr ""
 
 msgid "À propos d'UT WheelTrek"
 msgstr ""
+
+msgid "Conçu pour Ubuntu Touch"
+msgstr ""

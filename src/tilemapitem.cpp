@@ -484,8 +484,17 @@ void TileMapItem::paint(QPainter *painter)
         painter->setRenderHint(QPainter::Antialiasing, true);
         for (const QVariant &v : m_favorites) {
             const QVariantMap m = v.toMap();
-            const QPointF pt(lonToWorldX(m.value(QStringLiteral("lon")).toDouble(), world) - ox,
-                             latToWorldY(m.value(QStringLiteral("lat")).toDouble(), world) - oy);
+            const double flat = m.value(QStringLiteral("lat")).toDouble();
+            const double flon = m.value(QStringLiteral("lon")).toDouble();
+            // v0.99.1: memes garde-fous que les waypoints — un favorites.json
+            // corrompu (NaN / hors limites) ne doit pas dessiner d'etoile
+            // fantome a une position absurde.
+            if (!std::isfinite(flat) || !std::isfinite(flon)
+                    || flat < -90.0 || flat > 90.0
+                    || flon < -180.0 || flon > 180.0)
+                continue;
+            const QPointF pt(lonToWorldX(flon, world) - ox,
+                             latToWorldY(flat, world) - oy);
             // Étoile à 5 branches
             QPainterPath star;
             const double r1 = 8.0, r2 = 3.5;

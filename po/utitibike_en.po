@@ -405,3 +405,6 @@ msgstr "UT WheelTrek is an app for biking and hiking. It shows a map, computes r
 
 msgid "À propos d'UT WheelTrek"
 msgstr "About UT WheelTrek"
+
+msgid "Conçu pour Ubuntu Touch"
+msgstr "Designed for Ubuntu Touch"

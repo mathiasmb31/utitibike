@@ -122,7 +122,7 @@ MainView {
                     var ctx = getContext("2d")
                     ctx.reset()
                     ctx.clearRect(0, 0, width, height)
-                    var text = "UT WHEELTREK · CONÇU POUR UBUNTU TOUCH · "
+                    var text = "UT WHEELTREK · " + i18n.tr("Conçu pour Ubuntu Touch").toUpperCase() + " · "
                     var r = width / 2 - width * 0.055
                     ctx.fillStyle = Theme.accentOrange
                     ctx.font = "bold " + Math.round(width * 0.042) + "px Ubuntu"

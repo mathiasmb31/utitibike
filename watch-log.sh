@@ -1,34 +1,37 @@
 #!/bin/bash
-# watch-log.sh — tail live des logs de l'app sur le device adb (FP5 <serial>)
+# watch-log.sh — suivi live des logs de UT WheelTrek sur le device (FP5 <serial>)
+# v0.99.1: l'ancien script (copie d'utoutlook) cherchait un wrapper.log qui
+# n'existe pas ici et un manifest.json en sous-dossier. Cette app C++ loggue
+# via journalctl --user (qWarning depuis aa-exec / utitibike).
 set -e
 DEV="${DEVICE:-${ADB_SERIAL:-<serial>}}"
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
   echo "Usage: ./watch-log.sh [filtre]"
-  echo "  filtres: error|loop|page|cookie|2fa|wrapper|all (defaut: all)"
-  echo "  ex: ./watch-log.sh error   -> uniquement les erreurs"
+  echo "  filtres: error|gps|record|tile|audio|all (defaut: all)"
+  echo "  ex: ./watch-log.sh gps -> fixes, pause et reprise GPS"
   exit 0
 fi
 FILTER="${1:-all}"
-LOG="/home/phablet/.config/$(grep -o '\"name\": *\"[^\"]*\"' */manifest.json 2>/dev/null | head -1 | sed 's/.*: *\"//;s/\"//')/wrapper.log"
-[ -f /dev/null ] && LOG="${LOG:-/home/phablet/.config/APP/wrapper.log}"
-# v4.1.0 (ref utoutlook): garde-fou — /home/phablet est chiffré sous UT ;
-# après un reboot non déverrouillé le log est illisible (ENOKEY).
+
 if ! adb devices 2>/dev/null | grep -q "^${DEV}[[:space:]]*device"; then
   echo "ERREUR: device $DEV non connecté (adb devices)" >&2
   exit 1
 fi
-if ! adb -s "$DEV" shell "test -f '$LOG'" 2>/dev/null; then
-  echo "ERREUR: $LOG illisible sur le device $DEV — appareil verrouillé après reboot ?" >&2
-  echo "  Déverrouillez le téléphone (PIN/mot de passe) puis relancez." >&2
+# Garde-fou : /home/phablet chiffré, illisible si le telephone est verrouille.
+if ! adb -s "$DEV" shell 'test -d /home/phablet/.local/share/mathias.utitibike' 2>/dev/null; then
+  echo "ERREUR: donnees de l'app illisibles sur $DEV — appareil verrouille apres reboot ?" >&2
+  echo "  Déverrouillez le téléphone puis relancez." >&2
   exit 1
 fi
-echo "log: $LOG sur $DEV via adb (Ctrl+C pour quitter)"
+
+BASE="journalctl --user -f --no-pager 2>/dev/null | grep -a -E 'utitibike|aa-exec'"
 case "$FILTER" in
-  error)  adb -s "$DEV" shell "tail -f '$LOG' | grep -a -i 'error\|fail\|431\|ERR_'" ;;
-  loop)   adb -s "$DEV" shell "tail -f '$LOG' | grep -a -i 'loop\|stagnant\|relaunch\|post.srf'" ;;
-  page)   adb -s "$DEV" shell "tail -f '$LOG' | grep -a 'Page loaded\|EVAL'" ;;
-  cookie) adb -s "$DEV" shell "tail -f '$LOG' | grep -a -i 'cookie\|431\|token'" ;;
-  2fa)    adb -s "$DEV" shell "tail -f '$LOG' | grep -a -i '2fa\|post.srf\|auth'" ;;
-  wrapper) adb -s "$DEV" shell "tail -f '$LOG' | grep -a -v 'console\.'" ;;
-  *)      adb -s "$DEV" shell "tail -f '$LOG'" ;;
+  error)   PAT='FATAL|error|failed|DENIED|crash|segfault' ;;
+  gps)     PAT='\[gpsd\].*(fix|pause|resume|GPS recovery|position|error)|location service' ;;
+  record)  PAT='\[gpsd\]|\[daemonctl\]|recording|parcours' ;;
+  tile)    PAT='tilecache|tileUrl|tuile' ;;
+  audio)   PAT='sound|paplay|beep|alarm' ;;
+  *)       PAT='.' ;;
 esac
+echo "logs UT WheelTrek sur $DEV (filtre=$FILTER, Ctrl+C pour quitter)"
+adb -s "$DEV" shell "${BASE} | grep -a -E '${PAT}'"

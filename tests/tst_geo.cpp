@@ -10,6 +10,7 @@ private slots:
     void samePointIsZero();
     void parisToulouse();
     void antipodes();
+    void nearAntipodesFinite();
     void negativeCoordinates();
     void symmetry();
     void knownDistance1Degree();
@@ -34,6 +35,14 @@ void TestGeo::antipodes()
     const double d = haversine(0.0, 0.0, 0.0, 180.0);
     QVERIFY2(d > 19000000.0 && d < 21000000.0,
              qPrintable(QString("Distance antipodes: %1 m (attendu ~20 015 km)").arg(d)));
+}
+
+void TestGeo::nearAntipodesFinite()
+{
+    // v0.99.1: sans clamp, a peut depasser 1 par arrondi -> NaN.
+    const double d = haversine(0.0, 0.0, 0.0, 179.99999999);
+    QVERIFY2(std::isfinite(d), "haversine must stay finite near antipodes");
+    QVERIFY(d > 19000000.0 && d < 21000000.0);
 }
 
 void TestGeo::negativeCoordinates()
