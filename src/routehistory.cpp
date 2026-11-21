@@ -208,6 +208,10 @@ void RouteHistory::load()
         }
         m_entries.append(e);
     }
+    // v0.99.1: la limite de 50 etait appliquee seulement dans addEntry —
+    // un history.json gonfle etait charge integralement.
+    while (m_entries.size() > 50)
+        m_entries.removeLast();
     if (migrated)
         save();
 }

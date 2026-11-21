@@ -191,6 +191,8 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
     // les deux respectent l'option gpsd.conf (bip désactivé = aucun son).
     if (m_recording) {
         const bool fix = info.isValid() && info.coordinate().isValid();
+        if (fix)
+            m_everHadFix = true;  // v0.99.1: memoire, meme apres un fix invalide
         if (fix != m_gotFix) {
             m_gotFix = fix;
             if (readBeepConf()) {
@@ -283,8 +285,12 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
     // fixes à 30 s pour ne pas solliciter le récepteur GPS inutilement ;
     // dès que ça roule, retour à 5 s. Tant qu'on est en pause, on garde
     // 5 s : la reprise de mouvement doit être détectée vite, pas 30 s plus tard.
-    m_gps->setUpdateInterval((m_curSpeed < 1.0 && !m_paused) ? kIntervalIdleMs
-                                                             : kIntervalMovingMs);
+    // v0.99.1: ne reconfigurer le plugin que lors d'un vrai changement —
+    // l'appel systematique a chaque fix peut rearmer le service de localisation.
+    const int wantInterval = (m_curSpeed < 1.0 && !m_paused) ? kIntervalIdleMs
+                                                             : kIntervalMovingMs;
+    if (m_gps->updateInterval() != wantInterval)
+        m_gps->setUpdateInterval(wantInterval);
     if (m_paused)
         return;
 
@@ -641,7 +647,7 @@ void GpsDaemon::applyPositioningMode()
         // toutes les méthodes (satellite inclus) — sinon aucune position
         // n'est jamais trouvée en mode « réseau ».
         QTimer::singleShot(30000, this, [this]() {
-            if (!m_gotFix) {
+            if (!m_everHadFix) {
                 qWarning() << "[gpsd] mode réseau sans fix après 30 s — secours satellite (AllPositioningMethods)";
                 m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
             }
@@ -844,6 +850,7 @@ void GpsDaemon::onControlTick()
         m_lastMoveMs = elapsedMs();  // init au start : la pause auto fonctionne
                                       // même si on démarre à l'arrêt
         m_gotFix = false;
+        m_everHadFix = false;
         m_rejected = 0;
         // v0.99.1: nouveau track -> nouveaux compteurs de reprise GPS
         m_lastPositionMs = QDateTime::currentMSecsSinceEpoch();
@@ -951,7 +958,7 @@ void GpsDaemon::onControlTick()
         }
         // Après 6 min sans aucun fix, on propose à l'app un départ manuel
         // (touche sur la carte) + beep long d'alerte au moment du passage.
-        if (!m_gotFix && elapsedMs() > kManualStartAfterMs && !m_awaitManualStart) {
+        if (!m_everHadFix && elapsedMs() > kManualStartAfterMs && !m_awaitManualStart) {
             m_awaitManualStart = true;
             playLongBeep();
             sendNotification(tr("Pas de signal GPS — touchez la carte pour définir le départ"));
@@ -1005,8 +1012,9 @@ void GpsDaemon::writeStatsJson()
     }
 }
 
-void GpsDaemon::writeDoneJson(const QString &gpxPath)
+bool GpsDaemon::writeDoneJson(const QString &gpxPath)
 {
+    bool ok = false;
     QJsonObject obj;
     obj[QStringLiteral("recording")] = false;
     obj[QStringLiteral("distanceM")] = m_distance;
@@ -1021,7 +1029,8 @@ void GpsDaemon::writeDoneJson(const QString &gpxPath)
     QSaveFile f(m_doneFile);
     if (f.open(QIODevice::WriteOnly)) {
         f.write(QJsonDocument(obj).toJson(QJsonDocument::Compact));
-        if (!f.commit()) {
+        ok = f.commit();
+        if (!ok) {
             ++m_writeErrors;
             qWarning() << "[gpsd] done commit FAIL";
         }
@@ -1029,6 +1038,7 @@ void GpsDaemon::writeDoneJson(const QString &gpxPath)
         ++m_writeErrors;
         qWarning() << "[gpsd] done open FAIL" << f.errorString();
     }
+    return ok;
 }
 
 QString GpsDaemon::generateGpx() const
@@ -1113,14 +1123,20 @@ void GpsDaemon::cleanup()
                          + m_startTime.toString(QStringLiteral("yyyyMMdd-HHmmss"))
                          + QStringLiteral(".gpx");
     const QString gpxPath = saveGpx(name);
-    writeDoneJson(gpxPath);
+    const bool doneOk = writeDoneJson(gpxPath);
 
-    // Nettoie les fichiers de contrôle et les filets de sécurité
+    // Nettoie les fichiers de contrôle et les filets de sécurité.
+    // v0.99.1: ne supprimer le .part QUE si le GPX ET le done ont ete
+    // ecrits — sinon c'est le seul filet restant pour recoverOrphanPart().
     QFile::remove(m_controlFile);
     QFile::remove(m_statsFile);
-    QFile::remove(m_partFile);
     QFile::remove(m_manualStartFile);
-    QFile::remove(m_tracksDir + QStringLiteral("/en-cours.gpx"));
+    if (!gpxPath.isEmpty() && doneOk) {
+        QFile::remove(m_partFile);
+        QFile::remove(m_tracksDir + QStringLiteral("/en-cours.gpx"));
+    } else {
+        qWarning() << "[gpsd] save incomplete — keeping .part for recovery";
+    }
 
     qWarning() << "[gpsd] saved" << gpxPath << m_points.size() << "points,"
                << "stopReason=" << m_stopReason << "exiting";
@@ -1136,12 +1152,9 @@ void GpsDaemon::cleanup()
     else if (m_stopReason == QLatin1String("maxduration"))
         sendNotification(tr("Durée max (12 h) atteinte — enregistrement arrêté, parcours sauvegardé"));
 
-    // Arrêt batterie : on ferme aussi l'app (même gelée écran éteint) pour
-    // qu'elle importe le parcours dans l'historique à sa fermeture.
-    if (m_stopReason == QLatin1String("battery") && m_parentPid > 0) {
-        qWarning() << "[gpsd] battery stop — SIGTERM to parent app pid" << m_parentPid;
-        kill(m_parentPid, SIGTERM);
-    }
-
+    // v0.99.1: NE PLUS SIGKILL/SIGTERM l'app ici. L'app n'installe aucun
+    // handler SIGTERM : le tuer empechait aboutToQuit ET le QProcess::finished
+    // de s'executer -> le done n'etait jamais importe dans l'historique.
+    // Le signal finished du QProcess suffit (DaemonController::onDaemonFinished).
     QCoreApplication::quit();
 }

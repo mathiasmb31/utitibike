@@ -44,14 +44,17 @@ void SearchClient::search(const QString &query)
     connect(timer, &QTimer::timeout, reply, &QNetworkReply::abort);
     timer->start(15000);
 
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        onReply(reply);
+    const quint64 seq = ++m_searchSeq;
+    connect(reply, &QNetworkReply::finished, this, [this, reply, seq]() {
+        onReply(reply, seq);
     });
 }
 
-void SearchClient::onReply(QNetworkReply *reply)
+void SearchClient::onReply(QNetworkReply *reply, quint64 seq)
 {
     reply->deleteLater();
+    if (seq != m_searchSeq)
+        return;  // v0.99.1: reponse d'une recherche plus ancienne
 
     if (reply->error() != QNetworkReply::NoError) {
         const QString msg = tr("Recherche indisponible (%1)").arg(reply->errorString());
@@ -124,14 +127,17 @@ void SearchClient::reverse(double lat, double lon)
     connect(timer, &QTimer::timeout, reply, &QNetworkReply::abort);
     timer->start(10000);
 
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        onReverseReply(reply);
+    const quint64 seq = ++m_reverseSeq;
+    connect(reply, &QNetworkReply::finished, this, [this, reply, seq]() {
+        onReverseReply(reply, seq);
     });
 }
 
-void SearchClient::onReverseReply(QNetworkReply *reply)
+void SearchClient::onReverseReply(QNetworkReply *reply, quint64 seq)
 {
     reply->deleteLater();
+    if (seq != m_reverseSeq)
+        return;  // v0.99.1: geocodage inverse perime (trajet renomme a tort)
 
     if (reply->error() != QNetworkReply::NoError) {
         qWarning() << "SearchClient reverse error:" << reply->error() << reply->errorString();

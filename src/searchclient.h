@@ -36,11 +36,14 @@ signals:
     void reverseFailed();
 
 private slots:
-    void onReply(QNetworkReply *reply);
-    void onReverseReply(QNetworkReply *reply);
+    void onReply(QNetworkReply *reply, quint64 seq);
+    void onReverseReply(QNetworkReply *reply, quint64 seq);
 
 private:
     QNetworkAccessManager m_nam;
+    // v0.99.1: une reponse lente ne doit pas ecraser une recherche plus recente.
+    quint64 m_searchSeq = 0;
+    quint64 m_reverseSeq = 0;
 };
 
 #endif // SEARCHCLIENT_H

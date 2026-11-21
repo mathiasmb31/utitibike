@@ -53,7 +53,7 @@ private slots:
 
 private:
     void writeStatsJson();
-    void writeDoneJson(const QString &gpxPath);
+    bool writeDoneJson(const QString &gpxPath);  // v0.99.1: renvoie le succes
     QString generateGpx() const;
     QString saveGpx(const QString &fileName) const;
     void appendPart();
@@ -149,7 +149,9 @@ private:
     // Auto-pause à l'arrêt + filtrage qualité
     bool m_paused = false;
     qint64 m_lastMoveMs = 0;   // elapsed() du dernier fix avec vitesse >= 1 m/s
-    bool m_gotFix = false;     // vrai fix reçu pendant cet enregistrement
+    bool m_gotFix = false;      // fix VALIDE en ce moment (bips de transition)
+    bool m_everHadFix = false;  // v0.99.1: au moins un fix recu ce track — sert
+                                // au depart manuel et au secours réseau (non réarmable)
     int m_rejected = 0;        // points rejetés (précision > kMaxAccuracyM)
     double m_altWin[3] = {0.0, 0.0, 0.0};  // fenêtre glissante 3 altitudes (lissage D+)
     int m_altWinN = 0;

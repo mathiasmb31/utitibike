@@ -57,6 +57,7 @@ private:
     // id de relation -> nom affiché (retenu entre suggest() et fetchTrail())
     QHash<qint64, QString> m_names;
     qint64 m_pendingId = 0;
+    quint64 m_querySeq = 0;  // v0.99.1: ignore les reponses Overpass perimees
 };
 
 #endif // SUGGESTCLIENT_H

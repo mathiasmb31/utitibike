@@ -125,18 +125,27 @@ void ViewState::load()
     m_lat = lat.toDouble();
     m_lon = lon.toDouble();
     m_zoom = qBound(3, int(zoom.toDouble()), 17);
+    // v0.99.1: memes validateurs que les setters — un view.json corrompu ne
+    // doit pas charger un theme/mode de positionnement incoherent.
     const QJsonValue theme = o.value(QStringLiteral("themeMode"));
-    if (theme.isString())
-        m_themeMode = theme.toString();
+    if (theme.isString()) {
+        const QString v = theme.toString();
+        m_themeMode = (v == QLatin1String("dark") || v == QLatin1String("light"))
+                      ? v : QStringLiteral("auto");
+    }
     const QJsonValue pos = o.value(QStringLiteral("positioningMode"));
-    if (pos.isString())
-        m_positioningMode = pos.toString();
+    if (pos.isString()) {
+        const QString v = pos.toString();
+        m_positioningMode = (v == QLatin1String("satellite") || v == QLatin1String("network"))
+                            ? v : QStringLiteral("auto");
+    }
     const QJsonValue au = o.value(QStringLiteral("avoidUnpaved"));
     if (au.isBool())
         m_avoidUnpaved = au.toBool();
     const QJsonValue tm = o.value(QStringLiteral("transportMode"));
     if (tm.isString())
-        m_transportMode = tm.toString();
+        m_transportMode = (tm.toString() == QLatin1String("foot"))
+                          ? QStringLiteral("foot") : QStringLiteral("bike");
     m_restored = true;
     qWarning() << "viewstate restored" << m_lat << m_lon << "zoom" << m_zoom
                << "theme" << m_themeMode;

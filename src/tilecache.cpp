@@ -97,6 +97,9 @@ void TileCache::setOnline(bool v)
         m_probeTimer.start();
     qWarning() << "tilecache online=" << v;
     emit onlineChanged();
+    // v0.99.1: le retour reseau doit relancer la file laisseee en attente.
+    if (v)
+        drain();
 }
 
 void TileCache::updateOnlineState(int error, bool ok)
@@ -184,6 +187,8 @@ QImage TileCache::tile(int z, int x, int y)
     const QString key = keyOf(z, x, y);
     QString tileServer;
     QDir dir;
+    bool online = false;
+    bool paused = false;
     {
         QMutexLocker locker(&m_mutex);
         if (QImage *img = m_mem.object(key))
@@ -192,6 +197,8 @@ QImage TileCache::tile(int z, int x, int y)
             return QImage();
         tileServer = m_tileServer;
         dir = m_dir;
+        online = m_online;    // v0.99.1: lire sous mutex (ecrit par setOnline)
+        paused = m_paused;
     }
 
     const QString path = tileFilePath(dir, tileServer, z, x, y);
@@ -204,7 +211,7 @@ QImage TileCache::tile(int z, int x, int y)
         }
     }
 
-    if (m_online && !m_paused)
+    if (online && !paused)
         fetch(z, x, y, false);
     return QImage();
 }
@@ -230,7 +237,10 @@ void TileCache::fetch(int z, int x, int y, bool batch)
 
 void TileCache::drain()
 {
-    while (!m_paused && m_active.size() < MaxActive && !m_queue.isEmpty()) {
+    // v0.99.1: ne pas lancer de salves de telechargement quand le reseau est
+    // declare hors ligne (les cles seraient consommees sans jamais etre
+    // retelechargees au retour du reseau).
+    while (!m_paused && m_online && m_active.size() < MaxActive && !m_queue.isEmpty()) {
         const QString key = m_queue.dequeue();
         const QStringList parts = key.split(QLatin1Char('/'));
         if (parts.size() != 3)
@@ -369,8 +379,10 @@ int TileCache::enqueueBox(double lat1, double lon1,
     const int tx1 = qFloor(std::max(xa, xb) / 256.0);
     const int ty0 = qFloor(std::min(ya, yb) / 256.0);
     const int ty1 = qFloor(std::max(ya, yb) / 256.0);
-    for (int tx = tx0; tx <= tx1; ++tx)
-        for (int ty = ty0; ty <= ty1; ++ty)
+    // v0.99.1: plafond identique a downloadRoute — le timer de prechargement
+    // de MapPage peut demander une grande zone a z17 (des milliers de tuiles).
+    for (int tx = tx0; tx <= tx1 && m_batchTotal < MaxRouteTiles; ++tx)
+        for (int ty = ty0; ty <= ty1 && m_batchTotal < MaxRouteTiles; ++ty)
             if (enqueueKey(z, tx, ty))
                 ++added;
     return added;
@@ -464,6 +476,13 @@ void TileCache::cancelAll()
     m_batchKeys.clear();
     m_batchTotal = 0;
     m_batchDone = 0;
+    // v0.99.1: les cles deja enfilees par fetch() restaient dans m_pending
+    // apres abort() — leur finished() ne venant jamais, tuiles noires
+    // definitives jusqu'au redemarrage.
+    {
+        QMutexLocker locker(&m_mutex);
+        m_pending.clear();
+    }
     emitProgress();
 }
 

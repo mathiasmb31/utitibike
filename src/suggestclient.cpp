@@ -39,12 +39,15 @@ void SuggestClient::query(const QString &overpass, int timeoutMs,
     req.setHeader(QNetworkRequest::UserAgentHeader,
                   QStringLiteral("utitibike/UT WheelTrek (Ubuntu Touch)"));
     QNetworkReply *reply = m_nam.get(req);
+    const quint64 seq = ++m_querySeq;
     QTimer::singleShot(timeoutMs, reply, [reply]() {
         if (reply->isRunning())
             reply->abort();
     });
-    connect(reply, &QNetworkReply::finished, this, [this, reply, onSuccess, onError]() {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, seq, onSuccess, onError]() {
         reply->deleteLater();
+        if (seq != m_querySeq)
+            return;  // v0.99.1: une requete plus recente a pris le dessus
         const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (reply->error() != QNetworkReply::NoError) {
             qWarning() << "suggest: network error" << reply->error() << reply->errorString()

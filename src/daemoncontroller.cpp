@@ -178,8 +178,12 @@ void DaemonController::checkExistingRecording()
     // Appelé au démarrage de l'app : si un daemon tourne encore
     // (app redémarrée rapidement), se resynchronise.
     if (!QFile::exists(m_controlFile)) {
-        // Pas de contrôle = pas d'enregistrement en cours
-        // Nettoie les fichiers résiduels éventuels
+        // Pas de contrôle = pas d'enregistrement en cours.
+        // v0.99.1: un done peut rester si l'app a ete fermee entre l'ecriture
+        // du done par le daemon et son import — le lire AVANT de l'effacer.
+        // checkExistingRecording est appele depuis QML, doneReceived est entendu.
+        if (QFile::exists(m_doneFile))
+            readDoneJson();
         QFile::remove(m_statsFile);
         QFile::remove(m_doneFile);
         return;
