@@ -78,6 +78,16 @@ Page {
     //   < 10 m/km → Vallonné  (vert clair)
     //   < 20 m/km → Sportif   (orange)
     //   ≥ 20 m/km → Montagne  (rouge)
+    // v0.99.1: les modeles QVariant (QVariantMap) peuvent arriver sous forme
+    // d'objet JS — on ne doit jamais concatener l'objet lui-meme dans un text.
+    function stepLabel(m) {
+        if (typeof m === "string")
+            return m
+        if (m && typeof m.desc === "string")
+            return m.desc
+        return ""
+    }
+
     function difficultyLevel(distanceM, ascentM) {
         if (distanceM <= 0) return ""
         var mPerKm = ascentM / (distanceM / 1000)
@@ -637,7 +647,7 @@ Page {
                 wrapMode: Text.WordWrap
                 fontSize: "small"
                 color: Theme.textPrimary
-                text: (index + 1) + ". " + (modelData.desc || "")
+                text: (index + 1) + ". " + page.stepLabel(modelData)
             }
         }
     }

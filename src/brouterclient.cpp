@@ -276,7 +276,7 @@ void BrouterClient::parseGpx(const QString &gpxText)
     double ascent = 0.0;
     double prevLat = 0.0;
     double prevLon = 0.0;
-    double prevEle = 0.0;
+    double ascentRefEle = 0.0;  // v0.99.1: reference D+ avec hysteresis
     bool havePrev = false;
     bool haveEle = false;
     // BRouter peut couper un itinéraire en plusieurs <trkseg> (ferry, tunnel,
@@ -376,17 +376,24 @@ void BrouterClient::parseGpx(const QString &gpxText)
             points.append(p);
             if (havePrev)
                 dist += haversine(prevLat, prevLon, lat, lon);
-            if (eleOk && haveEle && ele > prevEle)
-                ascent += ele - prevEle;
+            // v0.99.1: hysteresis 3 m — le MNE BRouter quantifie l'altitude
+            // et additionner chaque petit gain classait « Sportif » un
+            // parcours plat.
+            if (eleOk) {
+                if (!haveEle) {
+                    ascentRefEle = ele;
+                    haveEle = true;
+                } else if (ele - ascentRefEle >= 3.0) {
+                    ascent += ele - ascentRefEle;
+                    ascentRefEle = ele;
+                } else if (ascentRefEle - ele >= 3.0) {
+                    ascentRefEle = ele;
+                }
+            }
             prevLat = lat;
             prevLon = lon;
-            // D+ entre altitudes valides uniquement : prevEle ne garde que
-            // la dernière altitude connue (un point sans <ele> ne doit pas
-            // faire croire à une descente jusqu'à 0 m).
-            if (eleOk) {
-                prevEle = ele;
-                haveEle = true;
-            }
+            // (l'altitude de reference n'est mise a jour que dans le bloc
+            // d'hysteresis ci-dessus — un point sans <ele> ne la modifie pas)
             havePrev = true;
         }
     }

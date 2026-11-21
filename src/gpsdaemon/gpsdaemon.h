@@ -162,6 +162,11 @@ private:
     double m_altWin[3] = {0.0, 0.0, 0.0};  // fenêtre glissante 3 altitudes (lissage D+)
     int m_altWinN = 0;
     double m_lastAltEff = 0.0;
+    // v0.99.1: reference D+ avec hysteresis 3 m — le bruit d'altitude GPS
+    // (mediane sur 3 fixes a 3 Hz = 1 seconde seulement) gonflait le D+
+    // et classait « Sportif » un parcours plat.
+    double m_ascentRefAlt = 0.0;
+    static constexpr double kAltNoiseM = 3.0;
     bool m_hasAltEff = false;
 
     // Filet de sécurité crash : points ajoutés en append dans en-cours.part

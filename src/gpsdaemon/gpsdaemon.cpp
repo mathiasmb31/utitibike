@@ -321,10 +321,19 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
             const int n = qMin(m_altWinN, 3);
             std::sort(w, w + n);
             const double altEff = w[n / 2];
-            if (m_hasAltEff && altEff > m_lastAltEff)
-                m_ascent += altEff - m_lastAltEff;
+            // v0.99.1: hysteresis — on ne compte le D+ que quand l'altitude
+            // s'est ELOIGNEE de la reference de plus de 3 m. Le bruit
+            // (±1-2 m a 3 fix/s) n'est plus accumule.
+            if (!m_hasAltEff) {
+                m_ascentRefAlt = altEff;
+                m_hasAltEff = true;
+            } else if (altEff - m_ascentRefAlt >= kAltNoiseM) {
+                m_ascent += altEff - m_ascentRefAlt;
+                m_ascentRefAlt = altEff;
+            } else if (m_ascentRefAlt - altEff >= kAltNoiseM) {
+                m_ascentRefAlt = altEff;  // descente : on repart de la bas
+            }
             m_lastAltEff = altEff;
-            m_hasAltEff = true;
         }
     }
 
@@ -892,6 +901,8 @@ void GpsDaemon::onControlTick()
         m_gpsRestarts = 0;
         m_altWinN = 0;
         m_hasAltEff = false;
+        m_ascentRefAlt = 0.0;
+        m_lastAltEff = 0.0;
         m_partWritten = 0;
         m_awaitManualStart = false;
         m_alarmPlaying = false;
