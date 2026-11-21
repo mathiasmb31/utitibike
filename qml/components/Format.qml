@@ -1,19 +1,22 @@
 pragma Singleton
 import QtQuick 2.12
 
-// v0.99.1: formatage centralise respectant la locale (avant, .toFixed(1)
-// imposait le point decimal en FR/DE et les dates etaient heterogenes).
+// v0.99.1: formatage centralise respectant la locale.
+// ATTENTION: Qt.locale().toString(x, 'f', n) resout vers Object.toString()
+// en QML 5.12 -> "[object Object]". Utiliser Number.toLocaleString() et
+// Qt.formatDate/formatDateTime, qui renvoient de vraies chaines.
 QtObject {
     function num(value, digits) {
-        return Qt.locale().toString(Number(value), 'f', digits === undefined ? 1 : digits)
+        var d = digits === undefined ? 1 : digits
+        return Number(value).toLocaleString(Qt.locale(), 'f', d)
     }
     function integer(value) {
-        return Qt.locale().toString(Number(value), 'f', 0)
+        return Number(value).toLocaleString(Qt.locale(), 'f', 0)
     }
     function date(value) {
-        return new Date(value).toLocaleDateString(Qt.locale())
+        return Qt.formatDate(new Date(value), Qt.DefaultLocaleShortDate)
     }
     function dateTime(value) {
-        return new Date(value).toLocaleString(Qt.locale(), "dd/MM HH:mm")
+        return Qt.formatDateTime(new Date(value), "dd/MM HH:mm")
     }
 }

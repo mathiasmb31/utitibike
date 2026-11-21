@@ -322,7 +322,7 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
             std::sort(w, w + n);
             const double altEff = w[n / 2];
             // v0.99.1: hysteresis — on ne compte le D+ que quand l'altitude
-            // s'est ELOIGNEE de la reference de plus de 3 m. Le bruit
+            // s'est ELOIGNEE de la reference de plus de 5 m. Le bruit
             // (±1-2 m a 3 fix/s) n'est plus accumule.
             if (!m_hasAltEff) {
                 m_ascentRefAlt = altEff;

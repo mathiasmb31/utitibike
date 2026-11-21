@@ -376,17 +376,17 @@ void BrouterClient::parseGpx(const QString &gpxText)
             points.append(p);
             if (havePrev)
                 dist += haversine(prevLat, prevLon, lat, lon);
-            // v0.99.1: hysteresis 3 m — le MNE BRouter quantifie l'altitude
+            // v0.99.1: hysteresis 5 m — le MNE BRouter quantifie l'altitude
             // et additionner chaque petit gain classait « Sportif » un
             // parcours plat.
             if (eleOk) {
                 if (!haveEle) {
                     ascentRefEle = ele;
                     haveEle = true;
-                } else if (ele - ascentRefEle >= 3.0) {
+                } else if (ele - ascentRefEle >= 5.0) {
                     ascent += ele - ascentRefEle;
                     ascentRefEle = ele;
-                } else if (ascentRefEle - ele >= 3.0) {
+                } else if (ascentRefEle - ele >= 5.0) {
                     ascentRefEle = ele;
                 }
             }
