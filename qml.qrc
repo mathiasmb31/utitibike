@@ -11,6 +11,7 @@
         <file>qml/HelpSection.qml</file>
         <file>qml/components/qmldir</file>
         <file>qml/components/Theme.qml</file>
+        <file>qml/components/Format.qml</file>
         <file>qml/components/SportCard.qml</file>
         <file>qml/components/SegmentedControl.qml</file>
         <file>qml/components/AppHeader.qml</file>

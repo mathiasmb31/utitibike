@@ -109,7 +109,7 @@ Page {
                     anchors.centerIn: parent
                     spacing: units.gu(3)
                     Column {
-                        Label { text: statsPage.totalKm.toFixed(1) + " km"; fontSize: "large"; font.bold: true; color: Theme.accentOrange }
+                        Label { text: Format.num(statsPage.totalKm) + " km"; fontSize: "large"; font.bold: true; color: Theme.accentOrange }
                         Label { text: i18n.tr("Distance"); fontSize: "x-small"; color: Theme.textSecondary }
                     }
                     Column {
@@ -138,7 +138,7 @@ Page {
                     anchors.centerIn: parent
                     spacing: units.gu(3)
                     Column {
-                        Label { text: statsPage.weekKm.toFixed(1) + " km"; fontSize: "large"; font.bold: true; color: Theme.accentOrange }
+                        Label { text: Format.num(statsPage.weekKm) + " km"; fontSize: "large"; font.bold: true; color: Theme.accentOrange }
                         Label { text: i18n.tr("Distance"); fontSize: "x-small"; color: Theme.textSecondary }
                     }
                     Column {
@@ -167,7 +167,7 @@ Page {
                     anchors.centerIn: parent
                     spacing: units.gu(3)
                     Column {
-                        Label { text: statsPage.monthKm.toFixed(1) + " km"; fontSize: "large"; font.bold: true; color: Theme.accentOrange }
+                        Label { text: Format.num(statsPage.monthKm) + " km"; fontSize: "large"; font.bold: true; color: Theme.accentOrange }
                         Label { text: i18n.tr("Distance"); fontSize: "x-small"; color: Theme.textSecondary }
                     }
                     Column {
@@ -193,7 +193,7 @@ Page {
                 padding: units.gu(1)
                 Label {
                     anchors.centerIn: parent
-                    text: statsPage.recordKm.toFixed(1) + " km"
+                    text: Format.num(statsPage.recordKm) + " km"
                     fontSize: "x-large"
                     font.bold: true
                     color: Theme.accentOrange

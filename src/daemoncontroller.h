@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QProcess>
 #include <QDateTime>
+#include <QVariantList>
 
 class RouteHistory;
 
@@ -88,6 +89,9 @@ public:
     // Vérifie si un enregistrement daemon est en cours (appelé au
     // démarrage de l'app pour se resynchroniser).
     Q_INVOKABLE void checkExistingRecording();
+    // v0.99.1: points du tracé en cours lus dans en-cours.part (JSONL) pour
+    // affichage live sur la carte pendant l'enregistrement.
+    Q_INVOKABLE QVariantList liveTrackPoints() const;
     // Départ manuel (pas de fix GPS après 6 min) : écrit "lat lon" dans
     // manual-start.control, lu par le daemon au prochain tick de contrôle.
     Q_INVOKABLE void setManualStart(double lat, double lon);

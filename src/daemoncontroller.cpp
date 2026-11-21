@@ -191,6 +191,32 @@ void DaemonController::stopRecording()
     emit statsChanged();
 }
 
+QVariantList DaemonController::liveTrackPoints() const
+{
+    QVariantList out;
+    const QString partPath = m_tracksDir + QStringLiteral("/en-cours.part");
+    QFile f(partPath);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
+        return out;
+    while (!f.atEnd()) {
+        const QByteArray line = f.readLine().trimmed();
+        if (line.isEmpty())
+            continue;
+        const QJsonDocument doc = QJsonDocument::fromJson(line);
+        if (!doc.isObject())
+            continue;
+        const QJsonObject o = doc.object();
+        const double lat = o.value(QStringLiteral("lat")).toDouble();
+        const double lon = o.value(QStringLiteral("lon")).toDouble();
+        if (!std::isfinite(lat) || !std::isfinite(lon)
+                || lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0)
+            continue;
+        out.append(QVariantMap{{QStringLiteral("lat"), lat},
+                               {QStringLiteral("lon"), lon}});
+    }
+    return out;
+}
+
 void DaemonController::checkExistingRecording()
 {
     // Appelé au démarrage de l'app : si un daemon tourne encore

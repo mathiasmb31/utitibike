@@ -157,7 +157,7 @@ Item {
             // Distance totale en bas à droite — Theme.textSecondary #888899
             ctx.fillStyle = "#888899"
             ctx.textAlign = "right"
-            ctx.fillText((totalDist / 1000).toFixed(1) + " km", width - padR, height - units.gu(0.3))
+            ctx.fillText(Format.num(totalDist / 1000) + " km", width - padR, height - units.gu(0.3))
 
             if (hasEle) {
                 // Altitude max en haut à gauche — Theme.textPrimary #e8e8e8

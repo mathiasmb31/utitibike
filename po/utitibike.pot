@@ -428,3 +428,21 @@ msgstr "%1 km"
 
 msgid "%1 km · D+ %2 m"
 msgstr "%1 km · D+ %2 m"
+
+msgid "Rechercher un lieu"
+msgstr "Search for a place"
+
+msgid "Tracés suggérés"
+msgstr "Suggested trails"
+
+msgid "Couche de carte"
+msgstr "Map layer"
+
+msgid "Zoom avant"
+msgstr "Zoom in"
+
+msgid "Zoom arrière"
+msgstr "Zoom out"
+
+msgid "Recentrer sur ma position"
+msgstr "Recenter on my position"

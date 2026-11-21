@@ -48,6 +48,20 @@ Page {
                                             : (gpsTracker.active && gpsTracker.hasFix)
     property bool liveHasApprox: liveRecording ? daemonController.approx
                                                : (gpsTracker.active && gpsTracker.hasApprox)
+    // v0.99.1: chaine de positionnement des overlays du haut — avant, chacun
+    // calculait son y independamment et ils se chevauchaient des que deux
+    // etats etaient actifs (nav + recherche, recherche + profil, etc.).
+    property real yAfterNav: units.gu(1)
+                             + (navBanner.visible ? navBanner.height + units.gu(0.5) : 0)
+    property real yAfterSearch: yAfterNav
+                                + (searchBar.visible ? searchBar.height + units.gu(0.5) : 0)
+    property real yAfterSugg: yAfterSearch
+                              + (suggCard.visible ? suggCard.height + units.gu(0.5) : 0)
+    property real yAfterRoute: yAfterSugg
+                               + (routeInfoBanner.visible ? routeInfoBanner.height + units.gu(0.5) : 0)
+    property real yAfterElev: yAfterRoute
+                              + (elevationOverlay.visible ? elevationOverlay.height + units.gu(0.5) : 0)
+
     property bool liveHasPos: liveHasFix || liveHasApprox
     property real liveLat: liveRecording ? daemonController.latitude : gpsTracker.latitude
     property real liveLon: liveRecording ? daemonController.longitude : gpsTracker.longitude
@@ -221,8 +235,24 @@ Page {
         showToast(i18n.tr("Préchargement zoom %1 à %2 lancé").arg(map.zoom).arg(zmax))
     }
 
+    // v0.99.1: file de toasts — l'ancien showToast ecrasait le message en
+    // cours (un contournement par QTimer.singleShot(700) existait deja,
+    // preuve du probleme).
+    property var toastQueue: []
+    property bool toastShowing: false
     function showToast(msg) {
-        toastLabel.text = msg
+        toastQueue.push(msg)
+        if (!toastShowing)
+            showNextToast()
+    }
+    function showNextToast() {
+        if (toastQueue.length === 0) {
+            toastShowing = false
+            toastRect.opacity = 0
+            return
+        }
+        toastShowing = true
+        toastLabel.text = toastQueue.shift()
         toastRect.opacity = 1.0
         toastTimer.restart()
     }
@@ -260,7 +290,7 @@ Page {
                 var dateStr = new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm")
                 var name = i18n.tr("Trajet %1 · %2 km")
                            .arg(dateStr)
-                           .arg((distM / 1000).toFixed(1))
+                           .arg(Format.num(distM / 1000))
                 routeHistory.addEntry(name, distM, ascM, [], gpxContent, daemonController.startTime)
                 // Renomme « Trajet <lieu> · <date> » si Nominatim trouve le lieu
                 page.nameTripFromPlace(0, gpxContent, dateStr)
@@ -274,7 +304,7 @@ Page {
                 // chargé") qui l'écraserait sinon (toast unique).
                 QTimer.singleShot(700, function() {
                     showToast(i18n.tr("Parcours sauvegardé : %1 km · D+ %2 m")
-                              .arg((distM / 1000).toFixed(1))
+                              .arg(Format.num(distM / 1000))
                               .arg(Math.round(ascM)))
                 })
             }
@@ -314,7 +344,7 @@ Page {
                 var dateStr = new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm")
                 var name = i18n.tr("Trajet %1 · %2 km")
                            .arg(dateStr)
-                           .arg((daemonController.distanceM / 1000).toFixed(1))
+                           .arg(Format.num(daemonController.distanceM / 1000))
                 routeHistory.addEntry(name, daemonController.distanceM,
                                       daemonController.ascentM, [], gpxContent,
                                       daemonController.startTime)
@@ -577,8 +607,7 @@ Page {
             leftMargin: units.gu(1)
             rightMargin: units.gu(1)
         }
-        y: (navBanner.visible ? navBanner.height + units.gu(2) : units.gu(1))
-           + (routeInfoBanner.visible ? routeInfoBanner.height + units.gu(0.5) : 0)
+        y: page.yAfterRoute
         height: units.gu(6)
         padding: units.gu(0.5)
         visible: page.routePoints.length > 1
@@ -613,7 +642,7 @@ Page {
                     color: Theme.textPrimary
                     fontSize: "x-large"
                     font.bold: true
-                    text: page.liveHasFix ? page.liveSpeedKmh.toFixed(1) : "--"
+                    text: page.liveHasFix ? Format.num(page.liveSpeedKmh) : "--"
                 }
                 Label {
                     color: Theme.accentCyan
@@ -688,7 +717,7 @@ Page {
             right: parent.right
             margins: units.gu(1)
         }
-        y: units.gu(1)
+        y: page.yAfterElev
         height: units.gu(5)
         padding: units.gu(1)
         visible: daemonController.recording && daemonController.awaitManualStart
@@ -736,7 +765,7 @@ Page {
             right: parent.right
             margins: units.gu(1)
         }
-        y: navBanner.visible ? navBanner.height + units.gu(1.5) : units.gu(1)
+        y: page.yAfterNav
         height: searchCol.height + units.gu(1)
         padding: units.gu(0.5)
         visible: page.searchOpen
@@ -851,7 +880,7 @@ Page {
             right: parent.right
             margins: units.gu(1)
         }
-        y: page.searchOpen ? searchBar.y + searchBar.height + units.gu(0.5) : units.gu(1)
+        y: page.yAfterSearch
         height: suggCol.height + units.gu(1)
         padding: units.gu(0.5)
         visible: page.suggOpen
@@ -950,7 +979,7 @@ Page {
                             color: Theme.textSecondary
                             text: (modelData.route === "hiking" || modelData.route === "foot"
                                    ? i18n.tr("Randonnée") : i18n.tr("Vélo"))
-                                  + " · " + i18n.tr("à %1 km").arg((modelData.distM / 1000).toFixed(1))
+                                  + " · " + i18n.tr("à %1 km").arg(Format.num(modelData.distM / 1000))
                                   + (modelData.estH >= 0 ? " · " + page.formatEstH(modelData.estH) : "")
                         }
                     }
@@ -1176,7 +1205,7 @@ Page {
             right: parent.right
             margins: units.gu(1)
         }
-        y: page.searchOpen ? searchBar.y + searchBar.height + units.gu(0.5) : units.gu(1)
+        y: page.yAfterSugg
         height: units.gu(4)
         padding: units.gu(0.75)
         radius: height / 2
@@ -1221,7 +1250,7 @@ Page {
             }
             Label {
                 anchors.verticalCenter: parent.verticalCenter
-                text: i18n.tr("%1 km").arg((page.routeDistance / 1000).toFixed(1))
+                text: i18n.tr("%1 km").arg(Format.num(page.routeDistance / 1000))
                 color: Theme.textPrimary
                 fontSize: "small"
             }
@@ -1252,6 +1281,7 @@ Page {
         // avec ombre (MapFab) — loupe recherche, suggestions, couche de
         // carte, zoom.
         MapFab {
+            Accessible.name: i18n.tr("Rechercher un lieu")
             // Recherche (barre de recherche en haut de la carte)
             Icon {
                 anchors.centerIn: parent
@@ -1266,6 +1296,7 @@ Page {
             }
         }
         MapFab {
+            Accessible.name: i18n.tr("Tracés suggérés")
             // Suggestions : tracés nommés à proximité (Overpass)
             Label {
                 anchors.centerIn: parent
@@ -1280,6 +1311,7 @@ Page {
             }
         }
         MapFab {
+            Accessible.name: i18n.tr("Couche de carte")
             // Couche de carte : cycle OSM → Cyclable → Sombre → Satellite
             id: tileLayerFab
             property var keys: ["osm", "cyclosm", "dark", "satellite"]
@@ -1299,6 +1331,7 @@ Page {
             }
         }
         MapFab {
+            Accessible.name: i18n.tr("Zoom avant")
             Icon {
                 anchors.centerIn: parent
                 name: "zoom-in"
@@ -1312,6 +1345,7 @@ Page {
             }
         }
         MapFab {
+            Accessible.name: i18n.tr("Zoom arrière")
             Icon {
                 anchors.centerIn: parent
                 name: "zoom-out"
@@ -1383,7 +1417,7 @@ Page {
     Timer {
         id: toastTimer
         interval: 2800
-        onTriggered: toastRect.opacity = 0
+        onTriggered: page.showNextToast()
     }
 
     Rectangle {
@@ -2040,7 +2074,7 @@ Page {
                     fontSize: "medium"
                     font.bold: true
                     color: Theme.textPrimary
-                    text: i18n.tr("%1 km · D+ %2 m").arg((page.routeDistance / 1000).toFixed(1)).arg(Math.round(page.routeAscent))
+                    text: i18n.tr("%1 km · D+ %2 m").arg(Format.num(page.routeDistance / 1000)).arg(Math.round(page.routeAscent))
                 }
 
                 // Difficulté estimée + calories (apparaît avec l'itinéraire)
@@ -2130,6 +2164,7 @@ Page {
     // avant, le bouton etait enfoui dans le panneau et invisible en navigation.
     MapFab {
         id: recenterFab
+        Accessible.name: i18n.tr("Recentrer sur ma position")
         visible: !page.panelOpen && !page.followGps && page.liveHasPos
         anchors {
             right: parent.right
@@ -2286,22 +2321,27 @@ Page {
     }
 
     // Tracé enregistré : ajout incrémental via pointAdded (O(1) par point GPS),
-    // Tracé live sur la carte pendant l'enregistrement : désactivé avec le
-    // daemon GPS (le daemon écrit un JSON, pas de signal point-by-point).
-    // Le tracé est visible après l'arrêt via l'historique.
-    // TODO: lire tracks/en-cours.gpx périodiquement pour le tracé live.
-    /*
-    Connections {
-        target: routeRecorder
-        function onPointAdded(point) {
-            map.appendTrackPoint(point)
+    // v0.99.1: TRACE LIVE pendant l'enregistrement. Le daemon ecrit son
+    // .part (JSONL) toutes les 10 s — on le relit toutes les 5 s via l'API
+    // C++ dediee, et on l'efface du graphe quand l'enregistrement s'arrete.
+    Timer {
+        id: liveTrackTimer
+        interval: 5000
+        repeat: true
+        running: daemonController.recording
+        onTriggered: {
+            var pts = daemonController.liveTrackPoints()
+            if (pts.length > 1)
+                map.trackPoints = pts
         }
-        function onPointsChanged() {
-            if (routeRecorder.pointCount === 0)
+    }
+    Connections {
+        target: daemonController
+        function onRecordingChanged() {
+            if (!daemonController.recording)
                 map.trackPoints = []
         }
     }
-    */
 
     // Pour charger un fichier GPX via le Content Hub (import).
     // handler: Source = on cherche une app qui FOURNIT le fichier (file manager).

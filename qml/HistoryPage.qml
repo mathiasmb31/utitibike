@@ -145,8 +145,8 @@ Page {
                 Label {
                     fontSize: "small"
                     color: Theme.textSecondary
-                    text: new Date(modelData.date).toLocaleDateString()
-                          + "  ·  " + (modelData.distanceM / 1000).toFixed(1) + " km"
+                    text: Format.date(modelData.date)
+                          + "  ·  " + Format.num(modelData.distanceM / 1000) + " km"
                           + "  ·  D+ " + Math.round(modelData.ascentM) + " m"
                 }
                 // Mini profil d'altitude du parcours (depuis le GPX)
