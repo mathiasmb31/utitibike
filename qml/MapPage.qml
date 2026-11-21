@@ -183,7 +183,7 @@ Page {
 
     function pickSuggestion(item) {
         page.suggBusy = true
-        suggestClient.fetchTrail(item.id)
+        suggestClient.fetchTrail(item.id, item.type || "relation")
     }
 
     function addWaypoint(lat, lon) {

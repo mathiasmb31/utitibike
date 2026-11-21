@@ -28,7 +28,8 @@ public:
     // mode : "foot" (randonnée à pied) ou "bike" (vélo)
     Q_INVOKABLE void suggest(double lat, double lon, const QString &mode);
     // Charge la géométrie complète de la relation et émet trailReady(gpx)
-    Q_INVOKABLE void fetchTrail(qint64 relationId);
+    // type = "relation" ou "way" (les suggestions incluent les deux)
+    Q_INVOKABLE void fetchTrail(qint64 id, const QString &type = QStringLiteral("relation"));
 
 signals:
     void busyChanged();
@@ -42,7 +43,8 @@ private:
     void setBusy(bool v);
     void query(const QString &overpass, int timeoutMs,
                void (SuggestClient::*onSuccess)(const QByteArray &),
-               void (SuggestClient::*onError)(const QString &));
+               void (SuggestClient::*onError)(const QString &),
+               int mirror = 0);   // v0.99.1: fallback entre miroirs Overpass
     void onSuggestReply(const QByteArray &body);
     void onSuggestError(const QString &msg);
     void onTrailReply(const QByteArray &body);
@@ -56,6 +58,7 @@ private:
     QString m_mode = QStringLiteral("bike");
     // id de relation -> nom affiché (retenu entre suggest() et fetchTrail())
     QHash<qint64, QString> m_names;
+    QHash<qint64, QString> m_types;   // "relation" ou "way"
     qint64 m_pendingId = 0;
     quint64 m_querySeq = 0;  // v0.99.1: ignore les reponses Overpass perimees
 };

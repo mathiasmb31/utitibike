@@ -470,3 +470,6 @@ msgstr "Steps"
 
 msgid "Filtrer les parcours…"
 msgstr "Filter tracks…"
+
+msgid "Tous les serveurs de suggestions sont indisponibles."
+msgstr ""

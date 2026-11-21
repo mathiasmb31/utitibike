@@ -11,8 +11,18 @@
 #include <QTimer>
 #include <QDebug>
 
-static const char kOverpassUrl[] = "https://overpass-api.de/api/interpreter";
-static const int kRadiusM = 5000;
+// v0.99.1: l'instance principale overpass-api.de est souvent saturee
+// (~35 s pour une requete, parfois timeout a 40 s). dresel.systems (Europe,
+// donnees Geofabrik) repond en ~3 s avec les memes resultats. Fallback sur
+// les instances globales en cas d'echec.
+static const char *kOverpassMirrors[] = {
+    "https://ovp.dresel.systems/api/interpreter",
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+};
+static const int kMirrorCount = 4;
+static const int kRadiusM = 20000;  // avant 5000 -> seulement 4 relations autour de Toulouse
 
 SuggestClient::SuggestClient(QObject *parent)
     : QObject(parent)
@@ -29,9 +39,15 @@ void SuggestClient::setBusy(bool v)
 
 void SuggestClient::query(const QString &overpass, int timeoutMs,
                           void (SuggestClient::*onSuccess)(const QByteArray &),
-                          void (SuggestClient::*onError)(const QString &))
+                          void (SuggestClient::*onError)(const QString &),
+                          int mirror)
 {
-    QUrl url(QString::fromLatin1(kOverpassUrl));
+    if (mirror >= kMirrorCount) {
+        qWarning() << "suggest: tous les miroirs Overpass ont echoue";
+        (this->*onError)(tr("Tous les serveurs de suggestions sont indisponibles."));
+        return;
+    }
+    QUrl url(QString::fromLatin1(kOverpassMirrors[mirror]));
     QUrlQuery q;
     q.addQueryItem(QStringLiteral("data"), overpass);
     url.setQuery(q);
@@ -44,17 +60,16 @@ void SuggestClient::query(const QString &overpass, int timeoutMs,
         if (reply->isRunning())
             reply->abort();
     });
-    connect(reply, &QNetworkReply::finished, this, [this, reply, seq, onSuccess, onError]() {
+    connect(reply, &QNetworkReply::finished, this,
+            [this, reply, seq, onSuccess, onError, mirror, overpass, timeoutMs]() {
         reply->deleteLater();
         if (seq != m_querySeq)
-            return;  // v0.99.1: une requete plus recente a pris le dessus
+            return;  // une reponse plus recente a pris le dessus
         const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        if (reply->error() != QNetworkReply::NoError) {
-            qWarning() << "suggest: network error" << reply->error() << reply->errorString()
-                       << "HTTP" << httpStatus;
-            (this->*onError)(reply->error() == QNetworkReply::OperationCanceledError
-                             ? tr("Délai dépassé — réessayez.")
-                             : tr("Réseau : %1").arg(reply->errorString()));
+        if (reply->error() != QNetworkReply::NoError || httpStatus >= 500) {
+            qWarning() << "suggest: mirror" << mirror << "failed (HTTP" << httpStatus
+                       << ")" << reply->errorString() << "- trying next";
+            query(overpass, timeoutMs, onSuccess, onError, mirror + 1);
             return;
         }
         (this->*onSuccess)(reply->readAll());
@@ -69,13 +84,16 @@ void SuggestClient::suggest(double lat, double lon, const QString &mode)
                                              : QStringLiteral("bike");
     m_names.clear();
     setBusy(true);
-    // Relations de randonnée (foot) ou vélo (bicycle/mtb), nommées, dans le rayon
+    // v0.99.1: relations ET ways nommees — beaucoup de sentiers locaux ne
+    // sont pas des relations OSM (23 ways supplementaires autour de Toulouse).
     const QString routeFilter = m_mode == QLatin1String("foot")
             ? QStringLiteral("[\"route\"~\"^(hiking|foot)$\"]")
             : QStringLiteral("[\"route\"~\"^(bicycle|mtb)$\"]");
     const QString q = QStringLiteral("[out:json][timeout:25];"
-                                     "relation[\"type\"=\"route\"]%1[\"name\"]"
-                                     "(around:%2,%3,%4);out center tags;")
+                                     "(relation[\"type\"=\"route\"]%1[\"name\"]"
+                                     "(around:%2,%3,%4);"
+                                     "way%1[\"name\"](around:%2,%3,%4););"
+                                     "out center tags;")
             .arg(routeFilter)
             .arg(kRadiusM)
             .arg(lat, 0, 'f', 6)
@@ -105,7 +123,9 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
     const QJsonArray elements = doc.object().value(QStringLiteral("elements")).toArray();
     for (const QJsonValue &v : elements) {
         const QJsonObject el = v.toObject();
-        if (el.value(QStringLiteral("type")).toString() != QLatin1String("relation"))
+        const QString osmType = el.value(QStringLiteral("type")).toString();
+        // v0.99.1: accepter aussi les ways nommees (sentiers locaux).
+        if (osmType != QLatin1String("relation") && osmType != QLatin1String("way"))
             continue;
         const QJsonObject tags = el.value(QStringLiteral("tags")).toObject();
         const QString name = tags.value(QStringLiteral("name")).toString();
@@ -118,8 +138,10 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
             continue;
         const qint64 id = el.value(QStringLiteral("id")).toVariant().toLongLong();
         m_names.insert(id, name);
+        m_types.insert(id, osmType);
         QVariantMap m;
         m.insert(QStringLiteral("id"), QVariant::fromValue(id));
+        m.insert(QStringLiteral("type"), osmType);
         m.insert(QStringLiteral("name"), name);
         m.insert(QStringLiteral("route"), tags.value(QStringLiteral("route")).toString());
         m.insert(QStringLiteral("lat"), lat);
@@ -150,14 +172,17 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
     emit suggestionsReady(out);
 }
 
-void SuggestClient::fetchTrail(qint64 relationId)
+void SuggestClient::fetchTrail(qint64 id, const QString &type)
 {
-    m_pendingId = relationId;
+    m_pendingId = id;
     setBusy(true);
-    const QString q = QStringLiteral("[out:json][timeout:60];"
-                                     "relation(%1);way(r);out geom;")
-            .arg(relationId);
-    qWarning() << "fetchTrail relation" << relationId;
+    // v0.99.1: une suggestion peut etre une way (pas de membres) — dans ce
+    // cas on recupere directement sa geometrie.
+    const QString osmType = m_types.value(id, type);
+    const QString q = osmType == QLatin1String("way")
+            ? QStringLiteral("[out:json][timeout:60];way(%1);out geom;").arg(id)
+            : QStringLiteral("[out:json][timeout:60];relation(%1);way(r);out geom;").arg(id);
+    qWarning() << "fetchTrail" << osmType << id;
     query(q, 75000, &SuggestClient::onTrailReply, &SuggestClient::onTrailError);
 }
 
