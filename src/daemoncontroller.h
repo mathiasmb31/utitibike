@@ -132,6 +132,7 @@ private:
     int m_restartAttempts = 0;     // cap à 5 pour éviter une boucle infinie
     bool m_stopRequested = false;  // vrai quand l'utilisateur demande l'arrêt
     bool m_recording = false;
+    bool m_doneHandled = false;    // v0.99.2: un seul import par session recording
     double m_distance = 0.0;
     double m_ascent = 0.0;
     int m_elapsedSec = 0;

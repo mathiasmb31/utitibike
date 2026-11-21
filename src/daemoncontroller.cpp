@@ -69,6 +69,7 @@ void DaemonController::startRecording()
     cleanupFiles();
     m_stopRequested = false;
     m_restartAttempts = 0;
+    m_doneHandled = false;  // v0.99.2: nouvel enregistrement -> nouveau done
 
     // Écrit le fichier de contrôle : "<pid> <sessionId>". Le daemon vérifie
     // que le PID est vivant (secours de PR_SET_PDEATHSIG) ; le sessionId
@@ -361,6 +362,15 @@ void DaemonController::readDoneJson()
     m_stopReason = obj.value(QStringLiteral("stopReason")).toString("user");
     if (m_stopReason.isEmpty())
         m_stopReason = QStringLiteral("user");
+
+    // v0.99.2: garde-fou en memoire EN PLUS de la suppression du fichier.
+    // Le daemon (SIGTERM batterie) et le QML peuvent tous deux demander
+    // l'import ; un seul doit arriver dans l'historique.
+    if (m_doneHandled) {
+        qWarning() << "[daemonctl] duplicate recording.done ignored";
+        return;
+    }
+    m_doneHandled = true;
 
     qWarning() << "[daemonctl] done received:" << m_pointCount << "points,"
                << m_distance << "m," << m_lastGpxPath

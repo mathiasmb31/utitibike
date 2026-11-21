@@ -216,16 +216,27 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
     req.setHeader(QNetworkRequest::UserAgentHeader,
                   QStringLiteral("utitibike/" UTITIBIKE_VERSION " (Ubuntu Touch)"));
     m_reply = m_nam->get(req);
+    // v0.99.2: capturer LE reply courant. Sur un double-clic, l'ancien
+    // lambda finished() faisait `m_reply = nullptr` sur la NOUVELLE requete
+    // et emettait un echec a tort ; le timer 90 s pouvait l'annuler aussi.
+    QNetworkReply *const thisReply = m_reply;
 
-    QTimer::singleShot(90000, m_reply, [this]() {
-        if (m_reply && m_reply->isRunning()) {
+    QTimer::singleShot(90000, thisReply, [this, thisReply]() {
+        if (m_reply == thisReply && thisReply->isRunning()) {
             qWarning() << "brouter TIMEOUT after 90s — aborting";
-            m_reply->abort();
+            thisReply->abort();
         }
     });
 
-    connect(m_reply, &QNetworkReply::finished, this, [this]() {
-        QNetworkReply *r = m_reply;
+    connect(thisReply, &QNetworkReply::finished, this, [this, thisReply]() {
+        if (m_reply != thisReply) {
+            // Reponse d'une requete annulee par un clic plus recent : on
+            // ignore son resultat (et son echec) sans toucher au courant.
+            qWarning() << "brouter: stale reply ignored (newer request running)";
+            thisReply->deleteLater();
+            return;
+        }
+        QNetworkReply *r = thisReply;
         m_reply = nullptr;
         r->deleteLater();
         setBusy(false);
