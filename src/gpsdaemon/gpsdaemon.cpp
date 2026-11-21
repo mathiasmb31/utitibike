@@ -101,6 +101,15 @@ GpsDaemon::GpsDaemon(QObject *parent)
     }
     connect(m_gps, &QGeoPositionInfoSource::positionUpdated,
             this, &GpsDaemon::onPositionUpdated);
+    // v0.99.1: erreur du provider (service de localisation coupé) -> reprise
+    // immediate. Le watchdog de onStatsTick couvre le cas ou aucun signal
+    // n'est emis (silence total du plugin).
+    connect(m_gps, QOverload<QGeoPositionInfoSource::Error>::of(&QGeoPositionInfoSource::error),
+            this, [this](QGeoPositionInfoSource::Error err) {
+        qWarning() << "[gpsd] position source error" << static_cast<int>(err)
+                   << "- recovering GPS";
+        recoverGps();
+    });
 
     // Timers espacés pour limiter les réveils CPU / écritures disque
     m_autoSaveTimer.setInterval(300000);  // 300 s — GPX complet (filet secondaire)
@@ -199,6 +208,10 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
     }
     if (!m_recording || !info.isValid())
         return;
+
+    // v0.99.1: tout fix valide (meme rejete par le filtre qualite) prouve que
+    // la source est toujours connectee — on alimente le watchdog.
+    m_lastPositionMs = QDateTime::currentMSecsSinceEpoch();
 
     QGeoCoordinate coord = info.coordinate();
     if (!coord.isValid())
@@ -699,6 +712,53 @@ void GpsDaemon::onStatsTick()
     writeStatsJson();
     if (m_writeErrors >= kMaxWriteErrors)
         stopOnDiskIssue("writeerror");
+
+    // v0.99.1: si le service de localisation a coupe la session, le plugin
+    // Qt se tait mais le daemon continue (bips, timers) -> tracé ampute.
+    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+    if (m_lastPositionMs > 0 && now - m_lastPositionMs > kNoFixRecoveryMs)
+        recoverGps();
+}
+
+void GpsDaemon::recoverGps()
+{
+    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+    if (m_lastRecoveryMs > 0 && now - m_lastRecoveryMs < kRecoveryDebounceMs)
+        return;  // anti-rebond (error() peut tirer plusieurs fois de suite)
+    m_lastRecoveryMs = now;
+    ++m_gpsRestarts;
+    const qint64 silence = m_lastPositionMs > 0 ? now - m_lastPositionMs : -1;
+    qWarning() << "[gpsd] GPS recovery #" << m_gpsRestarts
+               << "(no fix for" << silence << "ms) — restarting updates";
+
+    if (m_gpsRestarts > kMaxGpsRestarts) {
+        // Le proxy D-Bus du plugin peut etre definitivement mort : on recrée
+        // la source complete pour reouvrir une session de localisation.
+        qWarning() << "[gpsd] restarting updates failed — recreating position source";
+        m_gps->stopUpdates();
+        m_gps->deleteLater();
+        m_gps = QGeoPositionInfoSource::createDefaultSource(this);
+        if (!m_gps) {
+            qWarning() << "[gpsd] FATAL: cannot recreate position source";
+            return;
+        }
+        connect(m_gps, &QGeoPositionInfoSource::positionUpdated,
+                this, &GpsDaemon::onPositionUpdated);
+        connect(m_gps, QOverload<QGeoPositionInfoSource::Error>::of(&QGeoPositionInfoSource::error),
+                this, [this](QGeoPositionInfoSource::Error err) {
+            qWarning() << "[gpsd] position source error" << static_cast<int>(err)
+                       << "- recovering GPS";
+            recoverGps();
+        });
+        applyPositioningMode();
+        m_gps->setUpdateInterval(kIntervalMovingMs);
+        m_gpsRestarts = 1;
+    } else {
+        m_gps->stopUpdates();
+        m_gps->startUpdates();
+    }
+    m_lastPositionMs = now;  // nouveau délai de grâce de 60 s
+    qWarning() << "[gpsd] GPS recovery done, source:" << m_gps->sourceName();
 }
 
 // Joue un wav : paplay (PulseAudio) en PRIORITÉ — dans le daemon détaché
@@ -785,6 +845,10 @@ void GpsDaemon::onControlTick()
                                       // même si on démarre à l'arrêt
         m_gotFix = false;
         m_rejected = 0;
+        // v0.99.1: nouveau track -> nouveaux compteurs de reprise GPS
+        m_lastPositionMs = QDateTime::currentMSecsSinceEpoch();
+        m_lastRecoveryMs = 0;
+        m_gpsRestarts = 0;
         m_altWinN = 0;
         m_hasAltEff = false;
         m_partWritten = 0;

@@ -216,7 +216,7 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
     req.setHeader(QNetworkRequest::UserAgentHeader,
                   QStringLiteral("utitibike/" UTITIBIKE_VERSION " (Ubuntu Touch)"));
     m_reply = m_nam->get(req);
-    // v0.99.2: capturer LE reply courant. Sur un double-clic, l'ancien
+    // v0.99.1: capturer LE reply courant. Sur un double-clic, l'ancien
     // lambda finished() faisait `m_reply = nullptr` sur la NOUVELLE requete
     // et emettait un echec a tort ; le timer 90 s pouvait l'annuler aussi.
     QNetworkReply *const thisReply = m_reply;

@@ -63,6 +63,10 @@ private:
     qint64 elapsedMs() const { return m_elapsed.elapsed() + m_elapsedOffsetMs; }
     bool readBeepConf() const;   // gpsd.conf : beep=0/1 (option utilisateur)
     void applyPositioningMode(); // gpsd.conf : positioning=auto|satellite|network
+    // v0.99.1: le service de localisation peut couper la session du plugin Qt
+    // ("Connection to location service lost, ending session") — sans reprise,
+    // le daemon continue de tourner mais n'ajoute plus AUCUN point.
+    void recoverGps();           // relance (puis recrée) la source après coupure
     void playLongBeep();         // alerte départ manuel (joue même écran éteint)
     void playAlarm();            // sonnerie 5 s arrêt batterie (joue toujours)
     // Joue un effet sonore : QSoundEffect si prêt, sinon paplay en fallback
@@ -87,6 +91,14 @@ private:
     static constexpr qint64 kPauseAfterMs = 180000;
     // Départ manuel proposé à l'app après 6 min sans aucun fix satellite
     static constexpr qint64 kManualStartAfterMs = 360000;
+    // Watchdog coupure service de localisation : pas de fix pendant 60 s ->
+    // stopUpdates/startUpdates ; après 3 tentatives, recréer la source.
+    static constexpr qint64 kNoFixRecoveryMs = 60000;
+    static constexpr qint64 kRecoveryDebounceMs = 30000;
+    static constexpr int kMaxGpsRestarts = 3;
+    qint64 m_lastPositionMs = 0;     // horloge murale du dernier fix reçu
+    qint64 m_lastRecoveryMs = 0;     // anti-rebond entre deux reprises
+    int m_gpsRestarts = 0;           // nb de reprises depuis le début du track
     // Arrêt automatique de sécurité : batterie <= 20 % (sonnerie 5 s puis
     // sauvegarde) ou durée > 12 h
     static constexpr double kBatteryLowPct = 20.0;
