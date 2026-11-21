@@ -222,6 +222,9 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
     QGeoCoordinate coord = info.coordinate();
     if (!coord.isValid())
         return;
+    // v0.99.1: seul un VRAI fix valide reinitialise le compteur "1 h sans GPS"
+    // (les reprises du watchdog ne le doivent pas).
+    m_lastRealFixMs = QDateTime::currentMSecsSinceEpoch();
 
     const double lat = coord.latitude();
     const double lon = coord.longitude();
@@ -672,6 +675,30 @@ void GpsDaemon::onSafetyTick()
         cleanup();
         return;
     }
+    // v0.99.1: arret apres 1 h sans mouvement OU 1 h sans fix GPS. Le daemon
+    // survivant ne doit pas enregistrer un tracé fantome pendant 12 h.
+    // Surcharge de test : UTITIBIKE_IDLE_STOP_MS=20000 (ms).
+    bool overrideOk = false;
+    const int overrideMs = qEnvironmentVariableIntValue("UTITIBIKE_IDLE_STOP_MS", &overrideOk);
+    const qint64 idleMs = (overrideOk && overrideMs > 0)
+                          ? static_cast<qint64>(overrideMs) : kIdleStopMs;
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    if (m_lastRealFixMs > 0 && nowMs - m_lastRealFixMs > idleMs) {
+        qWarning() << "[gpsd] no GPS fix for" << (nowMs - m_lastRealFixMs)
+                   << "ms — stopping recording";
+        m_stopReason = QStringLiteral("nogps");
+        sendNotification(tr("Pas de GPS depuis 1 h — enregistrement arrêté"));
+        cleanup();
+        return;
+    }
+    if (m_lastMoveMs > 0 && elapsedMs() - m_lastMoveMs > idleMs) {
+        qWarning() << "[gpsd] no movement for" << (elapsedMs() - m_lastMoveMs)
+                   << "ms — stopping recording";
+        m_stopReason = QStringLiteral("nomove");
+        sendNotification(tr("Position immobile depuis 1 h — enregistrement arrêté"));
+        cleanup();
+        return;
+    }
     // Batterie <= 20 % : sonnerie d'alerte 5 s (même écran éteint, même si
     // bip désactivé — c'est une alarme d'arrêt), puis sauvegarde et arrêt.
     const double pct = batteryPct();
@@ -858,6 +885,9 @@ void GpsDaemon::onControlTick()
         m_rejected = 0;
         // v0.99.1: nouveau track -> nouveaux compteurs de reprise GPS
         m_lastPositionMs = QDateTime::currentMSecsSinceEpoch();
+        // v0.99.1: nouveau track -> compteur 1 h demarre maintenant, pour
+        // qu'un demarrage SANS AUCUN fix finisse aussi par s'arreter.
+        m_lastRealFixMs = QDateTime::currentMSecsSinceEpoch();
         m_lastRecoveryMs = 0;
         m_gpsRestarts = 0;
         m_altWinN = 0;

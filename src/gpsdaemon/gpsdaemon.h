@@ -100,6 +100,11 @@ private:
     qint64 m_lastPositionMs = 0;     // horloge murale du dernier fix reçu
     qint64 m_lastRecoveryMs = 0;     // anti-rebond entre deux reprises
     int m_gpsRestarts = 0;           // nb de reprises depuis le début du track
+    // v0.99.1: arret apres 1 h sans mouvement OU 1 h sans fix GPS — evite un
+    // enregistrement fantome du daemon survivant. Surcharge de test :
+    // UTITIBIKE_IDLE_STOP_MS=20000.
+    static constexpr qint64 kIdleStopMs = 60LL * 60LL * 1000LL;
+    qint64 m_lastRealFixMs = 0;   // dernier VRAI fix (pas une reprise GPS)
     // Arrêt automatique de sécurité : batterie <= 20 % (sonnerie 5 s puis
     // sauvegarde) ou durée > 12 h
     static constexpr double kBatteryLowPct = 20.0;
