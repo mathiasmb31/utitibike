@@ -19,7 +19,9 @@ echo "=== Kill vieux process ==="
 echo "=== Zombies avant kill ==="
 adb -s $DEV shell "ps -eo pid,stat,comm | awk '\$2 ~ /Z/ {z++} END {print \"zombies: \" (z+0)}'; echo \"process avant kill: \$(ps aux | grep $PROC | grep -v grep | wc -l)\""
 
-adb -s $DEV shell "ps aux | grep $PROC | grep -v grep | awk '{{print \$2}}' | while read p; do kill -9 $p 2>/dev/null; done; sleep 2; echo reste: $(ps aux | grep $PROC | grep -v grep | wc -l)"
+# v0.99.1: $p et $(...) doivent etre evalues sur le DEVICE, pas par le
+# shell local (sinon kill -9 sans PID = no-op).
+adb -s $DEV shell "ps aux | grep $PROC | grep -v grep | awk '{print \$2}' | while read p; do kill -9 \$p 2>/dev/null; done; sleep 2; echo reste: \$(ps aux | grep $PROC | grep -v grep | wc -l)"
 
 echo "=== Lancement ==="
 adb -s $DEV shell "setsid lomiri-app-launch $APPID > /dev/null 2>&1 &"

@@ -1,4 +1,5 @@
 #include "daemoncontroller.h"
+#include "appdata.h"
 #include "geo.h"
 #include "routehistory.h"
 
@@ -19,7 +20,10 @@
 DaemonController::DaemonController(QObject *parent)
     : QObject(parent)
 {
-    m_appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    // v0.99.1: appDataDir() (chemin sauvegarde par main() avant ecrasement
+    // du applicationName par le QPA). QStandardPaths direct donnait
+    // ~/.local/share/utitibike hors template AppArmor sur device.
+    m_appDataDir = appDataDir();
     qWarning() << "[daemonctl] ctor appDataDir=" << m_appDataDir
                << "appName=" << QCoreApplication::applicationName();
     m_controlFile = m_appDataDir + QStringLiteral("/recording.control");
@@ -201,7 +205,11 @@ void DaemonController::checkExistingRecording()
 
     // Essaie de lire les stats existantes pour voir si le daemon tourne
     readStatsJson();
-    if (m_pointCount > 0 || m_elapsedSec > 0) {
+    // v0.99.1: le daemon ecrit recording.json des sa premiere seconde avec
+    // pointCount=0 / elapsedSec=0. Un redemarrage immediat de l'app ne doit
+    // PAS faire croire que le daemon est mort et supprimer recording.control
+    // (le daemon s'arreterait 5 s plus tard, perdant l'enregistrement).
+    if (QFile::exists(m_statsFile) || m_pointCount > 0 || m_elapsedSec > 0) {
         // Le daemon tourne encore — se resynchronise
         m_recording = true;
         m_pollTimer.start();
@@ -563,11 +571,13 @@ bool DaemonController::recoverOrphanPart()
         sf.write(gpx.toUtf8());
         ok = sf.commit();
     }
-    QFile::remove(partPath);  // consommé
     if (!ok) {
+        // v0.99.1: ne supprimer le .part QUE si la sauvegarde a reussi —
+        // sinon le tracé est perdu definitivement (disque plein / erreur).
         qWarning() << "[daemonctl] recovery save FAIL" << path;
         return false;
     }
+    QFile::remove(partPath);  // consommé
 
     m_lastGpxPath = path;
     m_lastGpxContent = gpx;

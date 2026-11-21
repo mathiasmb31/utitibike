@@ -5,7 +5,9 @@ set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$PROJECT_DIR/build-ninja"
-JOBS="${1:-$(nproc)}"
+# v0.99.1: plafond -j4 par defaut (regle workspace : jamais nproc sur
+# l'hote 8 coeurs / 11,5 Go — risque OOM). Surcharge explicite possible.
+JOBS="${1:-4}"
 
 # Dépendances Qt5 locales (téléchargées si /tmp vidé)
 QT5_LOCAL=/tmp/qt5-full

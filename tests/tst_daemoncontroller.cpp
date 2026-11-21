@@ -15,6 +15,7 @@ private slots:
     void initTestCase();
     void recoverOrphanPart();
     void manualStartAndBeepConf();
+    void resyncWithZeroStats();
 };
 
 void TstDaemonController::initTestCase()
@@ -82,6 +83,36 @@ void TstDaemonController::manualStartAndBeepConf()
     // Persistance : un nouveau contrôleur relit la conf
     DaemonController dc2;
     QVERIFY(!dc2.beepEnabled());
+}
+
+void TstDaemonController::resyncWithZeroStats()
+{
+    // v0.99.1: un daemon vient de demarrer — recording.control existe mais
+    // recording.json contient encore 0 point / 0 s. L'app redemarree dans
+    // cette fenetre doit se resynchroniser, PAS supprimer le control file.
+    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    const QString control = dir + QStringLiteral("/recording.control");
+    const QString stats = dir + QStringLiteral("/recording.json");
+    QFile::remove(dir + QStringLiteral("/recording.done"));
+    QFile::remove(control);
+    QFile::remove(stats);
+
+    QFile cf(control);
+    QVERIFY(cf.open(QIODevice::WriteOnly));
+    cf.write("99999 session-zero-stats\n");
+    cf.close();
+    QFile sf(stats);
+    QVERIFY(sf.open(QIODevice::WriteOnly));
+    sf.write("{\"elapsedSec\":0,\"pointCount\":0,\"distanceM\":0,\"ascentM\":0}");
+    sf.close();
+
+    DaemonController dc;
+    dc.checkExistingRecording();
+    QVERIFY(dc.recording());
+    QVERIFY(QFile::exists(control));
+
+    QFile::remove(control);
+    QFile::remove(stats);
 }
 
 QTEST_MAIN(TstDaemonController)

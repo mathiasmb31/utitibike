@@ -283,7 +283,11 @@ void TileCache::drain()
                            && !img.isNull();
             reply->deleteLater();
 
-            updateOnlineState(error, ok);
+            // v0.99.1: une reponse d'ancienne generation (couche changee
+            // entre-temps, requete annulee) ne doit pas piloter l'etat
+            // reseau global — sinon une erreur sur une tuile abandonnee
+            // peut basculer l'app en hors-ligne.
+            if (current) updateOnlineState(error, ok);
 
             if (ok && current) {
                 const QStringList parts = key.split(QLatin1Char('/'));
