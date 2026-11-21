@@ -99,12 +99,26 @@ Page {
                             viewState.transportMode = value
                         }
                     }
-                    Switch {
+                    // Ubuntu.Components.Switch n'a PAS de propriete text
+                    // affichee — le libelle doit etre un Label separe.
+                    Row {
                         width: parent.width
                         height: units.gu(6)
-                        text: i18n.tr("Éviter les chemins non goudronnés")
-                        checked: brouter.avoidUnpaved
-                        onCheckedChanged: brouter.avoidUnpaved = checked
+                        spacing: units.gu(1)
+                        Label {
+                            width: parent.width - switchUnpaved.width - parent.spacing
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: i18n.tr("Éviter les chemins non goudronnés")
+                            fontSize: "small"
+                            wrapMode: Text.WordWrap
+                            color: Theme.textPrimary
+                        }
+                        Switch {
+                            id: switchUnpaved
+                            height: units.gu(6)
+                            checked: brouter.avoidUnpaved
+                            onCheckedChanged: brouter.avoidUnpaved = checked
+                        }
                     }
                 }
             }
@@ -150,12 +164,23 @@ Page {
                             color: Theme.textSecondary
                         }
                     }
-                    Switch {
+                    Row {
                         width: parent.width
                         height: units.gu(6)
-                        text: i18n.tr("Bips GPS")
-                        checked: daemonController.beepEnabled
-                        onCheckedChanged: daemonController.setBeepEnabled(checked)
+                        spacing: units.gu(1)
+                        Label {
+                            width: parent.width - switchBeep.width - parent.spacing
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: i18n.tr("Bips GPS")
+                            fontSize: "small"
+                            color: Theme.textPrimary
+                        }
+                        Switch {
+                            id: switchBeep
+                            height: units.gu(6)
+                            checked: daemonController.beepEnabled
+                            onCheckedChanged: daemonController.setBeepEnabled(checked)
+                        }
                     }
                 }
             }
