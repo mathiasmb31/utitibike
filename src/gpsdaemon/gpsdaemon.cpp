@@ -44,6 +44,7 @@ GpsDaemon::GpsDaemon(QObject *parent)
 {
     // Même applicationName que l'app principale pour partager appDataDir.
     m_appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    m_pidFile     = m_appDataDir + QStringLiteral("/gpsd.pid");
     m_controlFile = m_appDataDir + QStringLiteral("/recording.control");
     m_statsFile   = m_appDataDir + QStringLiteral("/recording.json");
     m_doneFile    = m_appDataDir + QStringLiteral("/recording.done");
@@ -144,21 +145,24 @@ void GpsDaemon::run()
     std::signal(SIGBUS, signalHandler);
     std::signal(SIGFPE, signalHandler);
 
-    // Sécurité : le noyau envoie SIGTERM à ce processus quand le parent
-    // (l'app QML) meurt — même en cas de crash ou kill -9 de l'app.
-    // PR_SET_PDEATHSIG ne fonctionne que si le parent est encore vivant
-    // au moment de l'appel, d'où la double vérification.
-    prctl(PR_SET_PDEATHSIG, SIGTERM);
-    if (getppid() == 1) {
-        // Parent déjà mort (lancé via startDetached) — on vérifie le PID
-        // dans le fichier de contrôle à la place.
-        qWarning() << "[gpsd] parent already dead, relying on PID check";
+    // v0.99.1: le daemon SURVIT a la fermeture de l'app (demande Mathias).
+    // On ne pose plus PR_SET_PDEATHSIG : le noyau ne tue plus le daemon quand
+    // l'app meurt. Le seul arret reste la suppression de recording.control
+    // (ou SIGTERM explicite). On ecrit notre PID pour que l'app, apres un
+    // redemarrage, puisse nous piloter sans QProcess parent.
+    {
+        QFile pf(m_pidFile);
+        if (pf.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            pf.write(QByteArray::number(QCoreApplication::applicationPid()));
+            pf.close();
+        }
     }
+    qWarning() << "[gpsd] daemon started, pid=" << QCoreApplication::applicationPid()
+               << "ppid=" << getppid() << "(survives app close)";
 
     m_gps->startUpdates();
     m_controlTimer.start();
-    qWarning() << "[gpsd] daemon started, appDataDir=" << m_appDataDir
-               << "ppid=" << getppid();
+    qWarning() << "[gpsd] appDataDir=" << m_appDataDir;
 
     // DEBUG: GPS simulé pour tests sans satellite (intérieur).
     // UTITIBIKE_FAKE_GPS=1 → une position synthétique toutes les secondes.
@@ -917,14 +921,11 @@ void GpsDaemon::onControlTick()
             cleanup();
             return;
         }
-        // Sécurité secours : vérifie que l'app (parent) est encore vivante
-        if (m_parentPid > 0 && kill(m_parentPid, 0) != 0) {
-            qWarning() << "[gpsd] parent app dead (pid" << m_parentPid
-                       << ") — stopping recording";
-            m_stopReason = QStringLiteral("parent");
-            cleanup();
-            return;
-        }
+        // v0.99.1: NE PLUS arreter l'enregistrement quand l'app est fermee —
+        // c'est justement le role du daemon de survivre. Le PID du parent
+        // dans recording.control est mis a jour par checkExistingRecording()
+        // au prochain demarrage de l'app ; le seul arret reste le fichier
+        // de controle supprime ou un SIGTERM explicite.
         // Départ manuel : l'app a écrit "lat lon" dans manual-start.control
         // (aucun fix satellite depuis le début de l'enregistrement).
         if (!m_hasLast && QFile::exists(m_manualStartFile)) {
@@ -1129,6 +1130,7 @@ void GpsDaemon::cleanup()
     // v0.99.1: ne supprimer le .part QUE si le GPX ET le done ont ete
     // ecrits — sinon c'est le seul filet restant pour recoverOrphanPart().
     QFile::remove(m_controlFile);
+    QFile::remove(m_pidFile);
     QFile::remove(m_statsFile);
     QFile::remove(m_manualStartFile);
     if (!gpxPath.isEmpty() && doneOk) {

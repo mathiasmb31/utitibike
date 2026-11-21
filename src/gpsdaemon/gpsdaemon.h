@@ -14,11 +14,12 @@
 #include <QtDBus/QDBusArgument>
 #include <QtDBus/QDBusObjectPath>
 
-// Daemon GPS détaché pour utitibike. S'exécute sans UI (QCoreApplication),
+// Daemon GPS pour utitibike. S'exécute sans UI (QCoreApplication),
 // enregistre les positions GPS dans un fichier GPX, écrit un JSON de stats
-// live, et émet un beep toutes les 10 s. Lancé par l'app QML via
-// QProcess::startDetached() — échappe au SIGSTOP de Lomiri (le gel
-// cible le processus principal de l'app, pas les fils détachés).
+// live, et émet un beep toutes les 30 s. Lancé par l'app QML via QProcess.
+// v0.99.1: SURVIT a la fermeture de l'app (plus de PR_SET_PDEATHSIG ni de
+// test "parent mort") — l'enregistrement continue tant que recording.control
+// existe. L'app se reconnecte au prochain demarrage via checkExistingRecording().
 //
 // Fichiers dans appDataDir (~/.local/share/mathias.utitibike/) :
 //   recording.control  — créé par l'app pour démarrer, supprimé = arrêt
@@ -177,6 +178,7 @@ private:
     qint64 m_elapsedOffsetMs = 0;
 
     QString m_appDataDir;
+    QString m_pidFile;       // v0.99.1: PID du daemon, lu par l'app apres redemarrage
     QString m_controlFile;
     QString m_statsFile;
     QString m_doneFile;

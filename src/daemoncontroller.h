@@ -128,7 +128,8 @@ private:
 
     QTimer m_pollTimer;       // 5 s — lit recording.json
     QTimer m_restartTimer;    // 2 s (single shot) — relance après crash
-    QProcess *m_daemon = nullptr;  // processus fils (PR_SET_PDEATHSIG)
+    QProcess *m_daemon = nullptr;  // processus lance (peut etre mort apres fermeture app)
+    QString m_pidFile;             // v0.99.1: gpsd.pid ecrit par le daemon survivant
     int m_restartAttempts = 0;     // cap à 5 pour éviter une boucle infinie
     bool m_stopRequested = false;  // vrai quand l'utilisateur demande l'arrêt
     bool m_recording = false;
