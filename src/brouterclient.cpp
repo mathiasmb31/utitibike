@@ -404,6 +404,7 @@ void BrouterClient::parseGpx(const QString &gpxText)
     m_lastGpx = gpxText;
     m_routePoints = points;
     m_turnPoints = turnPoints;
+    emit instructionsChanged();
     emit lastGpxChanged();
     emit routeReady(points, dist, ascent);
 }

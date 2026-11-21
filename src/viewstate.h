@@ -21,6 +21,8 @@ class ViewState : public QObject
     Q_PROPERTY(bool avoidUnpaved READ avoidUnpaved WRITE setAvoidUnpaved NOTIFY avoidUnpavedChanged)
     // Mode de déplacement : "bike" (vélo) ou "foot" (marche / randonnée)
     Q_PROPERTY(QString transportMode READ transportMode WRITE setTransportMode NOTIFY transportModeChanged)
+    // v0.99.1: poids utilisateur pour l'estimation des calories (30-250 kg).
+    Q_PROPERTY(double userWeightKg READ userWeightKg WRITE setUserWeightKg NOTIFY userWeightKgChanged)
     // true si une vue sauvegardée a été restaurée. Sinon (premier lancement)
     // le QML centre la carte sur le premier fix GPS.
     Q_PROPERTY(bool restored READ restored CONSTANT)
@@ -42,6 +44,8 @@ public:
     void setAvoidUnpaved(bool v);
     QString transportMode() const { return m_transportMode; }
     void setTransportMode(const QString &v);
+    double userWeightKg() const { return m_userWeightKg; }
+    void setUserWeightKg(double v);
     bool restored() const { return m_restored; }
 
 signals:
@@ -52,6 +56,7 @@ signals:
     void positioningModeChanged();
     void avoidUnpavedChanged();
     void transportModeChanged();
+    void userWeightKgChanged();
 
 private:
     void load();
@@ -64,6 +69,7 @@ private:
     QString m_positioningMode = QStringLiteral("auto");
     bool m_avoidUnpaved = false;
     QString m_transportMode = QStringLiteral("bike");
+    double m_userWeightKg = 70.0;
     bool m_restored = false;
     QTimer m_saveTimer;
 };

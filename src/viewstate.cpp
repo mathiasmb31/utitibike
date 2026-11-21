@@ -29,6 +29,7 @@ ViewState::ViewState(QObject *parent)
         o.insert(QStringLiteral("positioningMode"), m_positioningMode);
         o.insert(QStringLiteral("avoidUnpaved"), m_avoidUnpaved);
         o.insert(QStringLiteral("transportMode"), m_transportMode);
+        o.insert(QStringLiteral("userWeightKg"), m_userWeightKg);
         f.write(QJsonDocument(o).toJson(QJsonDocument::Compact));
         f.commit();
     });
@@ -74,6 +75,16 @@ void ViewState::setTransportMode(const QString &v)
         return;
     m_transportMode = mode;
     emit transportModeChanged();
+    scheduleSave();
+}
+
+void ViewState::setUserWeightKg(double v)
+{
+    const double w = qBound(30.0, v, 250.0);
+    if (qFuzzyCompare(m_userWeightKg, w))
+        return;
+    m_userWeightKg = w;
+    emit userWeightKgChanged();
     scheduleSave();
 }
 
@@ -142,6 +153,10 @@ void ViewState::load()
     const QJsonValue au = o.value(QStringLiteral("avoidUnpaved"));
     if (au.isBool())
         m_avoidUnpaved = au.toBool();
+    // v0.99.1: poids restaure avec garde-fou (30-250 kg).
+    const QJsonValue uw = o.value(QStringLiteral("userWeightKg"));
+    if (uw.isDouble() && uw.toDouble() >= 30.0 && uw.toDouble() <= 250.0)
+        m_userWeightKg = uw.toDouble();
     const QJsonValue tm = o.value(QStringLiteral("transportMode"));
     if (tm.isString())
         m_transportMode = (tm.toString() == QLatin1String("foot"))

@@ -28,6 +28,7 @@ private slots:
     // ViewState
     void viewStateDefaults();
     void viewStateSetGet();
+    void viewStateUserWeight();
 };
 
 void TestPersistence::initTestCase()
@@ -166,6 +167,19 @@ void TestPersistence::viewStateSetGet()
     QCOMPARE(vs.centerLat(), 48.8566);
     QCOMPARE(vs.centerLon(), 2.3522);
     QCOMPARE(vs.zoom(), 15);
+}
+
+void TestPersistence::viewStateUserWeight()
+{
+    // v0.99.1: le poids doit etre persiste et borne (30-250 kg).
+    ViewState vs;
+    QCOMPARE(vs.userWeightKg(), 70.0);
+    vs.setUserWeightKg(82.5);
+    QCOMPARE(vs.userWeightKg(), 82.5);
+    vs.setUserWeightKg(5.0);
+    QCOMPARE(vs.userWeightKg(), 30.0);
+    vs.setUserWeightKg(999.0);
+    QCOMPARE(vs.userWeightKg(), 250.0);
 }
 
 QTEST_GUILESS_MAIN(TestPersistence)

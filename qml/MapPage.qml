@@ -53,7 +53,10 @@ Page {
     // etats etaient actifs (nav + recherche, recherche + profil, etc.).
     property real yAfterNav: units.gu(1)
                              + (navBanner.visible ? navBanner.height + units.gu(0.5) : 0)
-    property real yAfterSearch: yAfterNav
+    property bool stepsOpen: false
+    property real yAfterSteps: yAfterNav
+                               + (stepsPanel.visible ? stepsPanel.height + units.gu(0.5) : 0)
+    property real yAfterSearch: yAfterSteps
                                 + (searchBar.visible ? searchBar.height + units.gu(0.5) : 0)
     property real yAfterSugg: yAfterSearch
                               + (suggCard.visible ? suggCard.height + units.gu(0.5) : 0)
@@ -331,10 +334,10 @@ Page {
         }
     }
     Component.onCompleted: {
-        // v0.99.1: la couche de tuiles suit le mode de deplacement restaure —
-        // sinon l'app redemarre en OSM alors que le dernier choix etait Cyc.
+        // v0.99.1: restauration des preferences persistees dans view.json.
         // Ici et pas dans Main.qml : `cache` est un objet de MapPage.
         cache.tileServer = viewState.transportMode === "foot" ? "osm" : "cyclosm"
+        page.userWeightKg = viewState.userWeightKg
         // Vérifie si un enregistrement daemon était en cours (app redémarrée)
         daemonController.checkExistingRecording()
         // Récupère un éventuel en-cours.part laissé par un daemon tué brutalement
@@ -592,6 +595,49 @@ Page {
                     fontSize: "small"
                     text: page.navSubText()
                 }
+            }
+            // v0.99.1: ouverture de la liste complete des manoeuvres.
+            Button {
+                width: units.gu(6)
+                height: units.gu(6)
+                color: "transparent"
+                onClicked: page.stepsOpen = !page.stepsOpen
+                Label {
+                    anchors.centerIn: parent
+                    text: i18n.tr("Étapes")
+                    fontSize: "x-small"
+                    font.bold: true
+                    color: Theme.textOnAccent
+                }
+            }
+        }
+    }
+
+    // v0.99.1: panneau des manoeuvres a venir (issues des rtept BRouter).
+    SportCard {
+        id: stepsPanel
+        z: 15
+        anchors {
+            left: parent.left
+            right: parent.right
+            margins: units.gu(1)
+        }
+        y: page.yAfterNav
+        width: parent.width - units.gu(2)
+        height: Math.min(units.gu(32), stepsList.contentHeight + units.gu(2))
+        padding: units.gu(0.5)
+        visible: page.stepsOpen && brouter.navigation
+        ListView {
+            id: stepsList
+            anchors.fill: parent
+            clip: true
+            model: brouter.instructions
+            delegate: Label {
+                width: stepsList.width - units.gu(1)
+                wrapMode: Text.WordWrap
+                fontSize: "small"
+                color: Theme.textPrimary
+                text: (index + 1) + ". " + (modelData.desc || "")
             }
         }
     }
@@ -1460,12 +1506,35 @@ Page {
                     width: parent.width
                     spacing: units.gu(1)
                     Label {
-                        width: parent.width - closeBtn.width - units.gu(1)
+                        width: parent.width - closeBtn.width * 2 - units.gu(2)
                         text: i18n.tr("Itinéraire — %1 point(s)").arg(page.waypoints.length)
                         fontSize: "medium"
                         font.bold: true
                         color: Theme.textPrimary
                         elide: Text.ElideRight
+                    }
+                    // v0.99.1: acces direct a la page de reglages dediee.
+                    Rectangle {
+                        width: units.gu(5)
+                        height: width
+                        radius: width / 2
+                        color: Theme.bgSection
+                        anchors.verticalCenter: parent.verticalCenter
+                        Icon {
+                            anchors.centerIn: parent
+                            name: "settings"
+                            width: units.gu(2.5)
+                            height: width
+                            color: Theme.textPrimary
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                haptics.vibrate(10)
+                                page.panelOpen = false
+                                pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
+                            }
+                        }
                     }
                     // Croix de fermeture DANS le panneau (en haut à droite) :
                     // ne recouvre aucun autre élément. Le FAB est masqué quand
@@ -1713,8 +1782,10 @@ Page {
                         text: page.userWeightKg
                         onTextChanged: {
                             var w = parseFloat(text)
-                            if (!isNaN(w) && w >= 30 && w <= 200)
+                            if (!isNaN(w) && w >= 30 && w <= 200) {
                                 page.userWeightKg = w
+                                viewState.userWeightKg = w   // v0.99.1: persiste dans view.json
+                            }
                         }
                     }
                     Label {

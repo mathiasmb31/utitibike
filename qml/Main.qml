@@ -7,7 +7,7 @@ MainView {
     id: root
     objectName: "mainView"
     applicationName: "utitibike"
-    automaticOrientation: false
+    automaticOrientation: true   // v0.99.1: paysage utile sur un guidon
     anchorToKeyboard: false
 
     // Domaine de traduction : ce binding est évalué à la création de la racine,

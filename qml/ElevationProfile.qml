@@ -15,6 +15,27 @@ Item {
     property real distanceM: 0   // distance totale (pour l'échelle X)
     property real minEle: 0
     property real maxEle: 0
+    // v0.99.1: scrubbing — index du point sous le doigt (-1 = aucun).
+    property int scrubIndex: -1
+    onScrubIndexChanged: canvas.requestPaint()
+
+    function scrubAt(px) {
+        var d = canvas.distances
+        if (!d || d.length < 2 || root.distanceM <= 0)
+            return
+        var padL = units.gu(4.5)
+        var padR = units.gu(1)
+        var w = width - padL - padR
+        var f = Math.max(0, Math.min(1, (px - padL) / w))
+        var target = f * root.distanceM
+        var best = 0
+        var bd = Infinity
+        for (var i = 0; i < d.length; ++i) {
+            var diff = Math.abs(d[i] - target)
+            if (diff < bd) { bd = diff; best = i }
+        }
+        scrubIndex = best
+    }
 
     implicitHeight: units.gu(12)
 
@@ -150,6 +171,19 @@ Item {
                 ctx.setLineDash([])
             }
 
+            // v0.99.1: curseur de scrubbing.
+            if (scrubIndex >= 0 && scrubIndex < distances.length) {
+                var sx = xAt(scrubIndex)
+                ctx.strokeStyle = "#ffffff"
+                ctx.globalAlpha = 0.6
+                ctx.lineWidth = 1
+                ctx.beginPath()
+                ctx.moveTo(sx, padT)
+                ctx.lineTo(sx, height - padB)
+                ctx.stroke()
+                ctx.globalAlpha = 1.0
+            }
+
             // Axes et labels — littéraux (le contexte 2d du Canvas prend des
             // chaînes ; les valeurs égales au thème sont rappelées en commentaire)
             ctx.font = " " + units.gu(1.2) + "px sans-serif"
@@ -174,6 +208,35 @@ Item {
                 ctx.fillText("D+ " + Math.round(dPlus) + " m", padL + w / 2, padT + units.gu(1.2))
             }
         }
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+        onPositionChanged: root.scrubAt(mouseX)
+        onPressed: root.scrubAt(mouseX)
+        onExited: root.scrubIndex = -1
+    }
+    Label {
+        visible: root.scrubIndex >= 0 && canvas.hasEle
+                 && root.scrubIndex < root.points.length
+        x: Math.max(0, Math.min(parent.width - width,
+                                xAtScreen(root.scrubIndex) - width / 2))
+        y: units.gu(0.2)
+        fontSize: "x-small"
+        color: Theme.textPrimary
+        text: (root.scrubIndex >= 0
+               && root.scrubIndex < canvas.distances.length
+               && root.scrubIndex < root.points.length
+               && root.points[root.scrubIndex] !== undefined)
+              ? Format.num(canvas.distances[root.scrubIndex] / 1000)
+                + " km · " + Math.round(root.points[root.scrubIndex].ele) + " m"
+              : ""
+    }
+    function xAtScreen(i) {
+        var padL = units.gu(4.5)
+        var padR = units.gu(1)
+        return padL + (canvas.distances[i] / root.distanceM) * (width - padL - padR)
     }
 
     Label {

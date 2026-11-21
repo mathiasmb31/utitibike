@@ -446,3 +446,27 @@ msgstr "Zoom out"
 
 msgid "Recentrer sur ma position"
 msgstr "Recenter on my position"
+
+msgid "Réglages"
+msgstr "Settings"
+
+msgid "Navigation"
+msgstr "Navigation"
+
+msgid "Éviter les chemins non goudronnés"
+msgstr "Avoid unpaved paths"
+
+msgid "Enregistrement"
+msgstr "Recording"
+
+msgid "Bips GPS"
+msgstr "GPS beeps"
+
+msgid "Aide"
+msgstr "Help"
+
+msgid "Étapes"
+msgstr "Steps"
+
+msgid "Filtrer les parcours…"
+msgstr "Filter tracks…"

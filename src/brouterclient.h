@@ -24,6 +24,9 @@ class BrouterClient : public QObject
     Q_PROPERTY(bool avoidUnpaved READ avoidUnpaved WRITE setAvoidUnpaved NOTIFY avoidUnpavedChanged)
     Q_PROPERTY(bool navigation READ navigation NOTIFY navigationChanged)
     // Prochaine instruction de virage (ex: "Dans 200 m, tourner à gauche")
+    // v0.99.1: liste complete des manoeuvres (rtept du GPX BRouter) pour le
+    // panneau « Etapes » en navigation.
+    Q_PROPERTY(QVariantList instructions READ instructions NOTIFY instructionsChanged)
     Q_PROPERTY(QString nextInstruction READ nextInstruction NOTIFY nextInstructionChanged)
     Q_PROPERTY(double nextInstructionDistance READ nextInstructionDistance NOTIFY nextInstructionChanged)
     // Distance restante le long de l'itinéraire depuis la position courante (m)
@@ -47,6 +50,7 @@ public:
     bool avoidUnpaved() const { return m_avoidUnpaved; }
     void setAvoidUnpaved(bool v);
     bool navigation() const { return m_navigation; }
+    QVariantList instructions() const { return m_turnPoints; }
     QString nextInstruction() const { return m_nextInstruction; }
     double nextInstructionDistance() const { return m_nextInstructionDistance; }
     double remainingDistanceM() const { return m_remainingDistanceM; }
@@ -67,6 +71,7 @@ public:
     Q_INVOKABLE void loadGpxData(const QString &gpxContent);
 
 signals:
+    void instructionsChanged();
     void busyChanged();
     void profileChanged();
     void lastGpxChanged();

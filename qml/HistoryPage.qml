@@ -6,6 +6,7 @@ import "components"
 
 Page {
     id: historyPage
+    property string filterText: ""
     header: AppHeader {
         title: i18n.tr("Historique")
         trailingActionBar.actions: [
@@ -57,6 +58,7 @@ Page {
     }
 
     ListView {
+        id: historyListView
         anchors.fill: parent
         model: routeHistory.entries
         spacing: 0   // les dividers des ListItem gèrent la séparation
@@ -67,6 +69,16 @@ Page {
                 width: parent.width - units.gu(2)
                 anchors.centerIn: parent
                 spacing: units.gu(0.5)
+                // v0.99.1: recherche/filtre par nom de parcours.
+                TextField {
+                    id: historyFilter
+                    width: parent.width
+                    placeholderText: i18n.tr("Filtrer les parcours…")
+                    onTextChanged: {
+                        historyPage.filterText = text
+                        historyListView.forceLayout()
+                    }
+                }
                 // v0.99.1: les gestes n'etaient pas discoverables.
                 Label {
                     width: parent.width
@@ -103,7 +115,11 @@ Page {
         //  assignes par id — ListItemAction n'existe pas.)
         delegate: ListItem {
             id: entryItem
-            height: entryCol.height + units.gu(2.4)
+            // v0.99.1: filtre par nom (masquage simple, modele inchange).
+            visible: historyPage.filterText === ""
+                     || (modelData.name || "").toLowerCase()
+                        .indexOf(historyPage.filterText.toLowerCase()) >= 0
+            height: visible ? entryCol.height + units.gu(2.4) : 0
             ListItemActions {
                 id: deleteActions
                 Action {
