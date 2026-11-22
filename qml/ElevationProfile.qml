@@ -20,6 +20,9 @@ Item {
     property bool hasSpeed: false
     // Fenêtre de moyennage glissante (secondes) — le nombre de points dans
     // la fenêtre s'adapte à la fréquence réelle du GPS.
+    // autoSpeedWindow l'ajuste à la durée totale du tracé (10-60 s) ; poser
+    // autoSpeedWindow à false permet de fixer speedWindowSec manuellement.
+    property bool autoSpeedWindow: true
     property int speedWindowSec: 30
     property real avgSpeedKmh: 0
     property real ascentM: 0
@@ -112,7 +115,19 @@ Item {
             }
             times.push(typeof p.t === "number" ? p.t : -1)
         }
-        // Moyenne glissante sur speedWindowSec secondes (30 s par défaut).
+        // v0.99.1: fenêtre adaptée à la durée totale — ~durée/600, arrondie
+        // à 5 s, bornée 10-60 s. Une trace de 4 h 55 reste à 30 s (valeur
+        // validée par Mathias) ; un court parcours devient plus réactif et
+        // une très longue sortie évite la explosion des micro-bandes.
+        if (root.autoSpeedWindow && times.length > 1
+                && times[0] > 0 && times[times.length - 1] > 0) {
+            var dureeS = (times[times.length - 1] - times[0]) / 1000
+            if (dureeS > 0) {
+                var w = Math.round(dureeS / 600 / 5) * 5
+                root.speedWindowSec = Math.max(10, Math.min(60, w))
+            }
+        }
+        // Moyenne glissante sur speedWindowSec secondes.
         // Deux pointeurs : la fenêtre contient autant de points que nécessaire
         // (3 Hz, 1 Hz ou irrégulier — le temps reste la référence).
         var windowMs = root.speedWindowSec * 1000
