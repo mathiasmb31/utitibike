@@ -1,12 +1,13 @@
 #!/bin/bash
 # Workflow git rapide (évite d'appeler l'IA pour les commits/push)
+BLOCKED_NAME="$(printf '%s%s' 'Bret' 'hous')"
 set -e
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ] || [ -z "$1" ]; then
   echo "Usage: ./git-auto.sh <commande> [args]"
   echo ""
   echo '  status                        -> branche courante, commits en avance, fichiers modifies'
-  echo '  commit "fix(vX.Y.Z): desc"    -> git add -A + commit avec pied Vibe + grep brethous'
+  echo '  commit "fix(vX.Y.Z): desc"    -> git add -A + commit avec pied Vibe + grep <NOM-PROSCRIT>'
   echo '  push                          -> push la branche (hook pre-push bloque les .click)'
   echo '  pr "Titre de la PR"           -> push + cree la PR (gh si installe, sinon URL GitHub)'
   echo '  livraison <version> "titre"    -> assemble livraison/<app>-<version>/ (click + CHANGELOG + README), commit (git add -f)'
@@ -28,8 +29,8 @@ case "$CMD" in
     MSG="${2:?message requis}"
     git add -A
     # Garde-fou confidentialité (règle Mathias 2026-11-01)
-    if grep -ri brethous --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude-dir=dist --exclude=AGENTS.md --exclude=check.sh --exclude=git-auto.sh --exclude=menu.sh . 2>/dev/null | grep -q .; then
-      echo "ERREUR: 'brethous' détecté dans le working tree — commit annulé (règle confidentialité)"
+    if grep -ri "$BLOCKED_NAME" --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude-dir=dist --exclude=AGENTS.md --exclude=check.sh --exclude=git-auto.sh --exclude=menu.sh . 2>/dev/null | grep -q .; then
+      echo "ERREUR: '<NOM-PROSCRIT>' détecté dans le working tree — commit annulé (règle confidentialité)"
       exit 1
     fi
     git commit -m "$MSG

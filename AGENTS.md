@@ -36,7 +36,7 @@ Rien de publié ne doit contenir `XXXX` (casse-insensible) ni l'adresse email as
 - Exception : données strictement locales et non publiées (cookies sur le
   téléphone, logs locaux du device, scratchpad de session).
 - Masquer (`XXXX`) toute occurrence dans un contenu destiné à être publié.
-- **Ne jamais publier le numéro de série ADB du device** (ni l'ancien ni le courant) : commits/PR, code, scripts, README/CHANGELOG, docs, captures, tickets, kits OpenStore. Utiliser `ADB_DEVICE` / `<serial-device>` (les scripts prennent `ADB_DEVICE`/`ADB_SERIAL` ou le 1er device de `adb devices`). Garde-fous : `githooks/pre-commit`, `githooks/pre-push`, `check.sh` étape 5. Exception : logs device et scratchpad locaux.
+- **Ne jamais publier aucune information personnelle ou confidentielle concernant Mathias** : nom de famille, adresses (email, postale, IP), numéros de téléphone, opérateur/APN, identifiants de device (serial ADB/IMEI), comptes, tokens/cookies, données financières/médicales — dans commits/PR (messages **et auteurs**), code, scripts, README/CHANGELOG, docs, captures, tickets, kits OpenStore. Placeholders : `<NOM>`, `<EMAIL>`, `<serial-device>`, `XXXX` ; scripts = `ADB_DEVICE`/`ADB_SERIAL` ou 1er device `adb devices`. Motifs construits à l'exécution dans les garde-fous (`githooks/pre-commit`, `githooks/pre-push`, `check.sh` étape 5) pour ne pas publier la valeur proscrite. Exception : logs device et scratchpad locaux.
 
 ## Branches (OBLIGATOIRE)
 

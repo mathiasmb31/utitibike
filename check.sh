@@ -1,5 +1,6 @@
 #!/bin/bash
 # check.sh — pré-vol complet en UNE commande, adapté à utitibike (C++/Qt).
+BLOCKED_NAME="$(printf '%s%s' 'Bret' 'hous')"
 # v0.99.1: l'ancien script etait copie d'utoutlook (node/npm) et ne lancait
 # AUCUN test — il affichait "OK" meme avec la suite C++ cassee.
 set -e
@@ -44,10 +45,10 @@ NT=$(cd build-host && ctest -N 2>/dev/null | grep -c 'Test #' || true)
   || { echo "  ERREUR: ctest a echoue"; exit 1; }
 
 echo "== 5/7 confidentialite"
-if git log --all --format='%ae %ce %B' | grep -qi 'brethous'; then
+if git log --all --format='%ae %ce %B' | grep -qi "$BLOCKED_NAME"; then
   echo "  ERREUR: identite proscrite dans l'historique"; exit 1
 else echo "  OK historique"; fi
-if grep -ri 'brethous' --exclude-dir=.git --exclude-dir=build --exclude-dir=build-host \
+if grep -ri "$BLOCKED_NAME" --exclude-dir=.git --exclude-dir=build --exclude-dir=build-host \
      --exclude-dir=build-ninja --exclude=AGENTS.md --exclude=check.sh \
      --exclude=git-auto.sh --exclude=menu.sh . 2>/dev/null | grep -q .; then
   echo "  ERREUR: identite proscrite dans le working tree"; exit 1
