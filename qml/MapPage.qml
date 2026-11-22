@@ -236,7 +236,34 @@ Page {
             return
         }
         var name = url.substring(url.lastIndexOf("/") + 1)
-        pageStack.push(Qt.resolvedUrl("ExportPage.qml"), { fileUrl: url, fileName: name })
+        openPage(Qt.resolvedUrl("ExportPage.qml"), { fileUrl: url, fileName: name })
+    }
+
+    // v0.99.1: le panneau « menu » est un overlay de MapPage avec un MouseArea
+    // qui bloque les événements. Le laisser ouvert en poussant une page (le
+    // bouton Historique ne le fermait pas, contrairement à Réglages) fait
+    // rester le menu devant la nouvelle page : les taps sur les traces
+    // historiques n'atteignent jamais le ListItem. On ferme systématiquement
+    // tous les overlays avant toute navigation.
+    function openPage(url, properties) {
+        page.panelOpen = false
+        page.searchOpen = false
+        page.suggOpen = false
+        if (properties)
+            pageStack.push(url, properties)
+        else
+            pageStack.push(url)
+    }
+
+    onVisibleChanged: {
+        if (!visible) {
+            // Filet de sécurité si une page est poussée sans passer par
+            // openPage() : aucun overlay de la carte ne doit survivre à la
+            // perte de visibilité de MapPage.
+            panelOpen = false
+            searchOpen = false
+            suggOpen = false
+        }
     }
 
     function startDownload() {
@@ -1541,8 +1568,7 @@ Page {
                             anchors.fill: parent
                             onClicked: {
                                 haptics.vibrate(10)
-                                page.panelOpen = false
-                                pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
+                                openPage(Qt.resolvedUrl("SettingsPage.qml"))
                             }
                         }
                     }
@@ -2006,8 +2032,8 @@ Page {
                             return
                         }
                         var name = url.substring(url.lastIndexOf("/") + 1)
-                        pageStack.push(Qt.resolvedUrl("ExportPage.qml"),
-                                       { fileUrl: url, fileName: name, handlerName: "Share" })
+                        openPage(Qt.resolvedUrl("ExportPage.qml"),
+                                 { fileUrl: url, fileName: name, handlerName: "Share" })
                     }
                 }
 
@@ -2028,7 +2054,7 @@ Page {
                     text: i18n.tr("Historique (%1)").arg(routeHistory.entries.length)
                     iconName: "view-list-symbolic"
                     color: Theme.bgSection
-                    onClicked: pageStack.push(Qt.resolvedUrl("HistoryPage.qml"))
+                    onClicked: openPage(Qt.resolvedUrl("HistoryPage.qml"))
                 }
 
                 Button {
@@ -2037,7 +2063,7 @@ Page {
                     text: i18n.tr("Aide")
                     iconName: "info"
                     color: Theme.bgSection
-                    onClicked: pageStack.push(Qt.resolvedUrl("HelpPage.qml"))
+                    onClicked: openPage(Qt.resolvedUrl("HelpPage.qml"))
                 }
 
                 Button {
@@ -2045,7 +2071,7 @@ Page {
                     height: units.gu(6)
                     text: i18n.tr("À propos")
                     color: Theme.bgSection
-                    onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
+                    onClicked: openPage(Qt.resolvedUrl("AboutPage.qml"))
                 }
 
                 Rectangle {

@@ -171,6 +171,13 @@ Page {
                     height: units.gu(5)
                     points: routeHistory.profileAt(index)
                     visible: points.length > 1
+                    // v0.99.1: le MouseArea de scrubbing du profil (ajoute pour
+                    // la carte de navigation) couvrait tout le mini-profil et
+                    // avalait le tap : le ListItem ne recevait plus onClicked
+                    // et la trace ne se chargeait pas. Ici le profil est purement
+                    // decoratif — on desactive ses entrees, le Canvas continue
+                    // de peindre normalement.
+                    enabled: false
                 }
             }
         }
