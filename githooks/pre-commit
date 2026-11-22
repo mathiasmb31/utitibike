@@ -1,4 +1,12 @@
 #!/bin/bash
+# Règle Mathias (tous projets) : JAMAIS d'ID device dans un contenu publié.
+BLOCK_ID="$(printf '5760%s579' 65)"
+OLD_ID="$(printf '71b90%s' fee)"
+if git diff --cached --text | grep -aE '^\+[^+]' | grep -aqE "$BLOCK_ID|$OLD_ID"; then
+    echo "ERREUR (confidentialité) : ID device interdit dans le commit." >&2
+    echo "  Utiliser ADB_DEVICE / <serial> à la place." >&2
+    exit 1
+fi
 # Garde-fou taille (règle Mathias 2026-11-08) — tout fichier NON .click
 # au-delà de MAX_COMMIT_FILE_MB Mo (défaut 50) est refusé au commit.
 # Les .click sont autorisés localement (git add -f) et bloqués au push.

@@ -3,13 +3,13 @@
 # Usage : ./batterie-tests.sh [version]
 #   ./batterie-tests.sh          (lit la version dans manifest.json)
 #
-# Prérequis : téléphone branché (adb <serial>), app installée, build-host présent.
+# Prérequis : téléphone branché (device défini par ADB_DEVICE), app installée, build-host présent.
 # NE touche qu'à utitibike — aucun appel/SMS, aucune autre app, pas de reboot.
 # Le rapport device est écrit dans ~/.config/mathias.utitibike/batterie.log.
 
 set +e
 VERSION="${1:-$(python3 -c "import json;print(json.load(open('$(dirname "$0")/manifest.json'))['version'])" 2>/dev/null)}"
-DEV="${ADB_DEVICE:-${ADB_SERIAL:-<serial>}}"
+DEV="${ADB_DEVICE:-${ADB_SERIAL:-$(adb devices 2>/dev/null | awk 'NR==2 {print $1}')}}"
 ADB="adb -s $DEV"
 APPID="mathias.utitibike_utitibike_${VERSION}"
 PROC="utitibike"

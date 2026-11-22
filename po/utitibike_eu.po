@@ -744,3 +744,18 @@ msgstr "• Long-press the map: add a point\n"
 
 msgid "• Glissez le doigt pour déplacer la carte\n"
 msgstr "• Swipe to move the map\n"
+
+msgid "Le bouton « Sug » cherche des itinéraires nommés autour de vous. "
+msgstr "The \"Sug\" button looks for named routes around you. "
+
+msgid "Profil et tuiles"
+msgstr "Profile and tiles"
+
+msgid "Sur une trace enregistrée, le profil affiche la vitesse moyenne "
+msgstr "On a recorded ride, the profile shows average speed "
+
+msgid "Tous vos parcours enregistrés sont dans le panneau Historique "
+msgstr "All your recorded rides are in the History panel "
+
+msgid "│ Enregistrer  │     │ • bip toutes les 30s │"
+msgstr "│ Record       │     │ • beep every 30s     │"

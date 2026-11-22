@@ -15,6 +15,13 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     else
         range="$remote_sha..$local_sha"
     fi
+    # Règle Mathias (tous projets) : aucun ID device dans un contenu publié.
+    BLOCK_ID="$(printf '5760%s579' 65)"
+    OLD_ID="$(printf '71b90%s' fee)"
+    if git log -p $range | grep -aE '^\+[^+]' | grep -aqE "$BLOCK_ID|$OLD_ID"; then
+        echo "ERREUR (confidentialité) : ID device interdit dans ce push." >&2
+        exit 1
+    fi
     bad=$(git rev-list --objects $range | awk '{print $2}' | grep '\.click$' | head -5)
     if [ -n "$bad" ]; then
         echo "ERREUR (règle Mathias) : ce push contient des .click :" >&2

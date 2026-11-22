@@ -52,6 +52,14 @@ if grep -ri 'brethous' --exclude-dir=.git --exclude-dir=build --exclude-dir=buil
      --exclude=git-auto.sh --exclude=menu.sh . 2>/dev/null | grep -q .; then
   echo "  ERREUR: identite proscrite dans le working tree"; exit 1
 else echo "  OK working tree"; fi
+# Règle Mathias (tous projets) : jamais d'ID device dans un contenu publié.
+# Le motif est construit à l'exécution pour que ce script ne contienne pas l'ID.
+DEV_ID="$(printf '5760%s579' 65)"; OLD_ID="$(printf '71b90%s' fee)"
+if grep -rInE "$DEV_ID|$OLD_ID" --exclude-dir=.git --exclude-dir=build \
+     --exclude-dir=build-host --exclude-dir=build-ninja --exclude=check.sh \
+     --exclude=pre-commit --exclude=pre-push . 2>/dev/null | grep -q .; then
+  echo "  ERREUR: ID device interdit dans le working tree"; exit 1
+else echo "  OK aucun ID device"; fi
 
 echo "== 6/7 i18n (chaines accentuees hors catalogue) — BLOQUANT"
 HITS=$(grep -rnP '[\x{00C0}-\x{00FF}]' --include='*.cpp' --include='*.qml' --include='*.h' \

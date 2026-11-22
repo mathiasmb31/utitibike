@@ -49,7 +49,9 @@ Page {
                 body: i18n.tr("UT WheelTrek est une application pour le vélo et la randonnée à pied. "
                             + "Elle affiche une carte, calcule des itinéraires, "
                             + "suggère des tracés à proximité, enregistre vos parcours "
-                            + "et les exporte. Tout fonctionne hors ligne une fois les cartes téléchargées.")
+                            + "et les exporte. La carte fonctionne hors ligne une fois les tuiles "
+                            + "téléchargées ; le calcul d'itinéraire, la recherche de lieux et "
+                            + "les suggestions nécessitent une connexion.")
             }
 
             // ── La carte ─────────────────────────────────────────
@@ -58,7 +60,7 @@ Page {
                 body: i18n.tr("• Glissez le doigt pour déplacer la carte\n"
                             + "• Pincez deux doigts pour zoomer\n"
                             + "• Appui long sur la carte : ajoute un point de passage\n"
-                            + "• Bouton en haut à gauche : changer le style de carte\n"
+                            + "• Bouton « Couche » (colonne de droite) : changer le style de carte\n"
                             + "• Bouton recherche : trouver une adresse ou un lieu")
             }
 
@@ -93,7 +95,7 @@ Page {
                 body: i18n.tr("Le bouton « Enregistrer » lance un petit programme "
                             + "en arrière-plan (un daemon). Ce daemon :\n"
                             + "• Note votre position toutes les 5 secondes\n"
-                            + "• Fait un bip toutes les 10 secondes\n"
+                            + "• Fait un bip toutes les 30 secondes\n"
                             + "• Continue même si vous éteignez l'écran\n"
                             + "• Continue même si vous quittez l'application\n\n"
                             + "Vous pouvez donc rouler longtemps sans vous soucier "
@@ -173,7 +175,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: i18n.tr("│ Enregistrer  │     │ • bip toutes les 10s │")
+                        text: i18n.tr("│ Enregistrer  │     │ • bip toutes les 30s │")
                     }
                     Label {
                         width: parent.width
@@ -208,13 +210,16 @@ Page {
             // ── Historique ───────────────────────────────────────
             HelpSection {
                 title: i18n.tr("Historique des parcours")
-                body: i18n.tr("Tous vos parcours enregistrés sont dans l'onglet Historique.\n"
-                            + "Appuyez sur un parcours pour :\n"
-                            + "• Le revoir sur la carte\n"
-                            + "• Voir le profil d'altitude\n"
-                            + "• L'exporter (GPX)\n"
-                            + "• Le partager\n"
-                            + "• Le supprimer")
+                body: i18n.tr("Tous vos parcours enregistrés sont dans le panneau Historique "
+                            + "(bouton dans le menu de la carte).\n"
+                            + "Appuyez sur un parcours pour le recharger sur la carte : vous "
+                            + "verrez alors son profil d'altitude et, pour les tracés "
+                            + "enregistrés, la vitesse (moyenne, courbe colorée, bouton "
+                            + "« Pente » pour comparer avec/sans correction de pente).\n"
+                            + "Le filtre permet de trier par date ou par distance. Glissez "
+                            + "vers la droite pour charger, vers la gauche pour supprimer.\n"
+                            + "L'export et le partage GPX se font depuis le panneau Itinéraire "
+                            + "une fois le tracé chargé.")
             }
 
             // ── Favoris ──────────────────────────────────────────
@@ -233,13 +238,35 @@ Page {
                             + "sans connexion internet. Idéal pour les sorties à la campagne.")
             }
 
+            // ── Suggestions ───────────────────────────────────────
+            HelpSection {
+                title: i18n.tr("Tracés suggérés")
+                body: i18n.tr("Le bouton « Sug » cherche des itinéraires nommés autour de vous. "
+                            + "Le rayon suit la durée maximale choisie (30 km par heure, "
+                            + "jusqu'à 100 km). Les résultats sont mis en cache 10 minutes : "
+                            + "le bouton « Actualiser » force une nouvelle recherche et "
+                            + "« Annuler » l'interrompt. Les tracés du réseau national "
+                            + "(NCN) et régional (RCN) sont affichés en premier.")
+            }
+
+            // ── Profil / tuiles ───────────────────────────────────
+            HelpSection {
+                title: i18n.tr("Profil et tuiles")
+                body: i18n.tr("Sur une trace enregistrée, le profil affiche la vitesse moyenne "
+                            + "et colore la courbe : vert au-dessus de la moyenne, rouge en "
+                            + "dessous. Le bouton « Pente » compare la vitesse à celle des "
+                            + "segments de même pente (une montée ralentit normalement).\n"
+                            + "Si une tuile semble absente ou périmée, utilisez "
+                            + "« Rafraîchir les tuiles visibles » dans le panneau Itinéraire.")
+            }
+
             // ── Batterie ──────────────────────────────────────────
             HelpSection {
                 title: i18n.tr("Économie de batterie")
                 body: i18n.tr("Le daemon GPS consomme peu :\n"
                             + "• Pas d'écran allumé\n"
                             + "• Un point GPS toutes les 5 secondes\n"
-                            + "• Un bip léger toutes les 10 secondes\n\n"
+                            + "• Un bip léger toutes les 30 secondes\n\n"
                             + "Résultat : 8 à 12 heures d'enregistrement continu.")
             }
 

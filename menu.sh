@@ -30,7 +30,7 @@ version_from_repo() {
 }
 
 VERSION="${VERSION:-$(version_from_repo)}"
-DEVICE="${DEVICE:-${ADB_DEVICE:-<serial>}}"
+DEVICE="${DEVICE:-${ADB_DEVICE:-$(adb devices 2>/dev/null | awk 'NR==2 {print $1}')}}"
 COMMIT_MSG="${COMMIT_MSG:-}"
 PR_TITLE="${PR_TITLE:-}"
 FIX_NAME="${FIX_NAME:-}"

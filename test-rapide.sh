@@ -1,5 +1,5 @@
 #!/bin/bash
-# Test rapide mathias.utitibike sur le téléphone (adb <serial>)
+# Test rapide mathias.utitibike sur le téléphone (device défini par ADB_DEVICE)
 set -e
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
@@ -8,7 +8,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
   exit 0
 fi
 
-DEV="<serial>"
+DEV="${ADB_DEVICE:-${ADB_SERIAL:-$(adb devices 2>/dev/null | awk 'NR==2 {print $1}')}}"
 APPID="mathias.utitibike"
 PROC="utitibike"
 

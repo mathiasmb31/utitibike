@@ -7,7 +7,9 @@ Toute release publique d'une app est livrée dans `vibeworkspace/livraison/<app>
 - `utoutlook.mathias_X.Y.Z_arm64.click` (ou le .click de l'app) — commité avec `git add -f` (les .click sont gitignorés)
 - `CHANGELOG.md` — release notes en **anglais**, langage non-développeur, titré, condensé (pas 10 pages) ; couvre depuis la dernière release majeure connue
 - `README.txt` (ou LISEZMOI.txt) — instructions d'installation (adb install / clickable install / transfert du .click), prérequis, nouveautés en 3 lignes
-- Version synchronisée dans `manifest.json` ET `package.json` (si Electron) avant le build
+- Source de vérité de version pour velo-touch : `project(utitibike VERSION x.y.z ...)` dans `CMakeLists.txt`.
+  `manifest.json` est **généré** depuis `manifest.json.in` par `configure_file()` — ne jamais l'éditer à la main.
+  Il n'y a pas de `package.json` dans ce projet.
 - Pied de commit Vibe obligatoire sur le commit de livraison
 - Ligne de crédit obligatoire dans le `CHANGELOG.md` **et** le `README.txt` de livraison : « Built and tested by Mathias — code written by Vibe, reviewed and controlled by Mathias. » (règle Mathias, 2026-11-02, reformulée 2026-11-17) — jamais « validated by Vibe » (Vibe est l'outil, Mathias vérifie et teste)
 

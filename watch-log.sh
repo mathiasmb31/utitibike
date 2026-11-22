@@ -1,10 +1,10 @@
 #!/bin/bash
-# watch-log.sh — suivi live des logs de UT WheelTrek sur le device (FP5 <serial>)
+# watch-log.sh — suivi live des logs de UT WheelTrek sur le device (device défini par ADB_DEVICE)
 # v0.99.1: l'ancien script (copie d'utoutlook) cherchait un wrapper.log qui
 # n'existe pas ici et un manifest.json en sous-dossier. Cette app C++ loggue
 # via journalctl --user (qWarning depuis aa-exec / utitibike).
 set -e
-DEV="${DEVICE:-${ADB_SERIAL:-<serial>}}"
+DEV="${DEVICE:-${ADB_DEVICE:-${ADB_SERIAL:-$(adb devices 2>/dev/null | awk 'NR==2 {print $1}')}}}"
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
   echo "Usage: ./watch-log.sh [filtre]"
   echo "  filtres: error|gps|record|tile|audio|all (defaut: all)"

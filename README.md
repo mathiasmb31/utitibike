@@ -3,8 +3,10 @@
 [![CI](https://github.com/mathiasmb31/utitibike/actions/workflows/ci.yml/badge.svg)](https://github.com/mathiasmb31/utitibike/actions/workflows/ci.yml)
 
 Itinéraires vélo pour Ubuntu Touch : carte OpenStreetMap (tuiles OSM, CyclOSM,
-Esri sombre, satellite Esri), calcul d'itinéraire BRouter, enregistrement GPS,
-profil d'altitude, export/import GPX, favoris, historique, recherche Nominatim.
+Esri Dark Gray, satellite Esri), calcul d'itinéraire BRouter, enregistrement GPS
+avec daemon détaché (survit à la fermeture de l'app), profil d'altitude et de
+vitesse, suggestions de tracés Overpass, export/import GPX, favoris,
+historique, recherche Nominatim.
 
 ## Tailles d'écran
 
@@ -21,7 +23,7 @@ clickable build
 clickable install build/aarch64-linux-gnu/app/mathias.utitibike_<version>_arm64.click
 ```
 
-Nécessite : Qt 5.12+ (Core, Gui, Quick, Network, DBus, Positioning), CMake,
+Nécessite : Qt 5.12+ (Core, Gui, Quick, Network, DBus, Positioning, Multimedia), CMake,
 gettext (msgfmt), qt5 lrelease, python3.
 
 ## Architecture
@@ -36,8 +38,12 @@ src/
                     waypoints, favoris, position, attribution, culling des tracés
   brouterclient.*   calcul d'itinéraire BRouter (HTTP), navigation turn-by-turn,
                     export GPX (horodatage ajouté), import GPX
-  gpstracker.*      position GPS (QGeoPositionInfoSource, lazy au 1er start)
-  routerecorder.*   enregistrement GPS : points, distance, D+, auto-save 60 s
+  gpstracker.*      position GPS (QGeoPositionInfoSource, lazy au 1er start,
+                    warmUp() au lancement : dernière position sans allumer le GPS)
+  daemoncontroller.* pilotage du daemon détaché (gpsd.pid), polling recording.done,
+                    reprise après crash, import GPX dans l'historique
+  gpsdaemon/        daemon détaché (utitibike-gpsd) : points, distance, D+, watchdog
+                    60 s, arrêt 1 h sans fix/sans mouvement, fichiers .part
   routehistory.*    historique des itinéraires (JSON + GPX externalisés)
   favorites.*       favoris (JSON)
   viewstate.*       dernière vue de la carte persistée (view.json)
@@ -79,11 +85,9 @@ QML `appVersion`.
 
 ## OpenStore (click review)
 
-Le review remonte des redflags AppArmor `read_path`/`write_path` : ce sont les
-chemins de données de l'app (`~/.cache|config|local/share/utitibike/**`),
-écrits via QSaveFile (écriture atomique). Ils sont nécessaires au cache de
-tuiles, à l'historique, aux favoris et à la vue persistée — à documenter dans
-la description de l'OpenStore.
+Le profil AppArmor ne contient **plus** de `read_path`/`write_path` (supprimés
+en 0.1.15 au profit de l'heuristique QScreen) : la clickable review passe sans
+redflag de sécurité. Le groupe `audio` est présent pour les bips du daemon.
 
 ## Bugs
 

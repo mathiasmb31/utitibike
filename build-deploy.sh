@@ -1,10 +1,10 @@
 #!/bin/bash
-# Build + install mathias.utitibike sur le téléphone (adb <serial>)
+# Build + install mathias.utitibike sur le téléphone (device défini par ADB_DEVICE)
 set -e
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
   echo "Usage: ./build-deploy.sh [jobs]"
-  echo "  Lance build-fast.sh (CMake/QML) puis clickable build + install sur adb <serial>"
+  echo "  Lance build-fast.sh (CMake/QML) puis clickable build + install sur le device défini par ADB_DEVICE"
   echo "  Exemple: ./build-deploy.sh 4"
   exit 0
 fi
@@ -13,7 +13,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 # v0.99.1: ${{...}} etait une mauvaise substitution bash (script mort).
 JOBS="${1:-4}"
-DEV="${ADB_DEVICE:-<serial>}"
+DEV="${ADB_DEVICE:-${ADB_SERIAL:-$(adb devices 2>/dev/null | awk 'NR==2 {print $1}')}}"
 
 echo "=== Build mathias.utitibike (jobs=$JOBS) ==="
 ./build-fast.sh "$JOBS" 2>&1 | tee /tmp/utitibike-build-fast.log | tail -10

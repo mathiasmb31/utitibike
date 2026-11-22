@@ -22,7 +22,9 @@ public:
     // Sombre si la couleur de fond système a une luminosité < 50 %
     bool dark() const
     {
-        return QGuiApplication::palette().color(QPalette::Window).lightnessF() < 0.5;
+        // lightnessF() n'existe qu'en Qt 5.14+ ; lightness() (0-255) suffit
+        // et garde la compatibilité avec le minimum déclaré (Qt 5.12).
+        return QGuiApplication::palette().color(QPalette::Window).lightness() < 128;
     }
 signals:
     void darkChanged();
