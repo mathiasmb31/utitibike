@@ -117,8 +117,8 @@ msgstr "Leden hittades inte eller saknar geometri."
 
 msgctxt "GpsDaemon"
 msgid "Pas de GPS depuis 1 h — enregistrement arrêté"
-msgstr ""
+msgstr "No GPS for 1 h — recording stopped"
 
 msgctxt "GpsDaemon"
 msgid "Position immobile depuis 1 h — enregistrement arrêté"
-msgstr ""
+msgstr "No movement for 1 h — recording stopped"

@@ -140,11 +140,21 @@ Page {
     function setMode(i) {
         if (page.modeIndex === i)
             return
-        page.modeIndex = i
+        // v0.99.1: une seule source de verite (viewState.transportMode).
+        // La reaction (couche de tuiles + recalcul) est centralisee dans le
+        // Connections sur viewState ci-dessous, pour que le changement depuis
+        // SettingsPage ait exactement le meme effet.
         viewState.transportMode = i === 1 ? "foot" : "bike"
-        cache.tileServer = i === 1 ? "osm" : "cyclosm"
-        if (page.waypoints.length >= 2 && !brouter.busy)
-            brouter.requestRoute(page.waypoints)
+    }
+
+    Connections {
+        target: viewState
+        function onTransportModeChanged() {
+            var foot = viewState.transportMode === "foot"
+            cache.tileServer = foot ? "osm" : "cyclosm"
+            if (page.waypoints.length >= 2 && !brouter.busy)
+                brouter.requestRoute(page.waypoints)
+        }
     }
 
     // Bouton « Sug » : propose les tracés nommés (relations OSM
@@ -392,6 +402,12 @@ Page {
                 showToast(i18n.tr("Arrêt auto : erreur d'écriture disque"))
             else if (daemonController.stopReason === "crash")
                 showToast(i18n.tr("Arrêt après un crash — parcours sauvegardé"))
+            // v0.99.1: ces deux raisons sont émises par le daemon (1 h sans
+            // fix / sans mouvement) mais n'étaient pas affichées.
+            else if (daemonController.stopReason === "nogps")
+                showToast(i18n.tr("Arrêt auto : pas de signal GPS depuis 1 h"))
+            else if (daemonController.stopReason === "nomove")
+                showToast(i18n.tr("Arrêt auto : pas de déplacement depuis 1 h"))
         }
         function onDaemonRestarted() {
             // Le daemon a crashé et a été relancé : le tracé reprend depuis
@@ -450,6 +466,13 @@ Page {
 
     Connections {
         target: brouter
+        // v0.99.1: signal jamais écouté jusqu'ici — arrivée silencieuse.
+        function onRouteFinished() {
+            if (brouter.navigation) {
+                haptics.vibrate(100)
+                showToast(i18n.tr("Vous êtes arrivé"))
+            }
+        }
         function onRouteReady(points, distanceM, ascentM) {
             console.log("[history] onRouteReady:", points.length, "points,",
                         "loadingFromHistory=", brouter.loadingFromHistory)
@@ -769,7 +792,7 @@ Page {
                 color: Theme.textPrimary
                 fontSize: "small"
                 visible: daemonController.recording
-                text: (daemonController.distanceM / 1000).toFixed(2) + " km"
+                text: Format.num(daemonController.distanceM / 1000) + " km"
                     + "  ·  D+ " + Math.round(daemonController.ascentM) + " m"
                     + "  ·  " + formatDuration(daemonController.elapsedSec)
             }
@@ -896,7 +919,7 @@ Page {
                 spacing: units.gu(0.5)
                 TextField {
                     id: searchField
-                    width: parent.width - units.gu(6)
+                    width: parent.width - units.gu(6) - (page.searchBusy ? units.gu(5) : 0)
                     height: units.gu(5)
                     placeholderText: i18n.tr("Rechercher un lieu…")
                     inputMethodHints: Qt.ImhNoPredictiveText
@@ -907,10 +930,29 @@ Page {
                 Button {
                     width: units.gu(5)
                     height: units.gu(5)
-                    text: "→"
+                    text: page.searchBusy ? "" : "→"
                     color: Theme.accentBlue
                     enabled: searchField.text.length > 2 && !page.searchBusy
                     onClicked: page.doSearch(searchField.text)
+                    ActivityIndicator {
+                        anchors.centerIn: parent
+                        width: units.gu(3)
+                        height: units.gu(3)
+                        running: page.searchBusy
+                        visible: page.searchBusy
+                    }
+                }
+                Button {
+                    visible: page.searchBusy
+                    width: units.gu(5)
+                    height: units.gu(5)
+                    iconName: "edit-undo"
+                    color: Theme.bgSection
+                    Accessible.name: i18n.tr("Annuler la recherche")
+                    onClicked: {
+                        searchClient.cancel()
+                        page.searchBusy = false
+                    }
                 }
             }
 
@@ -1009,12 +1051,34 @@ Page {
             Row {
                 width: parent.width
                 Label {
-                    width: parent.width - units.gu(6)
+                    width: parent.width - units.gu(10)
+                           - (page.suggBusy ? units.gu(5) : 0)
                     text: i18n.tr("Suggestions à proximité")
                     fontSize: "medium"
                     font.bold: true
                     color: Theme.textPrimary
                     anchors.verticalCenter: parent.verticalCenter
+                    elide: Text.ElideRight
+                }
+                Button {
+                    width: units.gu(5)
+                    height: units.gu(4)
+                    iconName: "view-refresh"
+                    color: Theme.bgSection
+                    enabled: !page.suggBusy
+                    Accessible.name: i18n.tr("Actualiser les suggestions")
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: suggestClient.refresh()
+                }
+                Button {
+                    visible: page.suggBusy
+                    width: units.gu(5)
+                    height: units.gu(4)
+                    iconName: "edit-undo"
+                    color: Theme.bgSection
+                    Accessible.name: i18n.tr("Annuler la recherche")
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: suggestClient.cancel()
                 }
                 Button {
                     width: units.gu(5)
@@ -1022,7 +1086,10 @@ Page {
                     iconName: "close"
                     color: Theme.bgSection
                     anchors.verticalCenter: parent.verticalCenter
-                    onClicked: page.suggOpen = false
+                    onClicked: {
+                        suggestClient.cancel()
+                        page.suggOpen = false
+                    }
                 }
             }
             // Filtre par durée souhaitée (temps estimé du tracé)
@@ -1108,6 +1175,8 @@ Page {
                                   + (modelData.network ? " · " + modelData.network.toUpperCase() : "")
                                   + " · " + i18n.tr("à %1 km").arg(Format.num(modelData.distM / 1000))
                                   + (modelData.estH >= 0 ? " · " + page.formatEstH(modelData.estH) : "")
+                                  + (modelData.routeDistanceM > 0
+                                     ? " · " + Format.num(modelData.routeDistanceM / 1000) + " km" : "")
                         }
                     }
                     MouseArea {
@@ -1146,14 +1215,20 @@ Page {
     function turnIcon(instr) {
         var s = (instr || "").toLowerCase()
         if (s.indexOf("u-turn") >= 0 || s.indexOf("demi-tour") >= 0
-                || s.indexOf("demi tour") >= 0)
+                || s.indexOf("demi tour") >= 0 || s.indexOf("kehrtwende") >= 0
+                || s.indexOf("media vuelta") >= 0 || s.indexOf("inversione") >= 0)
             return "↩"
         if (s.indexOf("roundabout") >= 0 || s.indexOf("rond-point") >= 0
-                || s.indexOf("rond point") >= 0)
+                || s.indexOf("rond point") >= 0 || s.indexOf("kreisverkehr") >= 0
+                || s.indexOf("rotonda") >= 0 || s.indexOf("rotunde") >= 0)
             return "⟳"
-        if (s.indexOf("left") >= 0 || s.indexOf("gauche") >= 0)
+        if (s.indexOf("left") >= 0 || s.indexOf("gauche") >= 0
+                || s.indexOf("links") >= 0 || s.indexOf("izquierda") >= 0
+                || s.indexOf("sinistra") >= 0 || s.indexOf("esquerda") >= 0)
             return "↰"
-        if (s.indexOf("right") >= 0 || s.indexOf("droite") >= 0)
+        if (s.indexOf("right") >= 0 || s.indexOf("droite") >= 0
+                || s.indexOf("rechts") >= 0 || s.indexOf("derecha") >= 0
+                || s.indexOf("destra") >= 0 || s.indexOf("direita") >= 0)
             return "↱"
         return "↑"
     }
@@ -1164,6 +1239,11 @@ Page {
         var parts = []
         if (brouter.nextInstructionDistance > 0)
             parts.push(i18n.tr("dans %1 m").arg(Math.round(brouter.nextInstructionDistance)))
+        // v0.99.1: progression restante / totale, même à l'arrêt (ETA masquée
+        // si la vitesse n'est pas crédible).
+        if (brouter.navigation && brouter.remainingDistanceM > 0 && page.routeDistance > 0)
+            parts.push(Format.num(brouter.remainingDistanceM / 1000)
+                       + " / " + Format.num(page.routeDistance / 1000) + " km")
         var v = page.liveSpeedKmh / 3.6  // m/s
         if (brouter.navigation && brouter.remainingDistanceM > 0 && v > 1.0) {
             var eta = new Date(Date.now() + brouter.remainingDistanceM / v * 1000)
@@ -1862,7 +1942,7 @@ Page {
                         text: page.userWeightKg
                         onTextChanged: {
                             var w = parseFloat(text)
-                            if (!isNaN(w) && w >= 30 && w <= 200) {
+                            if (!isNaN(w) && w >= 30 && w <= 250) {
                                 page.userWeightKg = w
                                 viewState.userWeightKg = w   // v0.99.1: persiste dans view.json
                             }
@@ -2039,6 +2119,7 @@ Page {
                         height: units.gu(6)
                         // v0.99.1: libelle exact — ce bouton ARRETE et SAUVE,
                         // il n'efface rien (l'ancien libelle etait trompeur).
+                        Accessible.name: text
                         text: i18n.tr("Arrêter et enregistrer")
                         iconName: "save"
                         color: Theme.bgSection
@@ -2056,6 +2137,7 @@ Page {
                 Button {
                     width: parent.width
                     height: units.gu(6)
+                    Accessible.name: text
                     text: i18n.tr("Exporter GPX")
                     iconName: "share"
                     color: Theme.bgSection
@@ -2066,6 +2148,7 @@ Page {
                 Button {
                     width: parent.width
                     height: units.gu(6)
+                    Accessible.name: text
                     text: i18n.tr("Partager le GPX")
                     color: Theme.bgSection
                     enabled: page.routeGpx !== ""
@@ -2084,6 +2167,7 @@ Page {
                 Button {
                     width: parent.width
                     height: units.gu(6)
+                    Accessible.name: text
                     text: i18n.tr("Charger un GPX")
                     iconName: "document-open"
                     color: Theme.bgSection
@@ -2095,6 +2179,7 @@ Page {
                 Button {
                     width: parent.width
                     height: units.gu(6)
+                    Accessible.name: text
                     text: i18n.tr("Historique (%1)").arg(routeHistory.entries.length)
                     iconName: "view-list-symbolic"
                     color: Theme.bgSection
@@ -2104,6 +2189,7 @@ Page {
                 Button {
                     width: parent.width
                     height: units.gu(6)
+                    Accessible.name: text
                     text: i18n.tr("Aide")
                     iconName: "info"
                     color: Theme.bgSection
@@ -2113,6 +2199,7 @@ Page {
                 Button {
                     width: parent.width
                     height: units.gu(6)
+                    Accessible.name: text
                     text: i18n.tr("À propos")
                     color: Theme.bgSection
                     onClicked: openPage(Qt.resolvedUrl("AboutPage.qml"))
@@ -2275,6 +2362,7 @@ Page {
                     Button {
                         width: (parent.width - units.gu(1)) / 2
                         height: units.gu(6)
+                        Accessible.name: text
                         text: i18n.tr("Précharger la zone affichée")
                         iconName: "view-refresh"
                         color: Theme.bgSection
@@ -2297,6 +2385,7 @@ Page {
                 Button {
                     width: parent.width
                     height: units.gu(6)
+                    Accessible.name: text
                     text: i18n.tr("Rafraîchir les tuiles visibles")
                     iconName: "view-refresh"
                     color: Theme.bgSection

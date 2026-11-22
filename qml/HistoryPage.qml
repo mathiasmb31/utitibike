@@ -25,6 +25,24 @@ Page {
         z: -10
     }
 
+    // 0 = date décroissante, 1 = distance décroissante
+    property int sortMode: 0
+
+    // Le modèle trié garde l'index d'ORIGINE (idx) : c'est lui qui sert à
+    // gpxAt()/profileAt(), sinon on chargerait la mauvaise trace.
+    function sortedEntries() {
+        var out = []
+        var src = routeHistory.entries
+        for (var i = 0; i < src.length; i++)
+            out.push({ e: src[i], idx: i })
+        out.sort(function(a, b) {
+            if (historyPage.sortMode === 1)
+                return (b.e.distanceM || 0) - (a.e.distanceM || 0)
+            return String(b.e.date || "").localeCompare(String(a.e.date || ""))
+        })
+        return out
+    }
+
     function loadEntry(idx) {
         var gpx = routeHistory.gpxAt(idx)
         console.log("[history] loadEntry index=", idx, "gpx chars=", gpx.length)
@@ -36,7 +54,37 @@ Page {
             pageStack.pop()
         } else {
             console.warn("[history] loadEntry: GPX vide ou trop court, rien charge")
+            toastLabel.text = i18n.tr("Itinéraire sans tracé GPX")
+            toastRect.opacity = 1
+            toastTimer.restart()
         }
+    }
+
+    Rectangle {
+        id: toastRect
+        z: 50
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            bottom: parent.bottom
+            bottomMargin: units.gu(2)
+        }
+        width: toastLabel.width + units.gu(2)
+        height: toastLabel.height + units.gu(1)
+        radius: Theme.radiusChip
+        color: Theme.bgCard
+        opacity: 0
+        Behavior on opacity { NumberAnimation { duration: 150 } }
+        Label {
+            id: toastLabel
+            anchors.centerIn: parent
+            color: Theme.textPrimary
+            fontSize: "small"
+        }
+    }
+    Timer {
+        id: toastTimer
+        interval: 2800
+        onTriggered: toastRect.opacity = 0
     }
 
     // Confirmation avant « Tout effacer » (suppression définitive).
@@ -46,6 +94,7 @@ Page {
         text: i18n.tr("Supprimer définitivement tous les itinéraires de l'historique ?")
         Button {
             height: units.gu(6)
+            Accessible.name: text
             text: i18n.tr("Tout effacer")
             color: Theme.accentRed
             onClicked: {
@@ -63,7 +112,7 @@ Page {
     ListView {
         id: historyListView
         anchors.fill: parent
-        model: routeHistory.entries
+        model: sortedEntries()
         spacing: 0   // les dividers des ListItem gèrent la séparation
         header: Item {
             // v0.99.1: l'ancien header etait un ListItem avec
@@ -104,6 +153,29 @@ Page {
                     visible: routeHistory.entries.length > 0
                 }
                 Row {
+                    width: parent.width
+                    spacing: units.gu(1)
+                    Label {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: i18n.tr("Tri")
+                        fontSize: "small"
+                        color: Theme.textSecondary
+                    }
+                    SegmentedControl {
+                        width: parent.width - units.gu(6)
+                        height: units.gu(5)
+                        model: [
+                            { label: i18n.tr("Date"), value: 0 },
+                            { label: i18n.tr("Distance"), value: 1 }
+                        ]
+                        currentIndex: historyPage.sortMode
+                        onSelected: {
+                            historyPage.sortMode = value
+                            historyListView.forceLayout()
+                        }
+                    }
+                }
+                Row {
                     id: headerRow
                     spacing: units.gu(2)
                     Label {
@@ -131,7 +203,7 @@ Page {
             id: entryItem
             // v0.99.1: filtre par nom (masquage simple, modele inchange).
             visible: historyPage.filterText === ""
-                     || (modelData.name || "").toLowerCase()
+                     || (modelData.e.name || "").toLowerCase()
                         .indexOf(historyPage.filterText.toLowerCase()) >= 0
             height: visible ? entryCol.height + units.gu(2.4) : 0
             ListItemActions {
@@ -139,7 +211,7 @@ Page {
                 Action {
                     iconName: "delete"
                     text: i18n.tr("Supprimer")
-                    onTriggered: routeHistory.removeEntry(index)
+                    onTriggered: routeHistory.removeEntry(modelData.idx)
                 }
             }
             ListItemActions {
@@ -147,12 +219,12 @@ Page {
                 Action {
                     iconName: "document-open"
                     text: i18n.tr("Charger")
-                    onTriggered: historyPage.loadEntry(index)
+                    onTriggered: historyPage.loadEntry(modelData.idx)
                 }
             }
             leadingActions: deleteActions
             trailingActions: loadActions
-            onClicked: historyPage.loadEntry(index)
+            onClicked: historyPage.loadEntry(modelData.idx)
 
             Column {
                 id: entryCol
@@ -167,7 +239,7 @@ Page {
                 Label {
                     width: parent.width
                     elide: Text.ElideRight
-                    text: modelData.name
+                    text: modelData.e.name
                     fontSize: "medium"
                     font.bold: true
                     color: Theme.textPrimary
@@ -175,15 +247,15 @@ Page {
                 Label {
                     fontSize: "small"
                     color: Theme.textSecondary
-                    text: Format.date(modelData.date)
-                          + "  ·  " + Format.num(modelData.distanceM / 1000) + " km"
-                          + "  ·  D+ " + Math.round(modelData.ascentM) + " m"
+                    text: Format.date(modelData.e.date)
+                          + "  ·  " + Format.num(modelData.e.distanceM / 1000) + " km"
+                          + "  ·  D+ " + Math.round(modelData.e.ascentM) + " m"
                 }
                 // Mini profil d'altitude du parcours (depuis le GPX)
                 ElevationProfile {
                     width: parent.width
                     height: units.gu(5)
-                    points: routeHistory.profileAt(index)
+                    points: routeHistory.profileAt(modelData.idx)
                     visible: points.length > 1
                     // v0.99.1: le MouseArea de scrubbing du profil (ajoute pour
                     // la carte de navigation) couvrait tout le mini-profil et

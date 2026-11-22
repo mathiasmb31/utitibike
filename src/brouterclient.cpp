@@ -9,6 +9,7 @@
 #include <QUrlQuery>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
+#include <QLocale>
 #include <QSaveFile>
 #include <QDir>
 #include <QStandardPaths>
@@ -201,6 +202,9 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
     q.addQueryItem(QStringLiteral("format"), QStringLiteral("gpx"));
     // Turn-by-turn instructions (texte lisible dans les <desc> des <rtept>)
     q.addQueryItem(QStringLiteral("turnInstructionFormat"), QStringLiteral("turn"));
+    // v0.99.1: instructions turn-by-turn dans la langue de l'UI (BRouter
+    // retombe sur l'anglais si le code n'est pas supporté).
+    q.addQueryItem(QStringLiteral("lang"), QLocale::system().name().section(QLatin1Char('_'), 0, 0));
     // Pass uphill cost so the user can prefer flat or hilly routes.
     q.addQueryItem(QStringLiteral("uphillcost"), QString::number(m_uphillCost));
     // Éviter les chemins non goudronnés : unpavedPenalty est un multiplicateur

@@ -47,16 +47,18 @@ void RouteHistory::addEntry(const QString &name, double distanceM, double ascent
                             const QVariantList &waypoints, const QString &gpx,
                             const QString &dateIso)
 {
-    QVariantMap entry;
-    entry.insert(QStringLiteral("name"), name.isEmpty()
-                 ? tr("Itinéraire %1").arg(QDateTime::currentDateTime().toString(QStringLiteral("dd/MM HH:mm")))
-                 : name);
     // Date de début du trajet (et non de l'arrêt) quand fournie
     QDateTime date = dateIso.isEmpty()
                      ? QDateTime::currentDateTime()
                      : QDateTime::fromString(dateIso, Qt::ISODateWithMs).toLocalTime();
     if (!date.isValid())
         date = QDateTime::currentDateTime();
+    QVariantMap entry;
+    // v0.99.1: le nom et la date utilisaient deux horloges differentes
+    // (heure d'arret dans le nom, heure de debut dans la date).
+    entry.insert(QStringLiteral("name"), name.isEmpty()
+                 ? tr("Itinéraire %1").arg(date.toString(QStringLiteral("dd/MM HH:mm")))
+                 : name);
     entry.insert(QStringLiteral("date"), date.toString(Qt::ISODate));
     entry.insert(QStringLiteral("distanceM"), distanceM);
     entry.insert(QStringLiteral("ascentM"), ascentM);
@@ -220,8 +222,13 @@ void RouteHistory::load()
     }
     // v0.99.1: la limite de 50 etait appliquee seulement dans addEntry —
     // un history.json gonfle etait charge integralement.
-    while (m_entries.size() > 50)
+    while (m_entries.size() > 50) {
+        const QString oldFile = m_entries.last().toMap()
+                                .value(QStringLiteral("gpxFile")).toString();
+        if (!oldFile.isEmpty())
+            QFile::remove(gpxFilePath(oldFile));
         m_entries.removeLast();
+    }
     if (migrated)
         save();
 }
@@ -238,5 +245,7 @@ void RouteHistory::save()
     if (!f.open(QIODevice::WriteOnly))
         return;
     f.write(QJsonDocument(arr).toJson(QJsonDocument::Compact));
-    f.commit();
+    // v0.99.1: commit() pouvait echouer (disque plein) sans aucun message.
+    if (!f.commit())
+        qWarning() << "RouteHistory save FAILED" << f.fileName() << f.errorString();
 }

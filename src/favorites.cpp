@@ -29,6 +29,10 @@ void Favorites::add(const QString &name, double lat, double lon, const QString &
     entry.insert(QStringLiteral("lon"), lon);
     entry.insert(QStringLiteral("category"), category.isEmpty() ? QStringLiteral("autre") : category);
     m_entries.append(entry);
+    // v0.99.1: borne identique a l'historique pour eviter une croissance
+    // non controlee de favorites.json.
+    while (m_entries.size() > 50)
+        m_entries.removeFirst();
     save();
     emit entriesChanged();
 }
@@ -89,5 +93,6 @@ void Favorites::save()
     if (!f.open(QIODevice::WriteOnly))
         return;
     f.write(QJsonDocument(arr).toJson(QJsonDocument::Compact));
-    f.commit();
+    if (!f.commit())
+        qWarning() << "Favorites save FAILED" << f.fileName() << f.errorString();
 }

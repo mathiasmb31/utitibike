@@ -9,6 +9,7 @@
 #include <QJsonArray>
 #include <QRegExp>
 #include <QTimer>
+#include <QDateTime>
 #include <QDebug>
 
 // v0.99.1: l'instance principale overpass-api.de est souvent saturee
@@ -23,6 +24,7 @@ static const char *kOverpassMirrors[] = {
 };
 static const int kMirrorCount = 4;
 static const int kRadiusM = 100000;  // demande Mathias : 100 km pour trouver de vraies véloroutes
+static const qint64 kCacheTtlMs = 10 * 60 * 1000;  // 10 min
 
 SuggestClient::SuggestClient(QObject *parent)
     : QObject(parent)
@@ -76,14 +78,30 @@ void SuggestClient::query(const QString &overpass, int timeoutMs,
     });
 }
 
+QString SuggestClient::cacheKey() const
+{
+    // Arrondi à ~1 km : deux recherches proches partagent le même résultat.
+    return QStringLiteral("%1|%2|%3|%4")
+            .arg(qRound(m_lat * 100)).arg(qRound(m_lon * 100))
+            .arg(m_mode).arg(m_radiusM);
+}
+
 void SuggestClient::suggest(double lat, double lon, const QString &mode, int radiusM)
 {
     // L'UI passe un rayon proportionnel à la durée max choisie ; 0 = défaut.
-    const int radius = (radiusM > 0) ? radiusM : kRadiusM;
+    m_radiusM = (radiusM > 0) ? radiusM : kRadiusM;
     m_lat = lat;
     m_lon = lon;
     m_mode = (mode == QLatin1String("foot")) ? QStringLiteral("foot")
                                              : QStringLiteral("bike");
+    // v0.99.1: cache 10 min — rouvrir le panneau ou revenir à un filtre déjà
+    // affiché ne relance plus une requête de ~28 s.
+    if (m_cacheKey == cacheKey()
+            && QDateTime::currentMSecsSinceEpoch() - m_cacheAtMs < kCacheTtlMs) {
+        setBusy(false);
+        emit suggestionsReady(m_cacheItems);
+        return;
+    }
     m_names.clear();
     setBusy(true);
     // v0.99.1: relations ET ways nommees — beaucoup de sentiers locaux ne
@@ -99,14 +117,30 @@ void SuggestClient::suggest(double lat, double lon, const QString &mode, int rad
                                      "way%1[\"name\"](around:%2,%3,%4););"
                                      "out center tags;")
             .arg(routeFilter)
-            .arg(radius)
+            .arg(m_radiusM)
             .arg(lat, 0, 'f', 6)
             .arg(lon, 0, 'f', 6);
     // Un rayon de 100 km renvoie ~200 relations et met ~28 s au miroir
     // rapide ; le timeout client doit suivre (40 s -> 60 s à 100 km).
-    const int timeoutMs = 40000 + radius / 5;
+    const int timeoutMs = 40000 + m_radiusM / 5;
     qWarning() << "suggest query:" << q << "timeout" << timeoutMs;
     query(q, timeoutMs, &SuggestClient::onSuggestReply, &SuggestClient::onSuggestError);
+}
+
+void SuggestClient::refresh()
+{
+    m_cacheKey.clear();
+    m_cacheItems.clear();
+    m_cacheAtMs = 0;
+    suggest(m_lat, m_lon, m_mode, m_radiusM);
+}
+
+void SuggestClient::cancel()
+{
+    // Invalide les réponses en vol (suggest + trail) via le compteur de
+    // séquence déjà utilisé par query().
+    ++m_querySeq;
+    setBusy(false);
 }
 
 void SuggestClient::onSuggestError(const QString &msg)
@@ -167,13 +201,16 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
         // Temps estimé du tracé : tag OSM « distance » (km) de la relation,
         // à la vitesse du mode (marche ~5 km/h, vélo ~18 km/h). -1 si inconnu.
         double estH = -1.0;
+        double routeDistanceM = -1.0;
         const double speedKmh = (m_mode == QLatin1String("foot")) ? 5.0 : 18.0;
         const QString distTag = tags.value(QStringLiteral("distance")).toString();
         QRegExp rx(QStringLiteral("[0-9]+([.,][0-9]+)?"));
         if (rx.indexIn(distTag) >= 0) {
             const double km = rx.cap(0).replace(QLatin1Char(','), QLatin1Char('.')).toDouble();
-            if (km > 0)
+            if (km > 0) {
                 estH = km / speedKmh;
+                routeDistanceM = km * 1000.0;
+            }
         } else {
             // v0.99.1: ~34 tracés sur 44 n'ont PAS de tag « distance » —
             // sans estimation ils disparaissaient dès qu'un filtre de durée
@@ -186,6 +223,7 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
                 estH = guessKm / speedKmh;
         }
         m.insert(QStringLiteral("estH"), estH);
+        m.insert(QStringLiteral("routeDistanceM"), routeDistanceM);
         const int rank = (network == QLatin1String("ncn")) ? 0
                        : (network == QLatin1String("rcn")) ? 1
                        : (network == QLatin1String("lcn")) ? 2 : 3;
@@ -200,7 +238,10 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
     const int maxItems = qMin<int>(items.size(), 40);
     for (int i = 0; i < maxItems; ++i)
         out.append(items.at(i).map);
-    qWarning() << "suggest:" << out.size() << "suggestions";
+    m_cacheKey = cacheKey();
+    m_cacheItems = out;
+    m_cacheAtMs = QDateTime::currentMSecsSinceEpoch();
+    qWarning() << "suggest:" << out.size() << "suggestions (cached)";
     emit suggestionsReady(out);
 }
 

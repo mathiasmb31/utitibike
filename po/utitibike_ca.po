@@ -407,7 +407,7 @@ msgid "À propos d'UT WheelTrek"
 msgstr "About UT WheelTrek"
 
 msgid "Conçu pour Ubuntu Touch"
-msgstr ""
+msgstr "Designed for Ubuntu Touch"
 
 msgid "Arrêter et enregistrer"
 msgstr "Stop and save"
@@ -498,3 +498,54 @@ msgstr "Refresh visible tiles"
 
 msgid "Vitesse moy. %1 km/h"
 msgstr "Avg. speed %1 km/h"
+
+msgid "Actualiser les suggestions"
+msgstr "Refresh suggestions"
+
+msgid "Annuler la recherche"
+msgstr "Cancel search"
+
+msgid "Itinéraire sans tracé GPX"
+msgstr "Route without GPX track"
+
+msgid "Tri"
+msgstr "Sort"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Arrêt auto : pas de signal GPS depuis 1 h"
+msgstr "Auto stop: no GPS signal for 1 h"
+
+msgid "Arrêt auto : pas de déplacement depuis 1 h"
+msgstr "Auto stop: no movement for 1 h"
+
+msgid "Vous êtes arrivé"
+msgstr "You have arrived"
+
+msgid "Échec du transfert du GPX"
+msgstr "GPX transfer failed"
+
+msgid "│ UT WheelTrek │────▶│  Daemon GPS          │"
+msgstr "| UT WheelTrek |---->|  GPS daemon          |"
+
+msgid "│  (l'appli)   │     │  (en arrière-plan)   │"
+msgstr "|  (the app)   |     |  (background)         |"
+
+msgid "│              │     │                      │"
+msgstr "|              |     |                      |"
+
+msgid "│ Bouton       │     │ • note la position   │"
+msgstr "| Button       |     | * records position   |"
+
+msgid "│ Enregistrer  │     │ • bip toutes les 10s │"
+msgstr "| Record       |     | * beep every 10s     |"
+
+msgid "│ Bouton       │     │ • sauvegarde le      │"
+msgstr "| Button       |     | * saves the          |"
+
+msgid "│ Arrêter      │     │ • s'arrête tout seul  │"
+msgstr "| Stop         |     | * stops by itself    |"
+
+msgid "└──────────────┘     └──────────────────────┘"
+msgstr "+--------------+     +----------------------+"

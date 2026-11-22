@@ -28,6 +28,10 @@ public:
 
     // mode : "foot" (randonnée à pied) ou "bike" (vélo)
     Q_INVOKABLE void suggest(double lat, double lon, const QString &mode, int radiusM);
+    // v0.99.1: force une nouvelle requête (ignore le cache 10 min).
+    Q_INVOKABLE void refresh();
+    // v0.99.1: invalide les réponses en vol et arrête l'indicateur.
+    Q_INVOKABLE void cancel();
     // Charge la géométrie complète de la relation et émet trailReady(gpx)
     // type = "relation" ou "way" (les suggestions incluent les deux)
     Q_INVOKABLE void fetchTrail(qint64 id, const QString &type = QStringLiteral("relation"));
@@ -51,12 +55,19 @@ private:
     void onTrailReply(const QByteArray &body);
     void onTrailError(const QString &msg);
     QString trailGpx(const QJsonDocument &doc) const;
+    QString cacheKey() const;
 
     QNetworkAccessManager m_nam;
     bool m_busy = false;
     double m_lat = 0.0;
     double m_lon = 0.0;
     QString m_mode = QStringLiteral("bike");
+    int m_radiusM = 0;
+    // Cache des suggestions (10 min) pour éviter de relancer Overpass à
+    // chaque ouverture du panneau / changement de filtre aller-retour.
+    QString m_cacheKey;
+    QVariantList m_cacheItems;
+    qint64 m_cacheAtMs = 0;
     // id de relation -> nom affiché (retenu entre suggest() et fetchTrail())
     QHash<qint64, QString> m_names;
     QHash<qint64, QString> m_types;   // "relation" ou "way"

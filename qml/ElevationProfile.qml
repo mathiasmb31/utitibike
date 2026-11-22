@@ -19,6 +19,9 @@ Item {
     // moyenne, ambre en dessous. hasSpeed=false pour les tracés BRouter.
     property bool hasSpeed: false
     property real avgSpeedKmh: 0
+    property real ascentM: 0
+    property real descentM: 0
+    property real maxSlopePct: 0
     function speedAt(i) {
         return (canvas.speeds && i >= 0 && i < canvas.speeds.length)
                ? canvas.speeds[i] : -1
@@ -54,6 +57,9 @@ Item {
             root.maxEle = 0
             root.hasSpeed = false
             root.avgSpeedKmh = 0
+            root.ascentM = 0
+            root.descentM = 0
+            root.maxSlopePct = 0
             canvas.speeds = []
             canvas.hasSpeed = false
             canvas.requestPaint()
@@ -66,17 +72,32 @@ Item {
         var maxE = -Infinity
         var hasEle = false
         var timeS = 0
+        var prevEle = null, eleRef = 0, ascent = 0, descent = 0, maxSlope = 0
         for (var i = 0; i < points.length; i++) {
             var p = points[i]
             if (p.ele !== undefined && p.ele !== null) {
                 hasEle = true
                 if (p.ele < minE) minE = p.ele
                 if (p.ele > maxE) maxE = p.ele
+                if (prevEle !== null) {
+                    // Hystérésis 5 m (comme le daemon) pour D+/D- comparables.
+                    if (eleRef === 0) eleRef = p.ele
+                    if (p.ele - eleRef >= 5) {
+                        ascent += p.ele - eleRef
+                        eleRef = p.ele
+                    } else if (eleRef - p.ele >= 5) {
+                        descent += eleRef - p.ele
+                        eleRef = p.ele
+                    }
+                }
+                prevEle = p.ele
             }
             if (i > 0) {
                 var prev = points[i - 1]
                 var dd = GeoUtils.haversine(prev.lat, prev.lon, p.lat, p.lon)
                 cum.push(cum[i - 1] + dd)
+                if (dd > 0.5 && p.ele !== undefined && prev.ele !== undefined)
+                    maxSlope = Math.max(maxSlope, Math.abs(p.ele - prev.ele) / dd * 100)
                 var v = -1
                 if (typeof p.t === "number" && typeof prev.t === "number") {
                     var dt = (p.t - prev.t) / 1000
@@ -93,6 +114,9 @@ Item {
             }
         }
         root.distanceM = cum[cum.length - 1]
+        root.ascentM = ascent
+        root.descentM = descent
+        root.maxSlopePct = maxSlope
         if (hasEle) {
             root.minEle = minE
             root.maxEle = maxE
@@ -251,11 +275,13 @@ Item {
                 // Altitude min en bas à gauche — Theme.textSecondary #888899
                 ctx.fillStyle = "#888899"
                 ctx.fillText(Math.round(root.minEle) + " m", padL, height - padB - units.gu(0.3))
-                // D+ au centre en haut — Theme.textPrimary #e8e8e8
-                var dPlus = root.maxEle - root.minEle
+                // D+ / D- / pente max au centre en haut — Theme.textPrimary #e8e8e8
                 ctx.fillStyle = "#e8e8e8"
                 ctx.textAlign = "center"
-                ctx.fillText("D+ " + Math.round(dPlus) + " m", padL + w / 2, padT + units.gu(1.2))
+                ctx.fillText("D+ " + Math.round(root.ascentM) + " · D- "
+                             + Math.round(root.descentM) + " m · "
+                             + Math.round(root.maxSlopePct) + "%",
+                             padL + w / 2, padT + units.gu(1.2))
             }
         }
     }

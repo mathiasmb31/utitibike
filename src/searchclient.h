@@ -20,6 +20,8 @@ public:
     // Lance une recherche Nominatim (monde entier).
     // Émet searchFinished(results) ou searchFailed(message).
     Q_INVOKABLE void search(const QString &query);
+    // v0.99.1: invalide les réponses en vol (géocodage + inverse).
+    Q_INVOKABLE void cancel();
 
     // Géocodage inverse Nominatim : nomme le lieu le plus proche d'un point
     // (ville/quartier). Émet reverseFinished(place) — place vide si aucun

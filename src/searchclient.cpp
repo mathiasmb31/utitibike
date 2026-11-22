@@ -2,6 +2,7 @@
 #include "appdata.h"
 
 #include <QNetworkRequest>
+#include <QLocale>
 #include <QUrlQuery>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -12,6 +13,13 @@
 SearchClient::SearchClient(QObject *parent)
     : QObject(parent)
 {
+}
+
+void SearchClient::cancel()
+{
+    // Invalide les réponses en vol : leurs finished() verront un seq périmé.
+    ++m_searchSeq;
+    ++m_reverseSeq;
 }
 
 void SearchClient::search(const QString &query)
@@ -35,6 +43,10 @@ void SearchClient::search(const QString &query)
                   + QStringLiteral(" (Ubuntu Touch)"));
     req.setHeader(QNetworkRequest::ContentTypeHeader,
                   QStringLiteral("application/json"));
+    // v0.99.1: sans cet en-tête Nominatim répond dans la langue du serveur
+    // (donc en anglais pour une UI FR/DE/ES…).
+    req.setRawHeader(QByteArrayLiteral("Accept-Language"),
+                     QLocale::system().name().toLatin1());
 
     QNetworkReply *reply = m_nam.get(req);
 
@@ -118,6 +130,10 @@ void SearchClient::reverse(double lat, double lon)
                   + QStringLiteral(" (Ubuntu Touch)"));
     req.setHeader(QNetworkRequest::ContentTypeHeader,
                   QStringLiteral("application/json"));
+    // v0.99.1: sans cet en-tête Nominatim répond dans la langue du serveur
+    // (donc en anglais pour une UI FR/DE/ES…).
+    req.setRawHeader(QByteArrayLiteral("Accept-Language"),
+                     QLocale::system().name().toLatin1());
 
     QNetworkReply *reply = m_nam.get(req);
 

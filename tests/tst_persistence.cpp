@@ -20,10 +20,12 @@ private slots:
     void favoritesAddRemove();
     void favoritesIsFavorite();
     void favoritesClear();
+    void favoritesLimit();
 
     // RouteHistory
     void routeHistoryAddRemove();
     void routeHistoryClear();
+    void routeHistoryNameUsesStartDate();
 
     // ViewState
     void viewStateDefaults();
@@ -90,6 +92,17 @@ void TestPersistence::favoritesClear()
     QCOMPARE(fav.entries().size(), 2);
     fav.clear();
     QCOMPARE(fav.entries().size(), 0);
+}
+
+void TestPersistence::favoritesLimit()
+{
+    Favorites fav;
+    fav.clear();
+    // 60 points éloignés de >10 m pour éviter le dédoublonnage.
+    for (int i = 0; i < 60; ++i)
+        fav.add(QStringLiteral("F%1").arg(i), 43.0 + i * 0.01, 1.0 + i * 0.01);
+    QCOMPARE(fav.entries().size(), 50);
+    fav.clear();
 }
 
 // ── RouteHistory ─────────────────────────────────────────────────────
@@ -180,6 +193,21 @@ void TestPersistence::viewStateUserWeight()
     QCOMPARE(vs.userWeightKg(), 30.0);
     vs.setUserWeightKg(999.0);
     QCOMPARE(vs.userWeightKg(), 250.0);
+}
+
+void TestPersistence::routeHistoryNameUsesStartDate()
+{
+    RouteHistory hist;
+    hist.clear();
+    // dateIso = début du trajet. Le nom par défaut doit utiliser la même
+    // date que le champ `date` (avant il utilisait l'heure d'arrêt).
+    hist.addEntry(QString(), 1000.0, 20.0, QVariantList(), QString(),
+                  QStringLiteral("2026-11-22T07:30:00.000"));
+    QCOMPARE(hist.entries().size(), 1);
+    const QVariantMap e = hist.entries().first().toMap();
+    QVERIFY(e.value(QStringLiteral("name")).toString().contains(QStringLiteral("22/11 07:30")));
+    QVERIFY(e.value(QStringLiteral("date")).toString().startsWith(QStringLiteral("2026-11-22T07:30")));
+    hist.clear();
 }
 
 QTEST_GUILESS_MAIN(TestPersistence)
