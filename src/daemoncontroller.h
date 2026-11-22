@@ -45,7 +45,7 @@ class DaemonController : public QObject
     // Bip de confirmation activé (persisté dans gpsd.conf, lu par le daemon)
     Q_PROPERTY(bool beepEnabled READ beepEnabled WRITE setBeepEnabled NOTIFY beepEnabledChanged)
     // Source GPS : "auto" | "satellite" | "network" (persisté dans gpsd.conf)
-    Q_PROPERTY(QString positioningMode READ positioningMode WRITE setPositioningMode NOTIFY positioningModeChanged)
+    Q_PROPERTY(QString positioningMode READ positioningMode NOTIFY positioningModeChanged)
     // Raison du dernier arrêt : "user", "control", "parent", "battery", "maxduration"
     Q_PROPERTY(QString stopReason READ stopReason NOTIFY doneReceived)
     // Date de début de l'enregistrement (ISO UTC, lue dans recording.done)
@@ -74,7 +74,6 @@ public:
     bool beepEnabled() const { return m_beepEnabled; }
     void setBeepEnabled(bool v);
     QString positioningMode() const { return m_positioningMode; }
-    void setPositioningMode(const QString &v);
     QString stopReason() const { return m_stopReason; }
     QString startTime() const { return m_startTime; }
     QString lastGpxPath() const { return m_lastGpxPath; }

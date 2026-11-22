@@ -47,9 +47,8 @@ DaemonController::DaemonController(QObject *parent)
                 m_positioningMode = QString::fromLatin1(line.mid(12).trimmed());
         }
     }
-    if (m_positioningMode != QLatin1String("satellite")
-            && m_positioningMode != QLatin1String("network"))
-        m_positioningMode = QStringLiteral("auto");
+    // v1.0: un seul mode utile sur UT — migration des anciennes valeurs.
+    m_positioningMode = QStringLiteral("auto");
 
     // Poll toutes les 5 s pour lire recording.json (moins de réveils CPU
     // côté app pendant l'enregistrement)
@@ -544,16 +543,6 @@ void DaemonController::setBeepEnabled(bool v)
     emit beepEnabledChanged();
 }
 
-void DaemonController::setPositioningMode(const QString &v)
-{
-    const QString mode = (v == QLatin1String("satellite") || v == QLatin1String("network"))
-                         ? v : QStringLiteral("auto");
-    if (m_positioningMode == mode)
-        return;
-    m_positioningMode = mode;
-    writeConf();  // le daemon relit gpsd.conf au prochain démarrage d'enregistrement
-    emit positioningModeChanged();
-}
 
 void DaemonController::setManualStart(double lat, double lon)
 {

@@ -69,23 +69,8 @@ Page {
                     anchors.centerIn: parent
                     width: parent.width - units.gu(2)
                     spacing: units.gu(1)
-                    Label { text: i18n.tr("Source GPS"); fontSize: "small"; color: Theme.textPrimary }
-                    SegmentedControl {
-                        width: parent.width
-                        height: units.gu(6)
-                        model: [
-                            { label: i18n.tr("Auto"), value: "auto" },
-                            { label: i18n.tr("Satellite"), value: "satellite" },
-                            { label: i18n.tr("Réseau"), value: "network" }
-                        ]
-                        currentIndex: ["auto", "satellite", "network"].indexOf(viewState.positioningMode)
-                        onSelected: {
-                            haptics.vibrate(10)
-                            viewState.positioningMode = value
-                            gpsTracker.setPositioningMode(value)
-                            daemonController.positioningMode = value
-                        }
-                    }
+                    // v1.0: sélecteur « Source GPS » supprimé — inutile sur
+                    // UT (lomiri-location-serviced : gps + remote seulement).
                     Label { text: i18n.tr("Mode de déplacement"); fontSize: "small"; color: Theme.textPrimary }
                     SegmentedControl {
                         width: parent.width

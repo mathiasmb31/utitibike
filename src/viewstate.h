@@ -16,7 +16,7 @@ class ViewState : public QObject
     // Préférence de thème : "auto" (suit le système Lomiri), "dark", "light"
     Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY themeModeChanged)
     // Source de position GPS : "auto", "satellite" (GPS seul), "network" (WiFi/cell)
-    Q_PROPERTY(QString positioningMode READ positioningMode WRITE setPositioningMode NOTIFY positioningModeChanged)
+    Q_PROPERTY(QString positioningMode READ positioningMode NOTIFY positioningModeChanged)
     // Éviter les chemins non goudronnés dans le calcul d'itinéraire BRouter
     Q_PROPERTY(bool avoidUnpaved READ avoidUnpaved WRITE setAvoidUnpaved NOTIFY avoidUnpavedChanged)
     // Mode de déplacement : "bike" (vélo) ou "foot" (marche / randonnée)
@@ -39,7 +39,6 @@ public:
     QString themeMode() const { return m_themeMode; }
     void setThemeMode(const QString &v);
     QString positioningMode() const { return m_positioningMode; }
-    void setPositioningMode(const QString &v);
     bool avoidUnpaved() const { return m_avoidUnpaved; }
     void setAvoidUnpaved(bool v);
     QString transportMode() const { return m_transportMode; }

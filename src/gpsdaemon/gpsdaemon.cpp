@@ -654,48 +654,13 @@ bool GpsDaemon::readBeepConf() const
     return !content.contains("beep=0");
 }
 
-// Applique la source de position choisie dans gpsd.conf (positioning=...) :
-// auto = satellite + WiFi/cell, satellite = GPS seul, network = réseau seul.
+// v1.0: le service Lomiri n'expose que gps + remote — il n'y a qu'un mode
+// utile. On ignore l'ancienne clé gpsd.conf (positioning=satellite|network)
+// et on laisse le plugin choisir toutes les méthodes disponibles.
 void GpsDaemon::applyPositioningMode()
 {
-    QString mode = QStringLiteral("auto");
-    QFile f(m_confFile);
-    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        const QByteArray content = f.readAll();
-        f.close();
-        const QList<QByteArray> lines = content.split('\n');
-        for (const QByteArray &line : lines) {
-            if (line.startsWith("positioning="))
-                mode = QString::fromLatin1(line.mid(12).trimmed());
-        }
-    }
-    if (mode == QLatin1String("satellite"))
-        m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::SatellitePositioningMethods);
-    else if (mode == QLatin1String("network")) {
-        m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::NonSatellitePositioningMethods);
-        // Secours : si le mode réseau seul ne fournit aucun fix après 15 s
-        // (le provider réseau de UT peut être indisponible), on retombe sur
-        // toutes les méthodes (satellite inclus) — sinon aucune position
-        // n'est jamais trouvée en mode « réseau ».
-        // v1.0: annule un éventuel timer de secours précédent pour ne pas
-        // basculer/logger deux fois la même chose.
-        if (m_networkFallbackTimer) {
-            m_networkFallbackTimer->stop();
-            m_networkFallbackTimer->deleteLater();
-            m_networkFallbackTimer = nullptr;
-        }
-        m_networkFallbackTimer = new QTimer(this);
-        m_networkFallbackTimer->setSingleShot(true);
-        connect(m_networkFallbackTimer, &QTimer::timeout, this, [this]() {
-            if (!m_everHadFix) {
-                qWarning() << "[gpsd] mode réseau sans fix après 15 s — secours satellite (AllPositioningMethods)";
-                m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
-            }
-        });
-        m_networkFallbackTimer->start(15000);
-    } else
-        m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
-    qWarning() << "[gpsd] positioning mode:" << mode;
+    m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
+    qWarning() << "[gpsd] positioning forced to auto (lomiri: gps + remote only)";
 }
 
 void GpsDaemon::onSafetyTick()

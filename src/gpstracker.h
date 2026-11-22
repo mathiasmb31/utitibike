@@ -50,17 +50,12 @@ public:
     Q_INVOKABLE void warmUp();
     Q_INVOKABLE void start();
     Q_INVOKABLE void stop();
-    // "auto" (satellite + réseau WiFi/cell), "satellite" (GPS seul),
-    // "network" (WiFi/cell uniquement, pas de satellite)
-    Q_INVOKABLE void setPositioningMode(const QString &mode);
 
 signals:
     void activeChanged();
     void availableChanged();
     void positionUpdated();
     void statusChanged();
-    // v1.0: le mode « réseau » n'a pas donné de fix, bascule vers GPS.
-    void positioningFallback();
 
 private:
     QGeoPositionInfoSource *m_source = nullptr;
@@ -73,7 +68,6 @@ private:
     double m_direction = 0.0;
     bool m_hasFix = false;
     bool m_hasApprox = false;
-    QString m_positioningMode = QStringLiteral("auto");
     // v1.0: watchdog — si aucune position pendant 60 s, redémarre la source
     // (le service de localisation Lomiri coupe parfois la session).
     QTimer m_watchdogTimer;

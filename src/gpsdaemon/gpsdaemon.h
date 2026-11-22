@@ -121,10 +121,6 @@ private:
     QTimer m_controlTimer;     // 5 s — vérifie recording.control + manual-start
     QTimer m_safetyTimer;      // 60 s — batterie (UPower) + durée max 12 h
     QTimer m_fakeGpsTimer;      // DEBUG — GPS simulé (UTITIBIKE_FAKE_GPS=1)
-    // v1.0: timer de secours du mode « réseau » (un seul à la fois pour ne
-    // pas logger / basculer plusieurs fois si applyPositioningMode est
-    // rappelé pendant un enregistrement).
-    QTimer *m_networkFallbackTimer = nullptr;
     QSoundEffect m_beep;
     QSoundEffect m_beepLong;    // alerte « action requise » (départ manuel)
     QSoundEffect m_alarm;       // sonnerie 5 s d'arrêt batterie (20 %)

@@ -2110,26 +2110,9 @@ Page {
                         onCheckedChanged: daemonController.beepEnabled = checked
                     }
                 }
-                Label {
-                    text: i18n.tr("Source GPS")
-                    fontSize: "x-small"
-                    color: Theme.textSecondary
-                }
-                SegmentedControl {
-                    width: parent.width
-                    property var modeKeys: ["auto", "satellite", "network"]
-                    model: [
-                        { label: i18n.tr("Auto"), value: "auto" },
-                        { label: i18n.tr("Satellite"), value: "satellite" },
-                        { label: i18n.tr("Réseau"), value: "network" }
-                    ]
-                    currentIndex: Math.max(0, modeKeys.indexOf(viewState.positioningMode))
-                    onSelected: {
-                        viewState.positioningMode = value
-                        gpsTracker.setPositioningMode(value)
-                        daemonController.positioningMode = value
-                    }
-                }
+                // v1.0: sélecteur « Source GPS » supprimé — le service
+                // Lomiri n'expose que gps + remote : il n'y a qu'un mode
+                // utile (auto), laissé en interne dans viewState/gpsd.conf.
                 Row {
                     width: parent.width
                     spacing: units.gu(0.5)
@@ -2640,11 +2623,6 @@ Page {
     // Centrage auto sur le GPS + mise à jour navigation
     Connections {
         target: gpsTracker
-        // v1.0: le réseau ne donne rien sur UT/SFR — informer l'utilisateur
-        // que le GPS a pris le relais (sinon c'était seulement dans les logs).
-        function onPositioningFallback() {
-            showToast(i18n.tr("Réseau indisponible — GPS activé"))
-        }
         function onPositionUpdated() {
             // Pendant un enregistrement daemon, la position vient du daemon
             // (voir Connections ci-dessous) : on ne centre pas depuis les 2 sources.

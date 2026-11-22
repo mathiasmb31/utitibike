@@ -47,16 +47,6 @@ void ViewState::setThemeMode(const QString &v)
     scheduleSave();
 }
 
-void ViewState::setPositioningMode(const QString &v)
-{
-    const QString mode = (v == QLatin1String("satellite") || v == QLatin1String("network"))
-                         ? v : QStringLiteral("auto");
-    if (m_positioningMode == mode)
-        return;
-    m_positioningMode = mode;
-    emit positioningModeChanged();
-    scheduleSave();
-}
 
 void ViewState::setAvoidUnpaved(bool v)
 {
@@ -147,8 +137,8 @@ void ViewState::load()
     const QJsonValue pos = o.value(QStringLiteral("positioningMode"));
     if (pos.isString()) {
         const QString v = pos.toString();
-        m_positioningMode = (v == QLatin1String("satellite") || v == QLatin1String("network"))
-                            ? v : QStringLiteral("auto");
+        Q_UNUSED(v)
+        m_positioningMode = QStringLiteral("auto");  // v1.0: migration des anciens réglages
     }
     const QJsonValue au = o.value(QStringLiteral("avoidUnpaved"));
     if (au.isBool())

@@ -57,8 +57,8 @@ bool GpsTracker::ensureSource()
                    << "supported methods"
                    << static_cast<int>(m_source->supportedPositioningMethods());
         m_source->setUpdateInterval(1000);
-        // Applique le mode choisi (auto = satellite + réseau WiFi/cell)
-        setPositioningMode(m_positioningMode);
+        // v1.0: un seul mode utile sur UT (lomiri : gps + remote).
+        m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
         // Position de secours : dernière position connue en cache (lue sans
         // attendre le serveur) pour afficher tout de suite où l'on est.
         const QGeoPositionInfo lastKnown = m_source->lastKnownPosition(false);
@@ -153,32 +153,4 @@ void GpsTracker::stop()
     m_watchdogTimer.stop();
     emit activeChanged();
     emit statusChanged();
-}
-
-void GpsTracker::setPositioningMode(const QString &mode)
-{
-    m_positioningMode = (mode == QLatin1String("satellite") || mode == QLatin1String("network"))
-                        ? mode : QStringLiteral("auto");
-    if (!m_source)
-        return;
-    if (m_positioningMode == QLatin1String("satellite"))
-        m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::SatellitePositioningMethods);
-    else if (m_positioningMode == QLatin1String("network")) {
-        m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::NonSatellitePositioningMethods);
-        // Secours : pas de fix réseau après 30 s → toutes méthodes (satellite
-        // inclus), sinon aucune position en mode « réseau » sur certains
-        // appareils où le provider réseau est indisponible.
-        // v1.0: délai réduit à 15 s — le provider réseau UT ne fournit
-        // souvent aucun fix 4G/5G. Le secours ne doit pas écraser un
-        // changement de l'utilisateur intervenu dans l'intervalle.
-        const QString scheduledMode = m_positioningMode;
-        QTimer::singleShot(15000, this, [this, scheduledMode]() {
-            if (m_positioningMode == scheduledMode && !m_hasFix) {
-                qWarning() << "GpsTracker: mode réseau sans fix après 15 s — secours satellite";
-                m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
-                emit positioningFallback();
-            }
-        });
-    } else
-        m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
 }
