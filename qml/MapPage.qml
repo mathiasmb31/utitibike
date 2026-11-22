@@ -1052,11 +1052,20 @@ Page {
                     }
                 }
             }
-            Label {
+            Row {
                 visible: page.suggBusy
-                text: i18n.tr("Recherche de tracés…")
-                fontSize: "small"
-                color: Theme.textSecondary
+                spacing: units.gu(1)
+                ActivityIndicator {
+                    width: units.gu(4)
+                    height: units.gu(4)
+                    running: page.suggBusy
+                }
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: i18n.tr("Recherche de tracés…")
+                    fontSize: "small"
+                    color: Theme.textSecondary
+                }
             }
             Label {
                 visible: !page.suggBusy && page.suggFiltered().length === 0
