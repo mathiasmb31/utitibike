@@ -159,7 +159,10 @@ Item {
                     if (ddw > 0 && dtw > 0) {
                         v = ddw / dtw * 3.6
                         var ek = points[k].ele, ej = points[j].ele
-                        if (ek !== undefined && ej !== undefined)
+                        // Une pente calculée sur < 30 m ou à l'arrêt est du
+                        // bruit GPS : on ne normalise PAS ces segments.
+                        if (ek !== undefined && ej !== undefined
+                                && ddw > 30.0 && v >= 4.0)
                             gr = (ek - ej) / ddw * 100   // pente % sur la fenêtre
                     }
                 }
@@ -209,7 +212,7 @@ Item {
         var adjusted = []
         for (var n2 = 0; n2 < speeds.length; n2++) {
             var a = speeds[n2]
-            if (a > 0 && grades[n2] !== null) {
+            if (a >= 4.0 && grades[n2] !== null) {
                 var ref = avgs[slopeBucket(grades[n2])]
                 if (ref > 0)
                     a = a * globalAvg / ref
