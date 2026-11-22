@@ -263,6 +263,15 @@ Page {
             panelOpen = false
             searchOpen = false
             suggOpen = false
+        } else {
+            // v0.99.1: QQuickPaintedItem ne redessine pas toujours tout seul
+            // quand il redevient visible (deja constate au retour de veille —
+            // voir appState.onForegroundChanged plus bas). Sans ce update,
+            // apres le chargement d'une trace depuis l'historique (route mise
+            // a jour pendant que MapPage etait cachee), l'ANCIEN trace reste
+            // affiche a l'ecran.
+            if (map)
+                map.update()
         }
     }
 
@@ -422,6 +431,8 @@ Page {
     Connections {
         target: brouter
         function onRouteReady(points, distanceM, ascentM) {
+            console.log("[history] onRouteReady:", points.length, "points,",
+                        "loadingFromHistory=", brouter.loadingFromHistory)
             page.routePoints = points
             page.routeDistance = distanceM
             page.routeAscent = ascentM

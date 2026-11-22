@@ -27,12 +27,15 @@ Page {
 
     function loadEntry(idx) {
         var gpx = routeHistory.gpxAt(idx)
+        console.log("[history] loadEntry index=", idx, "gpx chars=", gpx.length)
         if (gpx !== "" && gpx.length > 100) {
             // brouter est une context property (main.cpp),
             // accessible directement depuis HistoryPage.
             brouter.loadingFromHistory = true
             brouter.loadGpxData(gpx)
             pageStack.pop()
+        } else {
+            console.warn("[history] loadEntry: GPX vide ou trop court, rien charge")
         }
     }
 
