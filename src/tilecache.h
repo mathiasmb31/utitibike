@@ -71,6 +71,7 @@ private:
     void promoteVisible(const QString &key);
     void emitProgress();
     void purgeDiskCache();
+    void purgeOldDarkTiles();
     void updateOnlineState(int error, bool ok);
     static QString keyOf(int z, int x, int y);
     // Enfile les tuiles d'une boîte lat/lon au zoom z (dédupliquées, tuiles
@@ -106,8 +107,9 @@ private:
     // changé entre-temps (sinon une tuile de l'ancienne couche serait écrite
     // dans le répertoire du nouveau serveur).
     int m_serverGeneration = 0;
-    // CARTO dark_all exige désormais une clé API (tuiles « API KEY REQUIRED »),
-    // donc on garde OSM standard par défaut. Le style n'est pas persisté
+    // Le style sombre utilisait CARTO dark_all (désormais « API KEY REQUIRED »
+    // en HTTP 200) : remplacé par Esri Dark Gray Canvas, gratuit sans clé.
+    // On garde OSM standard par défaut. Le style n'est pas persisté
     // (session uniquement) : aucun risque d'écraser un choix utilisateur.
     QString m_tileServer = QStringLiteral("osm");
     // Auto-détection réseau : 3 échecs réseau consécutifs -> hors ligne ;

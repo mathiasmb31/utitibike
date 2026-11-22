@@ -527,7 +527,7 @@ void TileMapItem::paint(QPainter *painter)
     if (server == QLatin1String("satellite"))
         attribution = QStringLiteral("© Esri, Maxar, Earthstar Geographics");
     else if (server == QLatin1String("dark"))
-        attribution = QStringLiteral("© OpenStreetMap contributors · CARTO");
+        attribution = QStringLiteral("© Esri, HERE, Garmin, OpenStreetMap contributors");
     else
         attribution = QStringLiteral("© OpenStreetMap contributors");
     painter->drawText(QRectF(6.0, height() - 16.0, 400.0, 12.0),

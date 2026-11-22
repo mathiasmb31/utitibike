@@ -109,7 +109,7 @@ Page {
                     + "BRouter — abrensch/brouter (AGPL)\n"
                     + "Nominatim — nominatim.openstreetmap.org\n"
                     + "Tuiles CyclOSM — cyclOSM\n"
-                    + "Tuiles sombre — CARTO\n"
+                    + "Tuiles sombre — Esri Dark Gray\n"
                     + "Tuiles satellite — Esri"
             }
 

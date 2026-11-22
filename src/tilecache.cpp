@@ -39,7 +39,8 @@ QString flatName(int z, int x, int y, const QString &ext)
 // JPEG, les autres serveurs du PNG.
 QString tileFilePath(const QDir &dir, const QString &server, int z, int x, int y)
 {
-    const QString ext = (server == QLatin1String("satellite"))
+    const QString ext = (server == QLatin1String("satellite")
+                         || server == QLatin1String("dark"))
             ? QStringLiteral(".jpg") : QStringLiteral(".png");
     return dir.filePath(flatName(z, x, y, ext));
 }
@@ -49,7 +50,11 @@ QString tileUrl(const QString &server, int z, int x, int y)
     if (server == QLatin1String("cyclosm"))
         return QStringLiteral("https://a.tile-cyclosm.openstreetmap.fr/cyclosm/%1/%2/%3.png").arg(z).arg(x).arg(y);
     if (server == QLatin1String("dark"))
-        return QStringLiteral("https://a.basemaps.cartocdn.com/dark_all/%1/%2/%3.png").arg(z).arg(x).arg(y);
+        // v0.99.1: CARTO dark_all renvoie désormais une image « API KEY
+        // REQUIRED » avec un HTTP 200 (cache empoisonné). Esri Dark Gray
+        // Canvas est gratuit sans clé — même domaine que le satellite.
+        return QStringLiteral("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/%1/%2/%3")
+                .arg(z).arg(y).arg(x);
     if (server == QLatin1String("satellite"))
         return QStringLiteral("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/%1/%2/%3").arg(z).arg(y).arg(x);
     // Défaut : OSM standard
@@ -73,6 +78,7 @@ TileCache::TileCache(QObject *parent)
             fetch(0, 0, 0, false);   // tuile monde : sonde de retour en ligne
     });
     purgeDiskCache();
+    purgeOldDarkTiles();
 }
 
 TileCache::~TileCache()
@@ -593,6 +599,24 @@ void TileCache::cancelAll()
 void TileCache::emitProgress()
 {
     emit progress(m_batchDone, m_batchTotal);
+}
+
+void TileCache::purgeOldDarkTiles()
+{
+    // Migration v1.0: les anciennes tuiles CARTO « API KEY REQUIRED »
+    // étaient enregistrées en .png dans tiles/dark. Le nouveau fournisseur
+    // Esri fournit du JPEG : on supprime les .png périmés au démarrage.
+    const QDir d(appDataDir() + QStringLiteral("/tiles/dark"));
+    if (!d.exists())
+        return;
+    int removed = 0;
+    for (const QFileInfo &fi : d.entryInfoList(QDir::Files)) {
+        if (fi.suffix().compare(QLatin1String("png"), Qt::CaseInsensitive) == 0
+                && QFile::remove(fi.absoluteFilePath()))
+            ++removed;
+    }
+    if (removed > 0)
+        qWarning() << "tilecache: purged" << removed << "old CARTO dark tiles";
 }
 
 void TileCache::purgeDiskCache()
