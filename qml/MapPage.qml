@@ -420,10 +420,12 @@ Page {
         }
     }
     Component.onCompleted: {
-        // v1.0: warm-up différé (2 s) — crée la source GPS et lit la dernière
-        // position connue sans allumer le GPS. Différé pour ne pas bloquer
-        // le premier affichage (createDefaultSource peut être lent sur UT).
-        warmUpTimer.start()
+        // v1.0: warm-up synchrone — crée la source GPS et lit la dernière
+        // position connue sans allumer le GPS. Le C++ s'exécute pendant la
+        // construction de la page, même si la fenêtre est ensuite gelée par
+        // Lomiri. ensureSource() est idempotent et le daemon fait déjà la
+        // même chose au démarrage sans blocage visible.
+        gpsTracker.warmUp()
         // v0.99.1: restauration des preferences persistees dans view.json.
         // Ici et pas dans Main.qml : `cache` est un objet de MapPage.
         cache.tileServer = viewState.transportMode === "foot" ? "osm" : "cyclosm"
@@ -1638,11 +1640,6 @@ Page {
         id: toastTimer
         interval: 2800
         onTriggered: page.showNextToast()
-    }
-    Timer {
-        id: warmUpTimer
-        interval: 2000
-        onTriggered: gpsTracker.warmUp()
     }
     Timer {
         id: savedToastTimer
