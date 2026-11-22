@@ -745,7 +745,7 @@ Page {
             rightMargin: units.gu(1)
         }
         y: page.yAfterRoute
-        height: units.gu(6)
+        height: units.gu(8)   // v0.99.1: assez haut pour lire les couleurs de vitesse
         padding: units.gu(0.5)
         visible: page.routePoints.length > 1
         Behavior on y { NumberAnimation { duration: 250 } }

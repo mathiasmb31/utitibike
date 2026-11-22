@@ -12,6 +12,7 @@ class TestBrouterClient : public QObject
     Q_OBJECT
 private slots:
     void loadGpxValid();
+    void loadGpxWithTimestamps();
     void loadGpxInvalidXml();
     void loadGpxEmpty();
     void loadGpxNoTrackPoints();
@@ -62,6 +63,29 @@ void TestBrouterClient::loadGpxValid()
     QCOMPARE(ascent, 10.0);
     // lastGpx contient le texte original
     QVERIFY(client.lastGpx().contains("trkpt"));
+}
+
+void TestBrouterClient::loadGpxWithTimestamps()
+{
+    BrouterClient client;
+    QSignalSpy readySpy(&client, &BrouterClient::routeReady);
+    const QString gpx = QStringLiteral(
+        "<?xml version=\"1.0\"?><gpx version=\"1.1\"><trk><trkseg>"
+        "<trkpt lat=\"43.6000\" lon=\"1.4400\"><ele>100</ele>"
+        "<time>2026-11-22T07:00:00.000Z</time></trkpt>"
+        "<trkpt lat=\"43.6100\" lon=\"1.4500\"><ele>110</ele>"
+        "<time>2026-11-22T07:00:10.000Z</time></trkpt>"
+        "<trkpt lat=\"43.6200\" lon=\"1.4600\"><ele>115</ele>"
+        "<time>2026-11-22T07:00:20.000Z</time></trkpt>"
+        "</trkseg></trk></gpx>");
+    client.loadGpxData(gpx);
+    QCOMPARE(readySpy.count(), 1);
+    const QVariantList points = readySpy.at(0).at(0).toList();
+    QCOMPARE(points.size(), 3);
+    const qint64 t0 = points.at(0).toMap().value(QStringLiteral("t")).toLongLong();
+    const qint64 t2 = points.at(2).toMap().value(QStringLiteral("t")).toLongLong();
+    QVERIFY(t0 > 0);
+    QCOMPARE(t2 - t0, 20000LL);  // 20 s entre le 1er et le dernier point
 }
 
 void TestBrouterClient::loadGpxInvalidXml()

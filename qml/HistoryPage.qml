@@ -254,7 +254,7 @@ Page {
                 // Mini profil d'altitude du parcours (depuis le GPX)
                 ElevationProfile {
                     width: parent.width
-                    height: units.gu(5)
+                    height: units.gu(6)
                     points: routeHistory.profileAt(modelData.idx)
                     visible: points.length > 1
                     // v0.99.1: le MouseArea de scrubbing du profil (ajoute pour

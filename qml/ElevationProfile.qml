@@ -106,7 +106,7 @@ Item {
                         // GPS 3 Hz : lissage leger pour eviter des pics
                         // de vitesse aberrants (200 km/h) sur la courbe.
                         var pv = speeds[i - 1]
-                        if (pv > 0) v = 0.7 * v + 0.3 * pv
+                        if (pv > 0) v = 0.85 * v + 0.15 * pv
                         timeS += dt
                     }
                 }
@@ -170,16 +170,39 @@ Item {
             function yAt(ele) {
                 return padT + h - ((ele - eleMin) / eleRange) * h
             }
+            // v0.99.1: 3 niveaux contrastés (vert rapide / ambre moyen /
+            // rouge lent) pour que les écarts de vitesse se VOIENT sur un
+            // profil de quelques dizaines de pixels de haut.
+            function speedColor(v, alpha) {
+                if (!(v >= 0) || !(root.avgSpeedKmh > 0))
+                    return "rgba(255,107,53," + alpha + ")"        // orange par défaut
+                if (v >= root.avgSpeedKmh * 1.15)
+                    return "rgba(76,175,80," + alpha + ")"         // vert
+                if (v < root.avgSpeedKmh * 0.85)
+                    return "rgba(229,57,53," + alpha + ")"         // rouge
+                return "rgba(247,147,30," + alpha + ")"            // ambre
+            }
 
             if (hasEle) {
-                // Points projetés
+                // Points projetés — sous-échantillonnage à ~700 segments :
+                // un GPX de 51 895 points produisait 100 000 operations
+                // canvas a chaque repaint (scrubbing => saccades).
                 var xs = []
                 var ys = []
-                for (var i = 0; i < root.points.length; i++) {
+                var ss = []
+                var step = Math.max(1, Math.floor(root.points.length / 700))
+                for (var i = 0; i < root.points.length; i += step) {
                     var p = root.points[i]
                     var ele = (p.ele !== undefined && p.ele !== null) ? p.ele : eleMin
                     xs.push(xAt(i))
                     ys.push(yAt(ele))
+                    ss.push(canvas.speeds[i])
+                }
+                if ((root.points.length - 1) % step !== 0) {
+                    var last = root.points[root.points.length - 1]
+                    xs.push(xAt(root.points.length - 1))
+                    ys.push(yAt(last.ele !== undefined ? last.ele : eleMin))
+                    ss.push(canvas.speeds[root.points.length - 1])
                 }
 
                 // Chemin lissé : quadraticCurveTo entre les milieux des
@@ -202,31 +225,40 @@ Item {
                     }
                 }
 
-                // Remplissage : dégradé vertical orange (accentOrange) → transparent
-                ctx.beginPath()
-                courbePath(true)
-                var grad = ctx.createLinearGradient(0, padT, 0, padT + h)
-                grad.addColorStop(0, "rgba(255, 107, 53, 0.85)")   // #ff6b35
-                grad.addColorStop(1, "rgba(255, 107, 53, 0.05)")
-                ctx.fillStyle = grad
-                ctx.fill()
-
                 if (canvas.hasSpeed && root.avgSpeedKmh > 0) {
-                    // v0.99.1: un trait par segment — vert au-dessus de la
-                    // vitesse moyenne, ambre en dessous (litteraux = couleurs
-                    // du theme : accentGreen / accentAmber).
-                    ctx.lineWidth = 2.5
+                    // v0.99.1: TOUTE l'aire sous la courbe est coloree par
+                    // vitesse (bandes verticales), pas seulement un trait
+                    // fin — sinon les ecarts etaient invisibles a cette
+                    // echelle. Opacite 0.55 pour laisser lire les axes.
                     for (var s = 1; s < xs.length; s++) {
-                        var sp = canvas.speeds[s]
+                        var sp = ss[s]
                         ctx.beginPath()
-                        ctx.moveTo(xs[s - 1], ys[s - 1])
+                        ctx.moveTo(xs[s - 1], padT + h)
+                        ctx.lineTo(xs[s - 1], ys[s - 1])
                         ctx.lineTo(xs[s], ys[s])
-                        ctx.strokeStyle = (sp >= 0 && sp >= root.avgSpeedKmh)
-                                          ? "#4caf50" : "#f7931e"
+                        ctx.lineTo(xs[s], padT + h)
+                        ctx.closePath()
+                        ctx.fillStyle = speedColor(sp, 0.55)
+                        ctx.fill()
+                    }
+                    ctx.lineWidth = 3.5
+                    for (var t = 1; t < xs.length; t++) {
+                        ctx.beginPath()
+                        ctx.moveTo(xs[t - 1], ys[t - 1])
+                        ctx.lineTo(xs[t], ys[t])
+                        ctx.strokeStyle = speedColor(ss[t], 1.0)
                         ctx.stroke()
                     }
                 } else {
-                    // Pas d'horodatage (itineraire BRouter) : contour unique.
+                    // Remplissage : dégradé vertical orange (accentOrange) → transparent
+                    ctx.beginPath()
+                    courbePath(true)
+                    var grad = ctx.createLinearGradient(0, padT, 0, padT + h)
+                    grad.addColorStop(0, "rgba(255, 107, 53, 0.85)")   // #ff6b35
+                    grad.addColorStop(1, "rgba(255, 107, 53, 0.05)")
+                    ctx.fillStyle = grad
+                    ctx.fill()
+                    // contour unique des tracés sans horodatage (BRouter)
                     ctx.beginPath()
                     courbePath(false)
                     ctx.strokeStyle = "#f7931e"
@@ -297,6 +329,43 @@ Item {
         fontSize: "x-small"
         color: Theme.textPrimary
         text: i18n.tr("Vitesse moy. %1 km/h").arg(Format.num(root.avgSpeedKmh))
+    }
+
+    Row {
+        anchors {
+            left: parent.left
+            bottom: parent.bottom
+            leftMargin: units.gu(4.5)
+            bottomMargin: units.gu(0.2)
+        }
+        visible: root.hasSpeed
+        spacing: units.gu(0.5)
+        Rectangle {
+            width: units.gu(0.9)
+            height: width
+            radius: width / 2
+            color: "#4caf50"
+            anchors.verticalCenter: parent.verticalCenter
+        }
+        Label {
+            text: i18n.tr("> moyenne")
+            fontSize: "x-small"
+            color: Theme.textSecondary
+            anchors.verticalCenter: parent.verticalCenter
+        }
+        Rectangle {
+            width: units.gu(0.9)
+            height: width
+            radius: width / 2
+            color: "#e53935"
+            anchors.verticalCenter: parent.verticalCenter
+        }
+        Label {
+            text: i18n.tr("< moyenne")
+            fontSize: "x-small"
+            color: Theme.textSecondary
+            anchors.verticalCenter: parent.verticalCenter
+        }
     }
 
     MouseArea {

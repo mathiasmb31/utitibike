@@ -548,3 +548,9 @@ msgstr "| Stop         |     | * stops by itself    |"
 
 msgid "└──────────────┘     └──────────────────────┘"
 msgstr "+--------------+     +----------------------+"
+
+msgid "> moyenne"
+msgstr "Above average"
+
+msgid "< moyenne"
+msgstr "Below average"
