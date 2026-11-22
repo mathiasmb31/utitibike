@@ -316,6 +316,14 @@ void TileCache::drain()
                     m_mem.insert(key, new QImage(img));
                 }
                 emit tileReady(z, x, y);
+                m_retries.remove(key);
+            } else if (!ok && current) {
+                // v0.99.1: une tuile en echec restait "pending" puis etait
+                // oubliee — elle ne revenait que si le QML se redessinait
+                // par hasard. On reessaye quelques fois (2 max) apres un
+                // court delai, puis on abandonne pour ne pas saturer le
+                // serveur.
+                retryLater(key);
             }
 
             if (current && m_batchKeys.remove(key)) {
@@ -325,6 +333,26 @@ void TileCache::drain()
             drain();
         });
     }
+}
+
+void TileCache::retryLater(const QString &key)
+{
+    const int tries = m_retries.value(key, 0) + 1;
+    if (tries > 2) {
+        m_retries.remove(key);
+        return;
+    }
+    m_retries.insert(key, tries);
+    QTimer::singleShot(1500 * tries, this, [this, key]() {
+        {
+            QMutexLocker locker(&m_mutex);
+            if (m_pending.contains(key))
+                return;
+            m_pending.insert(key);
+        }
+        m_queue.enqueue(key);
+        drain();
+    });
 }
 
 void TileCache::beginBatch()
@@ -337,13 +365,22 @@ void TileCache::beginBatch()
 // Enfile une tuile (dédupliquée ; les tuiles déjà sur disque sont comptées
 // dans m_batchDone/m_batchTotal pour une progression cohérente).
 // Retourne true si la tuile a été enfilée pour téléchargement.
-bool TileCache::enqueueKey(int z, int x, int y)
+bool TileCache::enqueueKey(int z, int x, int y, bool force)
 {
     const int n = 1 << z;
     if (y < 0 || y >= n)
         return false;
     const int wx = ((x % n) + n) % n;
     const QString key = keyOf(z, wx, y);
+    if (force) {
+        // Rafraîchissement : la tuile sur disque et en mémoire est considérée
+        // comme périmée, on la supprime avant de la remettre en file.
+        QFile::remove(tileFilePath(m_dir, m_tileServer, z, wx, y));
+        QMutexLocker locker(&m_mutex);
+        m_mem.remove(key);
+        m_pending.remove(key);
+        m_retries.remove(key);
+    }
     {
         QMutexLocker locker(&m_mutex);
         if (m_pending.contains(key))
@@ -367,7 +404,7 @@ bool TileCache::enqueueKey(int z, int x, int y)
 }
 
 int TileCache::enqueueBox(double lat1, double lon1,
-                          double lat2, double lon2, int z)
+                          double lat2, double lon2, int z, bool force)
 {
     int added = 0;
     const double world = 256.0 * std::pow(2.0, z);
@@ -383,7 +420,7 @@ int TileCache::enqueueBox(double lat1, double lon1,
     // de MapPage peut demander une grande zone a z17 (des milliers de tuiles).
     for (int tx = tx0; tx <= tx1 && m_batchTotal < MaxRouteTiles; ++tx)
         for (int ty = ty0; ty <= ty1 && m_batchTotal < MaxRouteTiles; ++ty)
-            if (enqueueKey(z, tx, ty))
+            if (enqueueKey(z, tx, ty, force))
                 ++added;
     return added;
 }
@@ -397,6 +434,24 @@ void TileCache::downloadArea(double lat1, double lon1,
         enqueueBox(lat1, lon1, lat2, lon2, z);
     emitProgress();
     drain();
+}
+
+void TileCache::refreshArea(double lat1, double lon1,
+                            double lat2, double lon2,
+                            int zMin, int zMax)
+{
+    // v0.99.1: « Précharger » ignorait les tuiles déjà sur disque — il ne
+    // servait donc jamais à corriger un cache périmé ou une tuile vide.
+    // Ici on annule les téléchargements en cours, on supprime les fichiers
+    // et on vide le cache mémoire de la zone avant de la retélécharger.
+    cancelAll();
+    beginBatch();
+    for (int z = zMin; z <= zMax; ++z)
+        enqueueBox(lat1, lon1, lat2, lon2, z, true);
+    emitProgress();
+    drain();
+    qWarning() << "tilecache refresh area: z" << zMin << "-" << zMax
+               << "," << m_batchTotal << "tuiles";
 }
 
 void TileCache::downloadRoute(const QVariantList &points, double widthM,

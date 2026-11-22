@@ -38,6 +38,11 @@ public:
     Q_INVOKABLE void downloadArea(double lat1, double lon1,
                                   double lat2, double lon2,
                                   int zMin, int zMax);
+    // v0.99.1: force le re-telechargement des tuiles de la zone (supprime les
+    // fichiers disque et vide le cache memoire avant de les remettre en file).
+    Q_INVOKABLE void refreshArea(double lat1, double lon1,
+                                 double lat2, double lon2,
+                                 int zMin, int zMax);
     // Précharge un corridor de ±widthM autour d'une polyligne (itinéraire
     // calculé) pour la navigation hors ligne. Le nombre de tuiles est plafonné
     // (MaxRouteTiles) : si le corridor dépasse le plafond à zMax, on baisse
@@ -56,6 +61,7 @@ signals:
 private:
     void fetch(int z, int x, int y, bool batch);
     void drain();
+    void retryLater(const QString &key);
     void emitProgress();
     void purgeDiskCache();
     void updateOnlineState(int error, bool ok);
@@ -63,8 +69,9 @@ private:
     // Enfile les tuiles d'une boîte lat/lon au zoom z (dédupliquées, tuiles
     // déjà sur disque comptées dans m_batchDone). Retourne le nombre de tuiles
     // enfilées pour cette boîte.
-    int enqueueBox(double lat1, double lon1, double lat2, double lon2, int z);
-    bool enqueueKey(int z, int x, int y);
+    int enqueueBox(double lat1, double lon1, double lat2, double lon2, int z,
+                   bool force = false);
+    bool enqueueKey(int z, int x, int y, bool force = false);
     void beginBatch();
 
     QDir m_dir;
@@ -77,6 +84,9 @@ private:
     QMutex m_mutex;
     QSet<QString> m_batchKeys;
     QHash<QString, QNetworkReply *> m_active;
+    // v0.99.1: nombre de tentatives deja faites pour une tuile en echec
+    // (2 retries max, pour ne pas boucler sur un serveur en panne).
+    QHash<QString, int> m_retries;
     int m_batchTotal = 0;
     int m_batchDone = 0;
     bool m_online = true;

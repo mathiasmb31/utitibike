@@ -489,3 +489,9 @@ msgstr "Filter tracks…"
 
 msgid "Tous les serveurs de suggestions sont indisponibles."
 msgstr "All suggestion servers are unavailable."
+
+msgid "Rafraîchissement des tuiles lancé"
+msgstr "Tile refresh started"
+
+msgid "Rafraîchir les tuiles visibles"
+msgstr "Refresh visible tiles"

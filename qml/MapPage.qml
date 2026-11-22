@@ -284,6 +284,17 @@ Page {
         showToast(i18n.tr("Préchargement zoom %1 à %2 lancé").arg(map.zoom).arg(zmax))
     }
 
+    // v0.99.1: « Précharger » ignore les tuiles déjà sur disque. Ce bouton
+    // force leur re-téléchargement (utile si une tuile est vide/périmée).
+    function refreshTiles() {
+        var ext = map.visibleExtent()
+        page.dlDone = 0
+        page.dlTotal = 0
+        var zmax = Math.min(17, map.zoom + 2)
+        cache.refreshArea(ext.lat1, ext.lon1, ext.lat2, ext.lon2, map.zoom, zmax)
+        showToast(i18n.tr("Rafraîchissement des tuiles lancé"))
+    }
+
     // v0.99.1: file de toasts — l'ancien showToast ecrasait le message en
     // cours (un contournement par QTimer.singleShot(700) existait deja,
     // preuve du probleme).
@@ -2260,6 +2271,14 @@ Page {
                             page.dlDone = 0
                         }
                     }
+                }
+                Button {
+                    width: parent.width
+                    height: units.gu(6)
+                    text: i18n.tr("Rafraîchir les tuiles visibles")
+                    iconName: "view-refresh"
+                    color: Theme.bgSection
+                    onClicked: page.refreshTiles()
                 }
                 ProgressBar {
                     width: parent.width
