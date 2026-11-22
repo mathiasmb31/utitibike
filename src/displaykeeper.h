@@ -25,8 +25,10 @@ public:
 
     Q_INVOKABLE void hold()
     {
-        if (holding())
+        if (holding() || m_holdPending)
             return;
+        m_holdPending = true;
+        m_holdCancelled = false;
         QDBusMessage msg = QDBusMessage::createMethodCall(
                     QStringLiteral("com.canonical.Unity.Screen"),
                     QStringLiteral("/com/canonical/Unity/Screen"),
@@ -38,6 +40,7 @@ public:
                     QDBusConnection::systemBus().asyncCall(msg), this);
         connect(watcher, &QDBusPendingCallWatcher::finished, this,
                 [this](QDBusPendingCallWatcher *w) {
+            m_holdPending = false;
             const QDBusMessage reply = w->reply();
             if (reply.type() == QDBusMessage::ErrorMessage || reply.arguments().isEmpty()) {
                 qWarning() << "displaykeeper hold FAIL" << reply.errorMessage();
@@ -46,6 +49,17 @@ public:
                 const int id = reply.arguments().first().toInt(&ok);
                 if (!ok || id < 0) {
                     qWarning() << "displaykeeper hold FAIL bad id";
+                } else if (m_holdCancelled) {
+                    // release() est arrivé avant la réponse : on libère tout
+                    // de suite l'ID reçu au lieu de garder l'écran allumé.
+                    QDBusMessage rm = QDBusMessage::createMethodCall(
+                                QStringLiteral("com.canonical.Unity.Screen"),
+                                QStringLiteral("/com/canonical/Unity/Screen"),
+                                QStringLiteral("com.canonical.Unity.Screen"),
+                                QStringLiteral("removeDisplayOnRequest"));
+                    rm.setArguments({ QVariant(id) });
+                    QDBusConnection::systemBus().asyncCall(rm);
+                    m_holdCancelled = false;
                 } else {
                     m_id = id;
                     qWarning() << "displaykeeper holding id" << m_id;
@@ -58,6 +72,13 @@ public:
 
     Q_INVOKABLE void release()
     {
+        if (m_holdPending) {
+            // La réponse n'est pas encore arrivée : le callback se chargera
+            // de libérer l'ID dès qu'il sera connu.
+            m_holdPending = false;
+            m_holdCancelled = true;
+            return;
+        }
         if (!holding())
             return;
         QDBusMessage msg = QDBusMessage::createMethodCall(
@@ -80,6 +101,8 @@ signals:
 
 private:
     int m_id = -1;
+    bool m_holdPending = false;
+    bool m_holdCancelled = false;
 };
 
 #endif // DISPLAYKEEPER_H

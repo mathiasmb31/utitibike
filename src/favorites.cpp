@@ -79,6 +79,10 @@ void Favorites::load()
         if (v.isObject())
             m_entries.append(v.toObject().toVariantMap());
     }
+    // v1.0: la limite s'applique aussi au chargement (fichier gonflé par une
+    // ancienne version ou une corruption).
+    while (m_entries.size() > 50)
+        m_entries.removeLast();
 }
 
 void Favorites::save()

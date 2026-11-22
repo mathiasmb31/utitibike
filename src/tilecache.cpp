@@ -91,11 +91,22 @@ bool TileCache::online() const
     return m_online;
 }
 
+QString TileCache::tileServer() const
+{
+    // Appelé depuis le thread de rendu (TileMapItem::paint) : le QString est
+    // partagé avec le thread principal, sa copie doit être protégée.
+    QMutexLocker locker(&m_mutex);
+    return m_tileServer;
+}
+
 void TileCache::setOnline(bool v)
 {
     if (m_online == v)
         return;
-    m_online = v;
+    {
+        QMutexLocker locker(&m_mutex);
+        m_online = v;  // lu par tile() depuis le thread de rendu
+    }
     // Hors ligne : la sonde périodique détecte le retour du réseau.
     if (v)
         m_probeTimer.stop();
@@ -143,7 +154,10 @@ void TileCache::setPaused(bool v)
 {
     if (m_paused == v)
         return;
-    m_paused = v;
+    {
+        QMutexLocker locker(&m_mutex);
+        m_paused = v;  // lu par tile() depuis le thread de rendu
+    }
     qWarning() << "tilecache paused=" << v;
     emit pausedChanged();
     // En arrière-plan l'appli ne télécharge plus rien (batterie) ; au retour
@@ -350,7 +364,7 @@ void TileCache::drain()
                 // par hasard. On reessaye quelques fois (2 max) apres un
                 // court delai, puis on abandonne pour ne pas saturer le
                 // serveur.
-                retryLater(key);
+                retryLater(key, generation);
             }
 
             if (current && m_batchKeys.remove(key)) {
@@ -385,7 +399,7 @@ void TileCache::promoteVisible(const QString &key)
         m_queue.enqueue(others.dequeue());
 }
 
-void TileCache::retryLater(const QString &key)
+void TileCache::retryLater(const QString &key, int generation)
 {
     const int tries = m_retries.value(key, 0) + 1;
     if (tries > 2) {
@@ -393,7 +407,10 @@ void TileCache::retryLater(const QString &key)
         return;
     }
     m_retries.insert(key, tries);
-    QTimer::singleShot(1500 * tries, this, [this, key]() {
+    QTimer::singleShot(1500 * tries, this, [this, key, generation]() {
+        // Un changement de couche/refresh entre temps rend ce retry obsolète.
+        if (generation != m_serverGeneration)
+            return;
         {
             QMutexLocker locker(&m_mutex);
             if (m_pending.contains(key))
@@ -495,6 +512,8 @@ void TileCache::refreshArea(double lat1, double lon1,
     // Ici on annule les téléchargements en cours, on supprime les fichiers
     // et on vide le cache mémoire de la zone avant de la retélécharger.
     cancelAll();
+    // Invalide les retries en vol et les réponses d'avant le refresh.
+    ++m_serverGeneration;
     beginBatch();
     for (int z = zMin; z <= zMax; ++z)
         enqueueBox(lat1, lon1, lat2, lon2, z, true);
@@ -579,6 +598,7 @@ void TileCache::cancelAll()
         m_active.value(key)->abort();
     m_queue.clear();
     m_batchKeys.clear();
+    m_retries.clear();
     if (!m_interactiveKeys.isEmpty() || m_tilesLoading) {
         m_interactiveKeys.clear();
         m_tilesLoading = false;

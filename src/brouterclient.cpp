@@ -18,6 +18,20 @@
 #include <QTimer>
 #include <QDebug>
 #include <limits>
+#include <cmath>
+
+namespace {
+// Les GPX multi-<trkseg> contiennent un marqueur lat/lon = NaN. haversine()
+// clamp NaN -> 0, ce qui l'élirait comme « point le plus proche » et couperait
+// le guidage dès le premier fix. On ignore ces points partout dans la nav.
+bool navPointValid(const QVariantMap &p)
+{
+    const double la = p.value(QStringLiteral("lat")).toDouble();
+    const double lo = p.value(QStringLiteral("lon")).toDouble();
+    return std::isfinite(la) && std::isfinite(lo)
+           && la >= -90.0 && la <= 90.0 && lo >= -180.0 && lo <= 180.0;
+}
+}  // namespace
 
 namespace {
 
@@ -485,6 +499,8 @@ void BrouterClient::startNavigation()
     for (int i = 0; i + 1 < m_routePoints.size(); ++i) {
         const QVariantMap a = m_routePoints[i].toMap();
         const QVariantMap b = m_routePoints[i + 1].toMap();
+        if (!navPointValid(a) || !navPointValid(b))
+            continue;
         m_remainingDistanceM += haversine(a.value(QStringLiteral("lat")).toDouble(),
                                           a.value(QStringLiteral("lon")).toDouble(),
                                           b.value(QStringLiteral("lat")).toDouble(),
@@ -531,13 +547,14 @@ void BrouterClient::updatePosition(double lat, double lon)
     if (!m_navigation || m_routePoints.size() < 2)
         return;
 
-    // Trouve l'index du point de route le plus proche de notre position
-    int closestIdx = 0;
-    double closestDist = haversine(lat, lon,
-        m_routePoints[0].toMap().value(QStringLiteral("lat")).toDouble(),
-        m_routePoints[0].toMap().value(QStringLiteral("lon")).toDouble());
-    for (int i = 1; i < m_routePoints.size(); ++i) {
+    // Trouve l'index du point de route VALIDE le plus proche (les marqueurs
+    // NaN de séparation de trkseg ne doivent jamais être candidats).
+    int closestIdx = -1;
+    double closestDist = std::numeric_limits<double>::max();
+    for (int i = 0; i < m_routePoints.size(); ++i) {
         const QVariantMap p = m_routePoints[i].toMap();
+        if (!navPointValid(p))
+            continue;
         const double d = haversine(lat, lon,
             p.value(QStringLiteral("lat")).toDouble(),
             p.value(QStringLiteral("lon")).toDouble());
@@ -546,12 +563,16 @@ void BrouterClient::updatePosition(double lat, double lon)
             closestIdx = i;
         }
     }
+    if (closestIdx < 0)
+        return;
 
     // Distance restante le long du tracé (pour l'ETA côté QML)
     double remaining = 0.0;
     for (int i = closestIdx; i + 1 < m_routePoints.size(); ++i) {
         const QVariantMap a = m_routePoints[i].toMap();
         const QVariantMap b = m_routePoints[i + 1].toMap();
+        if (!navPointValid(a) || !navPointValid(b))
+            continue;
         remaining += haversine(a.value(QStringLiteral("lat")).toDouble(),
                                a.value(QStringLiteral("lon")).toDouble(),
                                b.value(QStringLiteral("lat")).toDouble(),
@@ -601,6 +622,8 @@ void BrouterClient::updatePosition(double lat, double lon)
     // Trouve le prochain point de virage après notre position
     for (int i = 0; i < m_turnPoints.size(); ++i) {
         const QVariantMap tp = m_turnPoints[i].toMap();
+        if (!navPointValid(tp))
+            continue;
         const double tLat = tp.value(QStringLiteral("lat")).toDouble();
         const double tLon = tp.value(QStringLiteral("lon")).toDouble();
         // Distance jusqu'au virage

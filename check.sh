@@ -34,7 +34,7 @@ echo "== 4/7 tests C++ (ctest) — BLOQUANT"
 if [ ! -f build-host/CMakeCache.txt ]; then
   echo "  ERREUR: build-host absent — lancer cmake -DBUILD_TESTING=ON + build"; exit 1
 fi
-if ! (cd build-host && cmake .. >/dev/null 2>&1); then
+if ! (cd build-host && cmake .. -DBUILD_TESTING=ON >/dev/null 2>&1); then
   echo "  ERREUR: cache CMake local perime"; exit 1
 fi
 (cd build-host && cmake --build . -j4 >/dev/null 2>&1) || { echo "  ERREUR build des tests"; exit 1; }
@@ -59,6 +59,21 @@ HITS=$(grep -rnP '[\x{00C0}-\x{00FF}]' --include='*.cpp' --include='*.qml' --inc
 if [ -n "$HITS" ]; then
   echo "  ERREUR: texte utilisateur hors catalogue i18n:"; echo "$HITS"; exit 1
 else echo "  OK aucun"; fi
+# v1.0: vérifie que TOUS les i18n.tr() du QML existent dans le .pot.
+MISSING=$(python3 - <<'PY'
+import re, glob
+src = '\n'.join(open(f, encoding='utf-8').read()
+                for f in glob.glob('qml/**/*.qml', recursive=True))
+msgs = set(re.findall(r'i18n\.tr\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"', src))
+pot = open('po/utitibike.pot', encoding='utf-8').read()
+for m in sorted(msgs):
+    if 'msgid "' + m + '"' not in pot:
+        print(m)
+PY
+)
+if [ -n "$MISSING" ]; then
+  echo "  ERREUR: msgids absents du .pot:"; echo "$MISSING" | head -20; exit 1
+else echo "  OK msgids QML présents dans le .pot"; fi
 
 echo "== 7/7 caracteres parasites CJK/Cyrillique (regle 2026-11-20)"
 CJK=$(grep -rnP '[\x{4e00}-\x{9fff}\x{0400}-\x{04ff}]' . \

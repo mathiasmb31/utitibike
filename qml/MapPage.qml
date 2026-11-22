@@ -38,7 +38,9 @@ Page {
     property int pendingReverseIndex: -1
     property string pendingReverseDate: ""
     property bool manualStartWarned: false  // vibration déjà envoyée pour le départ manuel
-    property real userWeightKg: 70  // poids pour l'estimation des calories
+    // v1.0: binding direct — un changement depuis SettingsPage met à jour
+    // immédiatement les calories (avant: copie unique au démarrage).
+    property real userWeightKg: viewState.userWeightKg
     // v1.0: valeurs pour les Timer déclaratifs (remplacent QTimer.singleShot)
     property real savedToastDistM: 0
     property real savedToastAscM: 0
@@ -429,11 +431,14 @@ Page {
         // v0.99.1: restauration des preferences persistees dans view.json.
         // Ici et pas dans Main.qml : `cache` est un objet de MapPage.
         cache.tileServer = viewState.transportMode === "foot" ? "osm" : "cyclosm"
-        page.userWeightKg = viewState.userWeightKg
         // Vérifie si un enregistrement daemon était en cours (app redémarrée)
         daemonController.checkExistingRecording()
+        // v1.0: si un recording.done vient d'être importé, ne pas ALSO importer
+        // le .part résiduel — c'était le même trajet (double entrée).
+        var doneImported = daemonController.lastGpxContent !== ""
+                           && daemonController.lastGpxContent.length > 0
         // Récupère un éventuel en-cours.part laissé par un daemon tué brutalement
-        if (daemonController.recoverOrphanPart()) {
+        if (!doneImported && daemonController.recoverOrphanPart()) {
             var gpxContent = daemonController.lastGpxContent
             if (gpxContent !== "" && gpxContent.length > 0) {
                 var dateStr = new Date().toLocaleString(Qt.locale(), "dd/MM HH:mm")
@@ -526,6 +531,11 @@ Page {
         function onRouteFailed(message) {
             page.routePoints = []
             page.routeGpx = ""
+            // v1.0: un GPX historique invalide ne doit pas laisser le
+            // drapeau posé — sinon les PROCHAINS itinéraires calculés ne
+            // seraient plus ajoutés à l'historique.
+            brouter.loadingFromHistory = false
+            brouter.recalculating = false
             showToast(message)
         }
         // Alertes virage : vibration à 200m, 100m, 50m
@@ -933,9 +943,9 @@ Page {
                     placeholderText: i18n.tr("Rechercher un lieu…")
                     Accessible.name: placeholderText
                     inputMethodHints: Qt.ImhNoPredictiveText
+                    // v1.0: onAccepted suffit — les Keys.onReturnPressed/Enter
+                    // déclenchaient parfois une 2e recherche Nominatim.
                     onAccepted: page.doSearch(text)
-                    Keys.onReturnPressed: page.doSearch(text)
-                    Keys.onEnterPressed: page.doSearch(text)
                 }
                 Button {
                     width: units.gu(5)
@@ -1001,8 +1011,14 @@ Page {
                         }
                         width: units.gu(5)
                         height: units.gu(5)
-                        color: favorites.isFavorite(modelData.lat, modelData.lon)
-                               ? Theme.accentOrange : Theme.bgSection
+                        // v1.0: lire `entries` crée la dépendance QML — sinon
+                        // le Q_INVOKABLE isFavorite() n'est pas réévalué à
+                        // l'ajout d'un favori et l'étoile reste grise.
+                        color: {
+                            favorites.entries
+                            return favorites.isFavorite(modelData.lat, modelData.lon)
+                                   ? Theme.accentOrange : Theme.bgSection
+                        }
                         Accessible.name: i18n.tr("Ajouter aux favoris")
                         onClicked: {
                             haptics.vibrate(10)
@@ -1080,7 +1096,10 @@ Page {
                     enabled: !page.suggBusy
                     Accessible.name: i18n.tr("Actualiser les suggestions")
                     anchors.verticalCenter: parent.verticalCenter
-                    onClicked: suggestClient.refresh()
+                    onClicked: {
+                        page.suggBusy = true
+                        suggestClient.refresh()
+                    }
                 }
                 Button {
                     visible: page.suggBusy
@@ -1090,7 +1109,10 @@ Page {
                     color: Theme.bgSection
                     Accessible.name: i18n.tr("Annuler la recherche")
                     anchors.verticalCenter: parent.verticalCenter
-                    onClicked: suggestClient.cancel()
+                    onClicked: {
+                        suggestClient.cancel()
+                        page.suggBusy = false   // sinon le spinner reste bloqué
+                    }
                 }
                 Button {
                     width: units.gu(5)
@@ -1155,7 +1177,8 @@ Page {
             }
             ListView {
                 width: parent.width
-                height: Math.min(units.gu(24), Math.max(1, page.suggFiltered().length) * units.gu(5))
+                height: page.suggFiltered().length > 0
+                        ? Math.min(units.gu(24), page.suggFiltered().length * units.gu(5)) : 0
                 visible: page.suggFiltered().length > 0
                 model: page.suggFiltered()
                 spacing: units.gu(0.2)
@@ -1386,9 +1409,12 @@ Page {
                     // de carte) : le pan redevient dans le repère de l'écran
                     if (page.followGps)
                         page.followGps = false
-                }
-                if (!longPressDone) {
-                    map.panBy(mouse.x - lastX, mouse.y - lastY)
+                    // v1.0: ne paner QUE pour un vrai drag. Un micro mouvement
+                    // (< 1 gu) modifiait le centre de carte et faisait annuler
+                    // l'appui long par le garde-fou — impossible de poser un
+                    // point sur un écran tactile réel.
+                    if (!longPressDone)
+                        map.panBy(mouse.x - lastX, mouse.y - lastY)
                     lastX = mouse.x
                     lastY = mouse.y
                 }
@@ -1729,6 +1755,8 @@ Page {
 
     Rectangle {
         id: panel
+        // v1.0: en paysage court, les overlays (z 5-20) recouvraient le menu.
+        z: page.panelOpen ? 30 : 0
         anchors {
             left: parent.left
             right: parent.right
@@ -2045,8 +2073,9 @@ Page {
                         onTextChanged: {
                             var w = parseFloat(text)
                             if (!isNaN(w) && w >= 30 && w <= 250) {
-                                page.userWeightKg = w
-                                viewState.userWeightKg = w   // v0.99.1: persiste dans view.json
+                                // v1.0: on n'écrit QUE viewState — le binding
+                                // de page.userWeightKg propage la valeur.
+                                viewState.userWeightKg = w
                             }
                         }
                     }
@@ -2162,7 +2191,10 @@ Page {
                                     displayKeeper.release()
                             } else {
                                 brouter.startNavigation()
-                                gpsTracker.start()
+                                // v1.0: si le daemon enregistre, il est déjà
+                                // la source de position — pas de 2e GPS.
+                                if (!daemonController.recording)
+                                    gpsTracker.start()
                                 page.followGps = true
                                 displayKeeper.hold()
                                 if (gpsTracker.hasFix) {
@@ -2199,7 +2231,10 @@ Page {
                                 // écran non retenu allumé : économie batterie.
                                 if (gpsTracker.active)
                                     gpsTracker.stop()
-                                displayKeeper.release()
+                                // v1.0: garder l'écran allumé si la navigation
+                                // est en cours (le daemon ne tient pas l'écran).
+                                if (!brouter.navigation)
+                                    displayKeeper.release()
                             }
                         }
                     }
@@ -2650,6 +2685,12 @@ Page {
                 map.centerLat = daemonController.latitude
                 map.centerLon = daemonController.longitude
             }
+            // v1.0: pendant un enregistrement, le daemon est la seule source
+            // GPS — c'est lui qui alimente aussi le guidage BRouter.
+            if (brouter.navigation && daemonController.recording
+                    && daemonController.hasFix)
+                brouter.updatePosition(daemonController.latitude,
+                                       daemonController.longitude)
             // Départ manuel proposé (6 min sans fix) : vibration d'alerte
             // (le daemon joue aussi un beep long, même écran éteint).
             if (daemonController.recording && daemonController.awaitManualStart

@@ -52,6 +52,8 @@ void RouteHistory::addEntry(const QString &name, double distanceM, double ascent
                      ? QDateTime::currentDateTime()
                      : QDateTime::fromString(dateIso, Qt::ISODateWithMs).toLocalTime();
     if (!date.isValid())
+        date = QDateTime::fromString(dateIso, Qt::ISODate).toLocalTime();
+    if (!date.isValid())
         date = QDateTime::currentDateTime();
     QVariantMap entry;
     // v0.99.1: le nom et la date utilisaient deux horloges differentes
@@ -155,7 +157,7 @@ QVariantList RouteHistory::profileAt(int index) const
     QXmlStreamReader r(gpx);
     double lat = 0.0, lon = 0.0, ele = 0.0;
     qint64 timeMs = 0;
-    bool inPt = false, hasEle = false;
+    bool inPt = false, hasEle = false, ptValid = false;
     while (!r.atEnd()) {
         r.readNext();
         if (r.isStartElement()) {
@@ -166,9 +168,13 @@ QVariantList RouteHistory::profileAt(int index) const
                 hasEle = false;
                 ele = 0.0;
                 timeMs = 0;
+                ptValid = qIsFinite(lat) && qIsFinite(lon)
+                          && lat >= -90.0 && lat <= 90.0
+                          && lon >= -180.0 && lon <= 180.0;
             } else if (inPt && r.name() == QLatin1String("ele")) {
-                ele = r.readElementText().toDouble();
-                hasEle = true;
+                bool eleOk = false;
+                ele = r.readElementText().toDouble(&eleOk);
+                hasEle = eleOk;
             } else if (inPt && r.name() == QLatin1String("time")) {
                 // v0.99.1: horodatage pour la vitesse moyenne et le profil
                 // colore par vitesse (les GPX enregistres ont <time>).
@@ -177,6 +183,8 @@ QVariantList RouteHistory::profileAt(int index) const
                     timeMs = dt.toMSecsSinceEpoch();
             }
         } else if (r.isEndElement() && r.name() == QLatin1String("trkpt")) {
+            if (!ptValid)
+                return out;
             QVariantMap p;
             p.insert(QStringLiteral("lat"), lat);
             p.insert(QStringLiteral("lon"), lon);
@@ -188,6 +196,8 @@ QVariantList RouteHistory::profileAt(int index) const
             inPt = false;
         }
     }
+    if (r.hasError())
+        return out;
     return out;
 }
 

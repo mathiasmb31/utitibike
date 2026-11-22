@@ -33,7 +33,7 @@ public:
     void setOnline(bool v);
     bool paused() const;
     void setPaused(bool v);
-    QString tileServer() const { return m_tileServer; }
+    QString tileServer() const;
     void setTileServer(const QString &s);
     bool tilesLoading() const { return m_tilesLoading; }
 
@@ -66,7 +66,7 @@ signals:
 private:
     void fetch(int z, int x, int y, bool batch);
     void drain();
-    void retryLater(const QString &key);
+    void retryLater(const QString &key, int generation);
     // Ramène une tuile déjà en attente (file de préchargement) en tête.
     void promoteVisible(const QString &key);
     void emitProgress();
@@ -89,7 +89,7 @@ private:
     QSet<QString> m_pending;
     // m_mem and m_pending are also touched from the scene graph render thread
     // (TileMapItem::paint -> tile()); everything else is main-thread only.
-    QMutex m_mutex;
+    mutable QMutex m_mutex;
     QSet<QString> m_batchKeys;
     // Tuiles demandées par le rendu (fetch batch=false) — pour l'indicateur.
     QSet<QString> m_interactiveKeys;

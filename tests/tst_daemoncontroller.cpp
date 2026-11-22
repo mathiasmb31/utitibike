@@ -1,4 +1,7 @@
 #include <QtTest>
+#include <QSignalSpy>
+#include <QJsonObject>
+#include <QJsonDocument>
 #include <QCoreApplication>
 #include <QStandardPaths>
 #include <QDir>
@@ -16,6 +19,7 @@ private slots:
     void recoverOrphanPart();
     void manualStartAndBeepConf();
     void resyncWithZeroStats();
+    void doneImport();
 };
 
 void TstDaemonController::initTestCase()
@@ -113,6 +117,40 @@ void TstDaemonController::resyncWithZeroStats()
 
     QFile::remove(control);
     QFile::remove(stats);
+}
+
+void TstDaemonController::doneImport()
+{
+    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(dir);
+    const QString done = dir + QStringLiteral("/recording.done");
+    const QString gpx = QStringLiteral(
+        "<?xml version=\"1.0\"?><gpx version=\"1.1\"><trk><trkseg>"
+        "<trkpt lat=\"43.6000\" lon=\"1.4400\"><ele>150</ele></trkpt>"
+        "<trkpt lat=\"43.6010\" lon=\"1.4400\"><ele>160</ele></trkpt>"
+        "</trkseg></trk></gpx>");
+    QJsonObject o;
+    o[QStringLiteral("recording")] = false;
+    o[QStringLiteral("distanceM")] = 222.0;
+    o[QStringLiteral("ascentM")] = 10.0;
+    o[QStringLiteral("elapsedSec")] = 10;
+    o[QStringLiteral("pointCount")] = 2;
+    o[QStringLiteral("startTime")] = QStringLiteral("2026-11-22T07:00:00.000");
+    o[QStringLiteral("gpxPath")] = QString();
+    o[QStringLiteral("gpxContent")] = gpx;
+    o[QStringLiteral("stopReason")] = QStringLiteral("user");
+    QFile f(done);
+    QVERIFY(f.open(QIODevice::WriteOnly));
+    f.write(QJsonDocument(o).toJson(QJsonDocument::Compact));
+    f.close();
+
+    DaemonController dc;
+    QSignalSpy spy(&dc, &DaemonController::doneReceived);
+    dc.checkExistingRecording();
+    QCOMPARE(spy.count(), 1);
+    QVERIFY(dc.lastGpxContent().contains(QStringLiteral("<trkpt")));
+    QCOMPARE(dc.pointCount(), 2);
+    QVERIFY(!QFile::exists(done));  // consommé
 }
 
 QTEST_MAIN(TstDaemonController)

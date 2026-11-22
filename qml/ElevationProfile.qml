@@ -95,6 +95,11 @@ Item {
         var hasEle = false
         var timeS = 0
         var prevEle = null, eleRef = 0, ascent = 0, descent = 0, maxSlope = 0
+        // Les GPX multi-<trkseg> contiennent un point NaN séparateur : il ne
+        // doit jamais produire une distance cumulée NaN (profil « NaN km »).
+        function finitePt(p) {
+            return p && isFinite(p.lat) && isFinite(p.lon)
+        }
         for (var i = 0; i < points.length; i++) {
             var p = points[i]
             if (p.ele !== undefined && p.ele !== null) {
@@ -116,7 +121,8 @@ Item {
             }
             if (i > 0) {
                 var prev = points[i - 1]
-                var dd = GeoUtils.haversine(prev.lat, prev.lon, p.lat, p.lon)
+                var dd = (finitePt(prev) && finitePt(p))
+                         ? GeoUtils.haversine(prev.lat, prev.lon, p.lat, p.lon) : 0
                 cum.push(cum[i - 1] + dd)
                 if (dd > 0.5 && p.ele !== undefined && prev.ele !== undefined)
                     maxSlope = Math.max(maxSlope, Math.abs(p.ele - prev.ele) / dd * 100)
@@ -244,7 +250,8 @@ Item {
         onPaint: {
             var ctx = getContext("2d")
             ctx.clearRect(0, 0, width, height)
-            if (root.points.length < 2 || distances.length < 2) return
+            if (root.points.length < 2 || distances.length < 2
+                    || !(root.distanceM > 0)) return
 
             var padL = units.gu(4.5)
             var padR = units.gu(1)
@@ -427,6 +434,9 @@ Item {
     // v0.99.1: bascule « Pente » — compare vitesse brute / normalisée par
     // la pente sans rebuild (utile pour valider le rendu sur le device).
     Rectangle {
+        // v1.0: au-dessus du MouseArea de scrubbing déclaré plus bas, sinon
+        // le tap sur « Pente » est volé et la bascule ne fonctionne pas.
+        z: 2
         anchors {
             left: parent.left
             top: parent.top
@@ -535,6 +545,8 @@ Item {
     function xAtScreen(i) {
         var padL = units.gu(4.5)
         var padR = units.gu(1)
+        if (!(root.distanceM > 0))
+            return padL
         return padL + (canvas.distances[i] / root.distanceM) * (width - padL - padR)
     }
 

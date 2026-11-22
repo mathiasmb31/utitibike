@@ -98,6 +98,14 @@ jobs:
           done
           exit $fail
 
+      - name: Check all src/gpsdaemon/*.cpp are in CMakeLists.txt
+        run: |
+          fail=0
+          for f in src/gpsdaemon/*.cpp; do
+            grep -qF "$f" CMakeLists.txt || { echo "MANQUANT dans CMakeLists.txt: $f"; fail=1; }
+          done
+          exit $fail
+
       - name: Check all tests/*.cpp are in tests/CMakeLists.txt
         run: |
           fail=0
@@ -179,6 +187,9 @@ jobs:
           test -f build-host/utitibike || { echo "Binaire non généré"; exit 1; }
           file build-host/utitibike
           echo "Build host OK"
+
+      - name: manifest.json must match CMakeLists.txt
+        run: git diff --exit-code manifest.json
 
       - name: Run unit tests
         working-directory: build-host

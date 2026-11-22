@@ -18,6 +18,22 @@
 #include <csignal>
 #include <unistd.h>
 
+namespace {
+// v1.0: kill(pid, 0) réussit aussi pour un zombie ou un PID réutilisé par un
+// autre processus. On vérifie que /proc/<pid>/cmdline est bien le daemon.
+bool pidIsGpsDaemon(qint64 pid)
+{
+    if (pid <= 0 || ::kill(static_cast<pid_t>(pid), 0) != 0)
+        return false;
+    QFile f(QStringLiteral("/proc/%1/cmdline").arg(pid));
+    if (!f.open(QIODevice::ReadOnly))
+        return false;
+    const QByteArray cmd = f.readAll().replace('\0', ' ');
+    f.close();
+    return cmd.contains("utitibike-gpsd");
+}
+}  // namespace
+
 DaemonController::DaemonController(QObject *parent)
     : QObject(parent)
 {
@@ -58,6 +74,12 @@ void DaemonController::startRecording()
 {
     if (m_recording)
         return;
+
+    // v1.0: si un done de la session précédente attend encore (arrêt depuis
+    // peu), on l'importe AVANT de nettoyer les fichiers — sinon le tracé est
+    // perdu au moment où l'utilisateur redémarre un enregistrement.
+    if (!m_doneHandled && QFile::exists(m_doneFile))
+        readDoneJson();
 
     // Nettoie les anciens fichiers résiduels
     cleanupFiles();
@@ -118,7 +140,7 @@ bool DaemonController::launchDaemon()
         if (pf.open(QIODevice::ReadOnly)) {
             const qint64 old = pf.readAll().trimmed().toLongLong();
             pf.close();
-            if (old > 0 && ::kill(static_cast<pid_t>(old), 0) == 0) {
+            if (pidIsGpsDaemon(old)) {
                 qWarning() << "[daemonctl] daemon already running (pid" << old
                            << ") — not starting a second one";
                 return true;
@@ -158,16 +180,18 @@ void DaemonController::stopRecording()
     if (pf.open(QIODevice::ReadOnly)) {
         const qint64 pid = pf.readAll().trimmed().toLongLong();
         pf.close();
-        if (pid > 0 && ::kill(static_cast<pid_t>(pid), 0) == 0) {
+        if (pidIsGpsDaemon(pid)) {
             qWarning() << "[daemonctl] SIGTERM to surviving daemon pid" << pid;
             ::kill(static_cast<pid_t>(pid), SIGTERM);
         }
     }
 
     m_recording = false;
-    m_pollTimer.stop();
-
-    // Lit le résultat final (le daemon a écrit recording.done avant de quitter)
+    // v1.0: NE PAS arrêter le poll ici. Le daemon écrit recording.done
+    // seulement APRÈS avoir traité SIGTERM (handler queued) : le readDoneJson
+    // immédiat ci-dessous échoue souvent, et c'est onPollTimer() (5 s) qui
+    // récupère le done et déclenche doneReceived → import dans l'historique.
+    // readDoneJson() tente quand même (cas où le fichier est déjà écrit).
     readDoneJson();
 
     emit recordingChanged();
@@ -266,7 +290,7 @@ void DaemonController::onPollTimer()
     if (pf.open(QIODevice::ReadOnly)) {
         const qint64 pid = pf.readAll().trimmed().toLongLong();
         pf.close();
-        if (pid > 0 && ::kill(static_cast<pid_t>(pid), 0) == 0)
+        if (pidIsGpsDaemon(pid))
             daemonAlive = true;
     }
     if (m_recording && !m_stopRequested && QFile::exists(m_controlFile)
@@ -459,7 +483,7 @@ void DaemonController::cleanupFiles()
     QFile::remove(m_doneFile);
 }
 
-// Réécrit gpsd.conf en conservant les deux clés (beep + positioning)
+// Réécrit gpsd.conf (le daemon n'utilise plus que beep en v1.0)
 void DaemonController::writeConf()
 {
     QSaveFile f(m_confFile);
@@ -519,6 +543,10 @@ bool DaemonController::recoverOrphanPart()
             continue;
         const double lat = o.value(QStringLiteral("lat")).toDouble();
         const double lon = o.value(QStringLiteral("lon")).toDouble();
+        // v1.0: un .part corrompu ne doit pas produire des points (0,0).
+        if (!qIsFinite(lat) || !qIsFinite(lon)
+                || lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0)
+            continue;
         const double ele = o.value(QStringLiteral("ele")).toDouble(0.0);
         const bool eleOk = o.contains(QStringLiteral("ele"));
         const QString time = o.value(QStringLiteral("time")).toString();

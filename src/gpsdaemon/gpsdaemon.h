@@ -40,7 +40,16 @@ public:
     void run();
 
     // Appelé depuis le handler de signal (crash) pour marquer la raison d'arrêt
-    void setStopReason(const QString &r) { m_stopReason = r; }
+    // v1.0: un SIGTERM pendant l'alarme batterie ne doit pas écraser la
+    // raison d'arrêt réelle (le done doit rester "battery").
+    void setStopReason(const QString &r) {
+        if (m_stopReason == QLatin1String("battery")
+                || m_stopReason == QLatin1String("diskfull")
+                || m_stopReason == QLatin1String("writeerror")
+                || m_stopReason == QLatin1String("maxduration"))
+            return;
+        m_stopReason = r;
+    }
 
 private slots:
     void onPositionUpdated(const QGeoPositionInfo &info);

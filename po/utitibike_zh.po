@@ -600,3 +600,147 @@ msgstr "Remove favourite"
 
 msgid "Réseau indisponible — GPS activé"
 msgstr "Network unavailable — GPS enabled"
+
+msgid "Guide d'utilisation"
+msgstr "User guide"
+
+msgid "La carte"
+msgstr "The map"
+
+msgid "Calculer un itinéraire"
+msgstr "Calculate a route"
+
+msgid "Navigation GPS (suivi en direct)"
+msgstr "GPS navigation (live tracking)"
+
+msgid "Enregistrer un parcours (mode économie)"
+msgstr "Record a ride (battery-saving mode)"
+
+msgid "Comment ça marche ?"
+msgstr "How does it work?"
+
+msgid "Historique des parcours"
+msgstr "Ride history"
+
+msgid "Favoris"
+msgstr "Favourites"
+
+msgid "Mode hors ligne"
+msgstr "Offline mode"
+
+msgid "Économie de batterie"
+msgstr "Battery saving"
+
+msgid "Sécurité"
+msgstr "Safety"
+
+msgid "Exporter un parcours"
+msgstr "Export a ride"
+
+msgid "Problèmes fréquents"
+msgstr "Common problems"
+
+msgid "Plat"
+msgstr "Flat"
+
+msgid "Position invalide — point ignoré"
+msgstr "Invalid position — point ignored"
+
+msgid "Point hors de la zone visible — ignoré"
+msgstr "Point outside visible area — ignored"
+
+msgid "Point %1 ajouté (%2, %3)"
+msgstr "Point %1 added (%2, %3)"
+
+msgid "Trajet %1 · %2 km"
+msgstr "Ride %1 · %2 km"
+
+msgid "Itinéraire calculé — %1 · ≈ %2 kcal"
+msgstr "Route calculated — %1 · ≈ %2 kcal"
+
+msgid "Itinéraire chargé — %1 · ≈ %2 kcal"
+msgstr "Route loaded — %1 · ≈ %2 kcal"
+
+msgid "Poids"
+msgstr "Weight"
+
+msgid "Difficulté : %1"
+msgstr "Difficulty: %1"
+
+msgid "≈ %1 kcal (estimation pour %2 kg)"
+msgstr "≈ %1 kcal (estimate for %2 kg)"
+
+msgid "Impossible de lancer le transfert"
+msgstr "Cannot start transfer"
+
+msgid "Aucun fichier reçu"
+msgstr "No file received"
+
+msgid "1. Activez le GPS avec le bouton « Activer GPS »\n"
+msgstr "1. Enable GPS with the \"Enable GPS\" button\n"
+
+msgid "1. Appuyez longuement sur la carte pour poser un point de départ\n"
+msgstr "1. Long-press the map to set a starting point\n"
+
+msgid "Appuyez sur l'étoile à côté d'un lieu pour l'ajouter "
+msgstr "Tap the star next to a place to add it "
+
+msgid "Court"
+msgstr "Short"
+
+msgid "Enregistrement arrêté"
+msgstr "Recording stopped"
+
+msgid "Le bouton « Enregistrer » lance un petit programme "
+msgstr "The \"Record\" button starts a small program "
+
+msgid "Le daemon GPS consomme peu :\n"
+msgstr "The GPS daemon uses little power:\n"
+
+msgid "Le daemon continue d'enregistrer même si vous quittez "
+msgstr "The daemon keeps recording even if you quit "
+
+msgid "Les tuiles de carte sont mises en cache automatiquement. "
+msgstr "Map tiles are cached automatically. "
+
+msgid "Montagne"
+msgstr "Mountain"
+
+msgid "Pas de GPS ? → Sortez dehors, le ciel doit être visible\n"
+msgstr "No GPS? → Go outside, the sky must be visible\n"
+
+msgid "Rando"
+msgstr "Hike"
+
+msgid "Rapide"
+msgstr "Fast"
+
+msgid "Sportif"
+msgstr "Sporty"
+
+msgid "Sécurisé"
+msgstr "Safe"
+
+msgid "Thème"
+msgstr "Theme"
+
+msgid "Tous vos parcours enregistrés sont dans l'onglet Historique.\n"
+msgstr "All your recorded rides are in the History tab.\n"
+
+msgid "UT WheelTrek est une application pour le vélo et la randonnée à pied. "
+msgstr "UT WheelTrek is an app for cycling and hiking. "
+
+msgid "Ubuntu Touch 24.04 · framework ubuntu-touch-24.04-1.x · Qt 5.15"
+msgstr "Ubuntu Touch 24.04 · framework ubuntu-touch-24.04-1.x · Qt 5.15"
+
+msgid "Vallonné"
+msgstr "Rolling"
+
+msgid "Vos parcours sont au format GPX, compatible avec :\n"
+msgstr "Your rides are in GPX format, compatible with:\n"
+
+msgid "• Appui long sur la carte : ajouter un point\n"
+msgstr "• Long-press the map: add a point\n"
+
+msgid "• Glissez le doigt pour déplacer la carte\n"
+msgstr "• Swipe to move the map\n"

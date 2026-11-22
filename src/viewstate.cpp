@@ -30,7 +30,8 @@ ViewState::ViewState(QObject *parent)
         o.insert(QStringLiteral("transportMode"), m_transportMode);
         o.insert(QStringLiteral("userWeightKg"), m_userWeightKg);
         f.write(QJsonDocument(o).toJson(QJsonDocument::Compact));
-        f.commit();
+        if (!f.commit())
+            qWarning() << "ViewState save FAILED" << f.fileName() << f.errorString();
     });
     load();
 }

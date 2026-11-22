@@ -153,6 +153,16 @@ void TestBrouterClient::loadGpxMultipleTrkSeg()
     QCOMPARE(points.at(1).toMap().value("lat").toDouble(), 43.6100);
     QCOMPARE(points.at(3).toMap().value("lat").toDouble(), 43.7000);
     QCOMPARE(points.at(4).toMap().value("lat").toDouble(), 43.7100);
+
+    // v1.0: le marqueur NaN ne doit PAS couper le guidage. Avant le correctif,
+    // haversine(NaN)=0 élisait le séparateur comme « point le plus proche »
+    // et déclenchait routeFinished() au premier updatePosition().
+    QSignalSpy finishedSpy(&client, &BrouterClient::routeFinished);
+    client.startNavigation();
+    QVERIFY(client.navigation());
+    client.updatePosition(43.6050, 1.4450);
+    QCOMPARE(finishedSpy.count(), 0);
+    QVERIFY(client.navigation());
 }
 
 void TestBrouterClient::requestRouteRejectsZeroZero()

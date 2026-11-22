@@ -2,6 +2,7 @@
 #include "geo.h"
 
 #include <QCoreApplication>
+#include <QSocketNotifier>
 #include <QProcess>
 #include <QStandardPaths>
 #include <QDir>
@@ -18,6 +19,7 @@
 #include <QtDBus/QDBusPendingCall>
 #include <algorithm>
 #include <csignal>
+#include <cerrno>
 #include <unistd.h>
 #include <sys/prctl.h>
 
@@ -25,16 +27,29 @@
 // arrêt demandé ; SIGSEGV/SIGABRT/SIGBUS/SIGFPE = crash — on sauve quand même).
 static GpsDaemon *g_daemon = nullptr;
 static volatile sig_atomic_t g_inSignal = 0;
+static volatile sig_atomic_t g_stopSignal = 0;
+static int g_stopPipe[2] = { -1, -1 };
+
 static void signalHandler(int sig) {
     // Garde contre la récursion (ex. segfault dans le handler lui-même)
     if (g_inSignal)
         _exit(128 + sig);
     g_inSignal = 1;
+    g_stopSignal = sig;
+    // SELF-PIPE : write() est async-signal-safe, contrairement à QString /
+    // invokeMethod qui peuvent deadlocker si le signal interrompt malloc ou
+    // un verrou Qt interne. Le QSocketNotifier fera le travail sur l'event loop.
+    if (g_stopPipe[1] >= 0) {
+        const char c = 'S';
+        ssize_t n;
+        do { n = ::write(g_stopPipe[1], &c, 1); } while (n < 0 && errno == EINTR);
+    }
+    if (sig == SIGTERM || sig == SIGINT)
+        return;  // l'event loop appellera cleanup()
+    // Crash : on tente le ménage immédiat (best effort), le garde-fou
+    // g_inSignal empêche la récursion.
     if (g_daemon) {
-        if (sig == SIGTERM || sig == SIGINT)
-            g_daemon->setStopReason(QStringLiteral("control"));
-        else
-            g_daemon->setStopReason(QStringLiteral("crash"));
+        g_daemon->setStopReason(QStringLiteral("crash"));
         QMetaObject::invokeMethod(g_daemon, "cleanup", Qt::QueuedConnection);
     }
 }
@@ -147,6 +162,23 @@ void GpsDaemon::run()
     std::signal(SIGBUS, signalHandler);
     std::signal(SIGFPE, signalHandler);
 
+    // Self-pipe : traiter SIGTERM/SIGINT sur l'event loop, jamais depuis le
+    // handler (async-signal-safe).
+    if (::pipe(g_stopPipe) == 0) {
+        QSocketNotifier *notifier = new QSocketNotifier(
+                    g_stopPipe[0], QSocketNotifier::Read, this);
+        connect(notifier, &QSocketNotifier::activated, this, [this]() {
+            char buf[16];
+            ssize_t n;
+            do { n = ::read(g_stopPipe[0], buf, sizeof(buf)); }
+            while (n < 0 && errno == EINTR);
+            const int sig = static_cast<int>(g_stopSignal);
+            if (sig == SIGTERM || sig == SIGINT)
+                setStopReason(QStringLiteral("control"));
+            QMetaObject::invokeMethod(this, "cleanup", Qt::QueuedConnection);
+        });
+    }
+
     // v0.99.1: le daemon SURVIT a la fermeture de l'app (demande Mathias).
     // On ne pose plus PR_SET_PDEATHSIG : le noyau ne tue plus le daemon quand
     // l'app meurt. Le seul arret reste la suppression de recording.control
@@ -162,6 +194,12 @@ void GpsDaemon::run()
     qWarning() << "[gpsd] daemon started, pid=" << QCoreApplication::applicationPid()
                << "ppid=" << getppid() << "(survives app close)";
 
+    // Si aucune source n'a pu être créée, le constructeur a déjà demandé
+    // l'arrêt : ne pas déréférencer m_gps ici (crash au démarrage).
+    if (!m_gps) {
+        qWarning() << "[gpsd] no position source — aborting run()";
+        return;
+    }
     m_gps->startUpdates();
     m_controlTimer.start();
     qWarning() << "[gpsd] appDataDir=" << m_appDataDir;
@@ -535,9 +573,12 @@ bool GpsDaemon::loadPartFile()
     m_lastLat = lastLat;
     m_lastLon = lastLon;
     m_lastTime = lastTime;
-    // D+ : on repart de la dernière altitude connue du tracé repris
+    // D+ : on repart de la dernière altitude connue du tracé repris.
+    // Sans cette initialisation, le premier fix après reprise compare
+    // l'altitude absolue (ex. 150 m) à 0 et ajoute 150 m de D+ fantôme.
     if (hasAlt) {
         m_hasAltEff = true;
+        m_ascentRefAlt = lastAlt;
     }
     m_lastMoveMs = elapsedMs();
     // Position courante = dernier point du tracé repris

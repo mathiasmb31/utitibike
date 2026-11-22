@@ -103,7 +103,10 @@ Page {
                             id: switchUnpaved
                             height: units.gu(6)
                             checked: brouter.avoidUnpaved
-                            onCheckedChanged: brouter.avoidUnpaved = checked
+                            onCheckedChanged: {
+                                brouter.avoidUnpaved = checked
+                                viewState.avoidUnpaved = checked  // v1.0: persistance
+                            }
                         }
                     }
                 }

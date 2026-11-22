@@ -57,7 +57,10 @@ void SuggestClient::query(const QString &overpass, int timeoutMs,
     req.setHeader(QNetworkRequest::UserAgentHeader,
                   QStringLiteral("utitibike/UT WheelTrek (Ubuntu Touch)"));
     QNetworkReply *reply = m_nam.get(req);
-    const quint64 seq = ++m_querySeq;
+    // v1.0: un seul numéro par requête LOGIQUE — les miroirs de secours
+    // réutilisent le même seq. Avant, chaque miroir incrémentait le compteur
+    // et pouvait invalider une requête plus récente (busy bloqué).
+    const quint64 seq = m_querySeq;
     QTimer::singleShot(timeoutMs, reply, [reply]() {
         if (reply->isRunning())
             reply->abort();
@@ -68,7 +71,9 @@ void SuggestClient::query(const QString &overpass, int timeoutMs,
         if (seq != m_querySeq)
             return;  // une reponse plus recente a pris le dessus
         const int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        if (reply->error() != QNetworkReply::NoError || httpStatus >= 500) {
+        // v1.0: exiger HTTP 200 — un 404/429 ne positionne pas toujours
+        // reply->error() en Qt5 et son corps HTML passait comme "réponse".
+        if (reply->error() != QNetworkReply::NoError || httpStatus != 200) {
             qWarning() << "suggest: mirror" << mirror << "failed (HTTP" << httpStatus
                        << ")" << reply->errorString() << "- trying next";
             query(overpass, timeoutMs, onSuccess, onError, mirror + 1);
@@ -89,6 +94,7 @@ QString SuggestClient::cacheKey() const
 void SuggestClient::suggest(double lat, double lon, const QString &mode, int radiusM)
 {
     // L'UI passe un rayon proportionnel à la durée max choisie ; 0 = défaut.
+    ++m_querySeq;  // nouvelle requête logique
     m_radiusM = (radiusM > 0) ? radiusM : kRadiusM;
     m_lat = lat;
     m_lon = lon;
@@ -238,6 +244,12 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
     const int maxItems = qMin<int>(items.size(), 40);
     for (int i = 0; i < maxItems; ++i)
         out.append(items.at(i).map);
+    // v1.0: un corps {"remark":"rate limited"} n'a pas d'éléments — ne pas
+    // le mettre en cache 10 min et ne pas annoncer une liste vide.
+    if (!doc.object().contains(QStringLiteral("elements"))) {
+        emit suggestionsFailed(tr("Réponse illisible du serveur de suggestions."));
+        return;
+    }
     m_cacheKey = cacheKey();
     m_cacheItems = out;
     m_cacheAtMs = QDateTime::currentMSecsSinceEpoch();
@@ -247,6 +259,7 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
 
 void SuggestClient::fetchTrail(qint64 id, const QString &type)
 {
+    ++m_querySeq;  // nouvelle requête logique
     m_pendingId = id;
     setBusy(true);
     // v0.99.1: une suggestion peut etre une way (pas de membres) — dans ce

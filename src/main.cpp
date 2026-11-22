@@ -62,7 +62,14 @@ int main(int argc, char *argv[])
     QTranslator translator;
     const QString sysLocale = QLocale::system().name();
     const QString appDir = QCoreApplication::applicationDirPath();
-    if (translator.load(QStringLiteral("utitibike_") + sysLocale, appDir)) {
+    bool loaded = translator.load(QStringLiteral("utitibike_") + sysLocale, appDir);
+    if (!loaded && sysLocale.contains(QLatin1Char('_'))) {
+        // v1.0: les .qm ne sont produits que par langue (utitibike_fr.qm)
+        // — une locale à territoire (fr_FR) doit retomber sur la langue.
+        const QString lang = sysLocale.section(QLatin1Char('_'), 0, 0);
+        loaded = translator.load(QStringLiteral("utitibike_") + lang, appDir);
+    }
+    if (loaded) {
         app.installTranslator(&translator);
         qDebug() << "utitibike translation loaded for locale" << sysLocale;
     } else {
