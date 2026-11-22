@@ -39,6 +39,9 @@ Page {
     property string pendingReverseDate: ""
     property bool manualStartWarned: false  // vibration déjà envoyée pour le départ manuel
     property real userWeightKg: 70  // poids pour l'estimation des calories
+    // v1.0: valeurs pour les Timer déclaratifs (remplacent QTimer.singleShot)
+    property real savedToastDistM: 0
+    property real savedToastAscM: 0
 
     // Source de position « live » unique : pendant un enregistrement, c'est le
     // daemon qui fournit la position (une seule source GPS ouverte côté app =
@@ -381,18 +384,19 @@ Page {
                 brouter.loadGpxData(gpxContent)
                 // Toast résumé après celui de onRouteReady ("Itinéraire
                 // chargé") qui l'écraserait sinon (toast unique).
-                QTimer.singleShot(700, function() {
-                    showToast(i18n.tr("Parcours sauvegardé : %1 km · D+ %2 m")
-                              .arg(Format.num(distM / 1000))
-                              .arg(Math.round(ascM)))
-                })
+                // v1.0: QTimer.singleShot() n'existe pas en QML (ReferenceError)
+                // — on utilise un Timer déclaratif avec les valeurs mises en
+                // propriétés avant le départ.
+                page.savedToastDistM = distM
+                page.savedToastAscM = ascM
+                savedToastTimer.start()
             }
             // Arrêt automatique du daemon (batterie / durée max / disque)
             if (daemonController.stopReason === "battery") {
                 showToast(i18n.tr("Arrêt auto : batterie à 20 %"))
                 // L'enregistrement s'est arrêté pour batterie : on ferme
                 // l'app (le daemon l'a peut-être déjà fermée par SIGTERM).
-                QTimer.singleShot(1500, function() { Qt.quit() })
+                quitTimer.start()
             }
             else if (daemonController.stopReason === "maxduration")
                 showToast(i18n.tr("Arrêt auto : durée max atteinte (12 h)"))
@@ -419,7 +423,7 @@ Page {
         // v1.0: warm-up différé (2 s) — crée la source GPS et lit la dernière
         // position connue sans allumer le GPS. Différé pour ne pas bloquer
         // le premier affichage (createDefaultSource peut être lent sur UT).
-        QTimer.singleShot(2000, function() { gpsTracker.warmUp() })
+        warmUpTimer.start()
         // v0.99.1: restauration des preferences persistees dans view.json.
         // Ici et pas dans Main.qml : `cache` est un objet de MapPage.
         cache.tileServer = viewState.transportMode === "foot" ? "osm" : "cyclosm"
@@ -1634,6 +1638,23 @@ Page {
         id: toastTimer
         interval: 2800
         onTriggered: page.showNextToast()
+    }
+    Timer {
+        id: warmUpTimer
+        interval: 2000
+        onTriggered: gpsTracker.warmUp()
+    }
+    Timer {
+        id: savedToastTimer
+        interval: 700
+        onTriggered: showToast(i18n.tr("Parcours sauvegardé : %1 km · D+ %2 m")
+                               .arg(Format.num(page.savedToastDistM / 1000))
+                               .arg(Math.round(page.savedToastAscM)))
+    }
+    Timer {
+        id: quitTimer
+        interval: 1500
+        onTriggered: Qt.quit()
     }
 
     // v0.99.1: indicateur « dalle en chargement » — une petite horloge
