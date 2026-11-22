@@ -1,4 +1,6 @@
 #include <QtTest>
+#include <QTcpServer>
+#include <QHostAddress>
 #include <QSignalSpy>
 #include <QVariantList>
 #include <QVariantMap>
@@ -23,6 +25,7 @@ private slots:
     void requestRouteRejectsTooFewWaypoints();
     void defaultProfile();
     void defaultUphillCost();
+    void doubleClickAbort();
 };
 
 static QVariantList makeWaypoint(double lat, double lon)
@@ -229,6 +232,30 @@ void TestBrouterClient::defaultUphillCost()
 {
     BrouterClient client;
     QCOMPARE(client.uphillCost(), 50);  // valeur par défaut dans le constructeur
+}
+
+void TestBrouterClient::doubleClickAbort()
+{
+    // v1.0: un double-clic annule la 1re requête. Son abort() peut émettre
+    // finished() de façon synchrone : aucun routeFailed parasite ne doit
+    // apparaître.
+    QTcpServer server;
+    QVERIFY(server.listen(QHostAddress::LocalHost, 0));
+    const QByteArray url = QByteArray("http://127.0.0.1:")
+                           + QByteArray::number(server.serverPort())
+                           + "/brouter";
+    qputenv("UTITIBIKE_BROUTER_URL", url);
+
+    BrouterClient client;
+    QSignalSpy failSpy(&client, &BrouterClient::routeFailed);
+    QVariantList wps;
+    wps << makeWaypoint(43.6000, 1.4400).first()
+        << makeWaypoint(43.6100, 1.4500).first();
+    client.requestRoute(wps);
+    client.requestRoute(wps);
+    QTest::qWait(1000);
+    QCOMPARE(failSpy.count(), 0);
+    qunsetenv("UTITIBIKE_BROUTER_URL");
 }
 
 QTEST_GUILESS_MAIN(TestBrouterClient)

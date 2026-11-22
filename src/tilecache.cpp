@@ -596,6 +596,9 @@ void TileCache::cancelAll()
     const QStringList keys = m_active.keys();
     for (const QString &key : keys)
         m_active.value(key)->abort();
+    // v1.0: ne pas attendre finished() pour libérer les slots — sinon un
+    // abort() sans finished() laisse m_active plein et drain() bloqué.
+    m_active.clear();
     m_queue.clear();
     m_batchKeys.clear();
     m_retries.clear();

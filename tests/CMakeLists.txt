@@ -37,6 +37,15 @@ target_include_directories(tst_brouterclient PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(tst_brouterclient Qt5::Test Qt5::Core Qt5::Network)
 add_test(NAME brouterclient COMMAND tst_brouterclient)
 
+# TileCache : cache mémoire/disque, états online/paused, refresh/cancel
+add_executable(tst_tilecache tst_tilecache.cpp
+    ${CMAKE_SOURCE_DIR}/src/tilecache.cpp
+    ${CMAKE_SOURCE_DIR}/src/appdata.cpp
+)
+target_include_directories(tst_tilecache PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(tst_tilecache Qt5::Test Qt5::Core Qt5::Gui Qt5::Network)
+add_test(NAME tilecache COMMAND tst_tilecache)
+
 # Persistance (Favorites, RouteHistory, ViewState)
 add_executable(tst_persistence tst_persistence.cpp
     ${CMAKE_SOURCE_DIR}/src/appdata.cpp

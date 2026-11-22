@@ -200,14 +200,21 @@ void BrouterClient::requestRoute(const QVariantList &waypoints)
         return;
     }
     if (m_reply) {
-        m_reply->abort();
-        m_reply->deleteLater();
+        // v1.0: mettre à nullptr AVANT abort() — si Qt émet finished()
+        // synchrone, la lambda de l'ancienne requête voit m_reply != thisReply
+        // et l'ignore au lieu d'émettre un routeFailed parasite.
+        QNetworkReply *old = m_reply;
         m_reply = nullptr;
+        old->abort();
+        old->deleteLater();
     }
 
     setBusy(true);
 
-    QUrl url(QStringLiteral("https://brouter.de/brouter"));
+    // v1.0: surcharge de test (serveur local) — la prod garde l'URL par défaut.
+    const QByteArray envUrl = qgetenv("UTITIBIKE_BROUTER_URL");
+    QUrl url(QString::fromUtf8(envUrl.isEmpty()
+                               ? "https://brouter.de/brouter" : envUrl));
     QUrlQuery q;
     q.addQueryItem(QStringLiteral("lonlats"), coords.join(QLatin1Char('|')));
     q.addQueryItem(QStringLiteral("profile"),
