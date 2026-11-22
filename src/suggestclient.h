@@ -10,9 +10,10 @@
 #include <QNetworkAccessManager>
 
 // Suggestions de tracés à proximité via l'API Overpass :
-//  - suggest(lat, lon, mode) liste les relations OSM nommées
+//  - suggest(lat, lon, mode, radiusM) liste les relations OSM nommées
 //    route hiking/foot (mode "foot") ou bicycle/mtb (mode "bike")
-//    dans un rayon de 5 km autour du point donné ;
+//    dans un rayon choisi par l'UI (proportionnel à la durée max, 100 km
+//    pour « Toutes ») autour du point donné ;
 //  - fetchTrail(id) récupère la géométrie des ways membres de la
 //    relation et émet un GPX prêt à être chargé par BrouterClient.
 class SuggestClient : public QObject
@@ -26,7 +27,7 @@ public:
     bool busy() const { return m_busy; }
 
     // mode : "foot" (randonnée à pied) ou "bike" (vélo)
-    Q_INVOKABLE void suggest(double lat, double lon, const QString &mode);
+    Q_INVOKABLE void suggest(double lat, double lon, const QString &mode, int radiusM);
     // Charge la géométrie complète de la relation et émet trailReady(gpx)
     // type = "relation" ou "way" (les suggestions incluent les deux)
     Q_INVOKABLE void fetchTrail(qint64 id, const QString &type = QStringLiteral("relation"));

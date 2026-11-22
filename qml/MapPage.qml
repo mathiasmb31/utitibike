@@ -155,9 +155,18 @@ Page {
         var lon = page.liveHasPos ? page.liveLon : map.centerLon
         page.suggOpen = true
         page.suggBusy = true
-        page.suggMaxH = 0
+        // v0.99.1: on garde le filtre de durée (changer le filtre relance la
+        // recherche avec un rayon adapté — inutile de chercher à 10 km un
+        // parcours de 150 km).
         page.suggestions = []
-        suggestClient.suggest(lat, lon, page.modeIndex === 1 ? "foot" : "bike")
+        suggestClient.suggest(lat, lon, page.modeIndex === 1 ? "foot" : "bike",
+                              suggestRadius())
+    }
+
+    // Rayon de recherche proportionnel à la durée max : ~30 km/h, 100 km
+    // pour « Toutes » (demande Mathias).
+    function suggestRadius() {
+        return page.suggMaxH > 0 ? page.suggMaxH * 30000 : 100000
     }
 
     // Suggestions filtrées par la durée max choisie (estH < 0 = durée
@@ -1037,7 +1046,10 @@ Page {
                         { label: i18n.tr("≤ %1 h").arg(5), value: 5 }
                     ]
                     currentIndex: Math.max(0, hourKeys.indexOf(page.suggMaxH))
-                    onSelected: page.suggMaxH = value
+                    onSelected: {
+                        page.suggMaxH = value
+                        page.openSuggestions()
+                    }
                 }
             }
             Label {
@@ -1084,6 +1096,7 @@ Page {
                             color: Theme.textSecondary
                             text: (modelData.route === "hiking" || modelData.route === "foot"
                                    ? i18n.tr("Randonnée") : i18n.tr("Vélo"))
+                                  + (modelData.network ? " · " + modelData.network.toUpperCase() : "")
                                   + " · " + i18n.tr("à %1 km").arg(Format.num(modelData.distM / 1000))
                                   + (modelData.estH >= 0 ? " · " + page.formatEstH(modelData.estH) : "")
                         }

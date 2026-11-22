@@ -22,7 +22,7 @@ static const char *kOverpassMirrors[] = {
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 };
 static const int kMirrorCount = 4;
-static const int kRadiusM = 20000;  // avant 5000 -> seulement 4 relations autour de Toulouse
+static const int kRadiusM = 100000;  // demande Mathias : 100 km pour trouver de vraies véloroutes
 
 SuggestClient::SuggestClient(QObject *parent)
     : QObject(parent)
@@ -76,8 +76,10 @@ void SuggestClient::query(const QString &overpass, int timeoutMs,
     });
 }
 
-void SuggestClient::suggest(double lat, double lon, const QString &mode)
+void SuggestClient::suggest(double lat, double lon, const QString &mode, int radiusM)
 {
+    // L'UI passe un rayon proportionnel à la durée max choisie ; 0 = défaut.
+    const int radius = (radiusM > 0) ? radiusM : kRadiusM;
     m_lat = lat;
     m_lon = lon;
     m_mode = (mode == QLatin1String("foot")) ? QStringLiteral("foot")
@@ -89,17 +91,22 @@ void SuggestClient::suggest(double lat, double lon, const QString &mode)
     const QString routeFilter = m_mode == QLatin1String("foot")
             ? QStringLiteral("[\"route\"~\"^(hiking|foot)$\"]")
             : QStringLiteral("[\"route\"~\"^(bicycle|mtb)$\"]");
-    const QString q = QStringLiteral("[out:json][timeout:25];"
+    const QString q = QStringLiteral("[out:json][timeout:60];"
                                      "(relation[\"type\"=\"route\"]%1[\"name\"]"
+                                     "(around:%2,%3,%4);"
+                                     "relation[\"type\"=\"route\"]%1[\"ref\"]"
                                      "(around:%2,%3,%4);"
                                      "way%1[\"name\"](around:%2,%3,%4););"
                                      "out center tags;")
             .arg(routeFilter)
-            .arg(kRadiusM)
+            .arg(radius)
             .arg(lat, 0, 'f', 6)
             .arg(lon, 0, 'f', 6);
-    qWarning() << "suggest query:" << q;
-    query(q, 40000, &SuggestClient::onSuggestReply, &SuggestClient::onSuggestError);
+    // Un rayon de 100 km renvoie ~200 relations et met ~28 s au miroir
+    // rapide ; le timeout client doit suivre (40 s -> 60 s à 100 km).
+    const int timeoutMs = 40000 + radius / 5;
+    qWarning() << "suggest query:" << q << "timeout" << timeoutMs;
+    query(q, timeoutMs, &SuggestClient::onSuggestReply, &SuggestClient::onSuggestError);
 }
 
 void SuggestClient::onSuggestError(const QString &msg)
@@ -118,7 +125,10 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
         emit suggestionsFailed(tr("Réponse illisible du serveur de suggestions."));
         return;
     }
-    struct Item { QVariantMap map; double distM; };
+    // rank : 0 = réseau national (ncn, longues véloroutes), 1 = régional,
+    // 2 = local, 3 = inconnu. On trie par pertinence avant distance : sinon
+    // la liste ne montrait que les petits circuits les plus proches.
+    struct Item { QVariantMap map; double distM; int rank; };
     QList<Item> items;
     const QJsonArray elements = doc.object().value(QStringLiteral("elements")).toArray();
     for (const QJsonValue &v : elements) {
@@ -128,7 +138,11 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
         if (osmType != QLatin1String("relation") && osmType != QLatin1String("way"))
             continue;
         const QJsonObject tags = el.value(QStringLiteral("tags")).toObject();
-        const QString name = tags.value(QStringLiteral("name")).toString();
+        QString name = tags.value(QStringLiteral("name")).toString();
+        // Certaines véloroutes n'ont que leur numéro (ex. V85) : on
+        // l'affiche plutôt que de jeter le tracé.
+        if (name.isEmpty())
+            name = tags.value(QStringLiteral("ref")).toString();
         if (name.isEmpty())
             continue;
         const QJsonObject center = el.value(QStringLiteral("center")).toObject();
@@ -144,6 +158,8 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
         m.insert(QStringLiteral("type"), osmType);
         m.insert(QStringLiteral("name"), name);
         m.insert(QStringLiteral("route"), tags.value(QStringLiteral("route")).toString());
+        const QString network = tags.value(QStringLiteral("network")).toString();
+        m.insert(QStringLiteral("network"), network);
         m.insert(QStringLiteral("lat"), lat);
         m.insert(QStringLiteral("lon"), lon);
         const double distM = haversine(m_lat, m_lon, lat, lon);
@@ -151,21 +167,37 @@ void SuggestClient::onSuggestReply(const QByteArray &body)
         // Temps estimé du tracé : tag OSM « distance » (km) de la relation,
         // à la vitesse du mode (marche ~5 km/h, vélo ~18 km/h). -1 si inconnu.
         double estH = -1.0;
+        const double speedKmh = (m_mode == QLatin1String("foot")) ? 5.0 : 18.0;
         const QString distTag = tags.value(QStringLiteral("distance")).toString();
         QRegExp rx(QStringLiteral("[0-9]+([.,][0-9]+)?"));
         if (rx.indexIn(distTag) >= 0) {
             const double km = rx.cap(0).replace(QLatin1Char(','), QLatin1Char('.')).toDouble();
-            const double speedKmh = (m_mode == QLatin1String("foot")) ? 5.0 : 18.0;
             if (km > 0)
                 estH = km / speedKmh;
+        } else {
+            // v0.99.1: ~34 tracés sur 44 n'ont PAS de tag « distance » —
+            // sans estimation ils disparaissaient dès qu'un filtre de durée
+            // était actif. Ordre de grandeur d'après le réseau OSM.
+            double guessKm = -1.0;
+            if (network == QLatin1String("ncn"))      guessKm = 80.0;
+            else if (network == QLatin1String("rcn")) guessKm = 30.0;
+            else if (network == QLatin1String("lcn")) guessKm = 12.0;
+            if (guessKm > 0)
+                estH = guessKm / speedKmh;
         }
         m.insert(QStringLiteral("estH"), estH);
-        items.append({m, distM});
+        const int rank = (network == QLatin1String("ncn")) ? 0
+                       : (network == QLatin1String("rcn")) ? 1
+                       : (network == QLatin1String("lcn")) ? 2 : 3;
+        items.append({m, distM, rank});
     }
-    std::sort(items.begin(), items.end(),
-              [](const Item &a, const Item &b) { return a.distM < b.distM; });
+    std::sort(items.begin(), items.end(), [](const Item &a, const Item &b) {
+        if (a.rank != b.rank)
+            return a.rank < b.rank;
+        return a.distM < b.distM;
+    });
     QVariantList out;
-    const int maxItems = qMin<int>(items.size(), 25);
+    const int maxItems = qMin<int>(items.size(), 40);
     for (int i = 0; i < maxItems; ++i)
         out.append(items.at(i).map);
     qWarning() << "suggest:" << out.size() << "suggestions";
