@@ -671,13 +671,13 @@ void GpsDaemon::applyPositioningMode()
         m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::SatellitePositioningMethods);
     else if (mode == QLatin1String("network")) {
         m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::NonSatellitePositioningMethods);
-        // Secours : si le mode réseau seul ne fournit aucun fix après 30 s
+        // Secours : si le mode réseau seul ne fournit aucun fix après 15 s
         // (le provider réseau de UT peut être indisponible), on retombe sur
         // toutes les méthodes (satellite inclus) — sinon aucune position
         // n'est jamais trouvée en mode « réseau ».
-        QTimer::singleShot(30000, this, [this]() {
+        QTimer::singleShot(15000, this, [this]() {
             if (!m_everHadFix) {
-                qWarning() << "[gpsd] mode réseau sans fix après 30 s — secours satellite (AllPositioningMethods)";
+                qWarning() << "[gpsd] mode réseau sans fix après 15 s — secours satellite (AllPositioningMethods)";
                 m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
             }
         });

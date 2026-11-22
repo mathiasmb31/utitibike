@@ -1,5 +1,6 @@
 #include "gpstracker.h"
 #include <QDebug>
+#include <QDateTime>
 #include <cmath>
 
 GpsTracker::GpsTracker(QObject *parent)
@@ -8,6 +9,20 @@ GpsTracker::GpsTracker(QObject *parent)
     // La source GPS n'est PAS créée ici : QGeoPositionInfoSource::createDefaultSource
     // peut bloquer le thread principal au démarrage (écran blanc sur UT).
     // Elle est créée lazily au premier start().
+    m_watchdogTimer.setInterval(60000);
+    connect(&m_watchdogTimer, &QTimer::timeout, this, [this]() {
+        if (!m_active || !m_source)
+            return;
+        const qint64 silence = QDateTime::currentMSecsSinceEpoch() - m_lastUpdateMs;
+        if (silence < 60000)
+            return;
+        qWarning() << "GpsTracker: no position for" << silence
+                   << "ms — restarting updates";
+        m_source->stopUpdates();
+        m_source->startUpdates();
+        m_lastUpdateMs = QDateTime::currentMSecsSinceEpoch();
+        emit statusChanged();
+    });
 }
 
 QString GpsTracker::statusText() const
@@ -49,18 +64,34 @@ void GpsTracker::start()
         }
         connect(m_source, &QGeoPositionInfoSource::positionUpdated,
                 this, [this](const QGeoPositionInfo &info) {
-            m_hasFix = info.isValid();
-            if (m_hasFix)
-                m_hasApprox = false;  // un vrai fix remplace la position approx
-            if (!m_hasFix) {
-                // Émettre quand même : le QML masque la position (hasFix=false)
-                // au lieu de garder un point fantôme à la dernière position.
+            m_lastUpdateMs = QDateTime::currentMSecsSinceEpoch();
+            // v1.0: une position 4G/5G ou WiFi a souvent une précision de
+            // plusieurs km. Ne pas la présenter comme un fix GPS (voyant
+            // vert, guidage, rotation de carte) : on la garde comme position
+            // approximative.
+            const bool hasAcc = info.hasAttribute(QGeoPositionInfo::HorizontalAccuracy);
+            const double acc = hasAcc
+                    ? info.attribute(QGeoPositionInfo::HorizontalAccuracy) : -1.0;
+            const bool accurate = !hasAcc || (acc >= 0.0 && acc <= 100.0);
+            m_hasFix = info.isValid() && accurate;
+            if (info.isValid())
+                m_hasApprox = !accurate;
+            if (!info.isValid()) {
                 emit positionUpdated();
                 return;
             }
             QGeoCoordinate c = info.coordinate();
             m_lat = c.latitude();
             m_lon = c.longitude();
+            if (!accurate) {
+                // Altitude/vitesse/cap d'un fix réseau ne sont pas fiables.
+                m_hasAlt = false;
+                m_alt = 0.0;
+                m_speed = 0.0;
+                m_direction = 0.0;
+                emit positionUpdated();
+                return;
+            }
             // Altitude valide seulement si le fix la fournit (sinon 0.0, ce
             // qui fausserait le D+ : un 0 m ne doit jamais compter comme un
             // point bas).
@@ -85,6 +116,8 @@ void GpsTracker::start()
     }
     m_source->startUpdates();
     m_active = true;
+    m_lastUpdateMs = QDateTime::currentMSecsSinceEpoch();
+    m_watchdogTimer.start();
     emit activeChanged();
     emit statusChanged();
 }
@@ -95,6 +128,7 @@ void GpsTracker::stop()
         return;
     m_source->stopUpdates();
     m_active = false;
+    m_watchdogTimer.stop();
     emit activeChanged();
     emit statusChanged();
 }
@@ -112,12 +146,13 @@ void GpsTracker::setPositioningMode(const QString &mode)
         // Secours : pas de fix réseau après 30 s → toutes méthodes (satellite
         // inclus), sinon aucune position en mode « réseau » sur certains
         // appareils où le provider réseau est indisponible.
-        // v0.99.1: le secours ne doit pas ecraser un changement de l'utilisateur
-        // (ex. passage en satellite) intervenu dans les 30 s.
+        // v1.0: délai réduit à 15 s — le provider réseau UT ne fournit
+        // souvent aucun fix 4G/5G. Le secours ne doit pas écraser un
+        // changement de l'utilisateur intervenu dans l'intervalle.
         const QString scheduledMode = m_positioningMode;
-        QTimer::singleShot(30000, this, [this, scheduledMode]() {
+        QTimer::singleShot(15000, this, [this, scheduledMode]() {
             if (m_positioningMode == scheduledMode && !m_hasFix) {
-                qWarning() << "GpsTracker: mode réseau sans fix après 30 s — secours satellite";
+                qWarning() << "GpsTracker: mode réseau sans fix après 15 s — secours satellite";
                 m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
             }
         });

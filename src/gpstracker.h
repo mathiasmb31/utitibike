@@ -69,6 +69,10 @@ private:
     bool m_hasFix = false;
     bool m_hasApprox = false;
     QString m_positioningMode = QStringLiteral("auto");
+    // v1.0: watchdog — si aucune position pendant 60 s, redémarre la source
+    // (le service de localisation Lomiri coupe parfois la session).
+    QTimer m_watchdogTimer;
+    qint64 m_lastUpdateMs = 0;
 };
 
 #endif // GPSTRACKER_H
