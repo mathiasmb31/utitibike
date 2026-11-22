@@ -65,12 +65,24 @@ Page {
         anchors.fill: parent
         model: routeHistory.entries
         spacing: 0   // les dividers des ListItem gèrent la séparation
-        header: ListItem {
-            height: headerCol.height + units.gu(2)
+        header: Item {
+            // v0.99.1: l'ancien header etait un ListItem avec
+            // `height: headerCol.height + gu(2)` alors que headerCol etait
+            // anchors.centerIn: parent — binding circulaire qui laissait
+            // l'en-tete trop court : son contenu (filtre + bouton) debordait
+            // sur la 1re ligne de la liste (impossible a taper).
+            // Column ancre en haut, hauteur autonome : plus de chevauchement.
+            height: headerCol.height + units.gu(1)
             Column {
                 id: headerCol
-                width: parent.width - units.gu(2)
-                anchors.centerIn: parent
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: parent.right
+                    topMargin: units.gu(0.5)
+                    leftMargin: units.gu(1)
+                    rightMargin: units.gu(1)
+                }
                 spacing: units.gu(0.5)
                 // v0.99.1: recherche/filtre par nom de parcours.
                 TextField {
@@ -91,25 +103,24 @@ Page {
                     horizontalAlignment: Text.AlignHCenter
                     visible: routeHistory.entries.length > 0
                 }
-            Row {
-                id: headerRow
-                anchors.centerIn: parent
-                spacing: units.gu(2)
-                Label {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: i18n.tr("%1 itinéraire(s)").arg(routeHistory.entries.length)
-                    fontSize: "small"
-                    color: Theme.textPrimary
+                Row {
+                    id: headerRow
+                    spacing: units.gu(2)
+                    Label {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: i18n.tr("%1 itinéraire(s)").arg(routeHistory.entries.length)
+                        fontSize: "small"
+                        color: Theme.textPrimary
+                    }
+                    Button {
+                        height: units.gu(6)
+                        text: i18n.tr("Tout effacer")
+                        iconName: "delete"
+                        color: Theme.accentRed
+                        visible: routeHistory.entries.length > 0
+                        onClicked: PopupUtils.open(clearDialog)
+                    }
                 }
-                Button {
-                    height: units.gu(6)
-                    text: i18n.tr("Tout effacer")
-                    iconName: "delete"
-                    color: Theme.accentRed
-                    visible: routeHistory.entries.length > 0
-                    onClicked: PopupUtils.open(clearDialog)
-                }
-            }
             }  // Column headerCol
         }
         // ListItem natif Ubuntu Touch : divider, highlight au tap, swipe
