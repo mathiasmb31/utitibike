@@ -13,7 +13,6 @@ class GpsTracker : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool active READ active NOTIFY activeChanged)
-    Q_PROPERTY(bool available READ available NOTIFY availableChanged)
     Q_PROPERTY(double latitude READ latitude NOTIFY positionUpdated)
     Q_PROPERTY(double longitude READ longitude NOTIFY positionUpdated)
     Q_PROPERTY(double altitude READ altitude NOTIFY positionUpdated)
@@ -30,10 +29,6 @@ public:
     explicit GpsTracker(QObject *parent = nullptr);
 
     bool active() const { return m_active; }
-    // Disponible = un plugin de source GPS existe. Interroge la liste statique
-    // des sources (ne les instancie pas : createDefaultSource, lui, bloque le
-    // thread principal au démarrage — la source est créée lazily au start()).
-    bool available() const { return !QGeoPositionInfoSource::availableSources().isEmpty(); }
     double latitude() const { return m_lat; }
     double longitude() const { return m_lon; }
     double altitude() const { return m_alt; }
@@ -53,7 +48,6 @@ public:
 
 signals:
     void activeChanged();
-    void availableChanged();
     void positionUpdated();
     void statusChanged();
 

@@ -15,8 +15,6 @@ class ViewState : public QObject
     Q_PROPERTY(int zoom READ zoom WRITE setZoom NOTIFY zoomChanged)
     // Préférence de thème : "auto" (suit le système Lomiri), "dark", "light"
     Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY themeModeChanged)
-    // Source de position GPS : "auto", "satellite" (GPS seul), "network" (WiFi/cell)
-    Q_PROPERTY(QString positioningMode READ positioningMode NOTIFY positioningModeChanged)
     // Éviter les chemins non goudronnés dans le calcul d'itinéraire BRouter
     Q_PROPERTY(bool avoidUnpaved READ avoidUnpaved WRITE setAvoidUnpaved NOTIFY avoidUnpavedChanged)
     // Mode de déplacement : "bike" (vélo) ou "foot" (marche / randonnée)
@@ -38,7 +36,6 @@ public:
     void setZoom(int v);
     QString themeMode() const { return m_themeMode; }
     void setThemeMode(const QString &v);
-    QString positioningMode() const { return m_positioningMode; }
     bool avoidUnpaved() const { return m_avoidUnpaved; }
     void setAvoidUnpaved(bool v);
     QString transportMode() const { return m_transportMode; }
@@ -52,7 +49,6 @@ signals:
     void centerLonChanged();
     void zoomChanged();
     void themeModeChanged();
-    void positioningModeChanged();
     void avoidUnpavedChanged();
     void transportModeChanged();
     void userWeightKgChanged();
@@ -65,7 +61,6 @@ private:
     double m_lon = 1.4442;
     int m_zoom = 12;
     QString m_themeMode = QStringLiteral("auto");
-    QString m_positioningMode = QStringLiteral("auto");
     bool m_avoidUnpaved = false;
     QString m_transportMode = QStringLiteral("bike");
     double m_userWeightKg = 70.0;

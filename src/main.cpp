@@ -16,7 +16,6 @@
 #include "tilemapitem.h"
 #include "brouterclient.h"
 #include "gpstracker.h"
-#include "routerecorder.h"
 #include "routehistory.h"
 #include "favorites.h"
 #include "urlopener.h"
@@ -83,7 +82,6 @@ int main(int argc, char *argv[])
     Haptics haptics;
     DisplayKeeper displayKeeper;
     GpsTracker gpsTracker;
-    RouteRecorder routeRecorder(&gpsTracker);
     DaemonController daemonController;
     RouteHistory routeHistory;
     Favorites favorites;
@@ -111,7 +109,6 @@ int main(int argc, char *argv[])
     view.rootContext()->setContextProperty(QStringLiteral("haptics"), &haptics);
     view.rootContext()->setContextProperty(QStringLiteral("appState"), &appState);
     view.rootContext()->setContextProperty(QStringLiteral("gpsTracker"), &gpsTracker);
-    view.rootContext()->setContextProperty(QStringLiteral("routeRecorder"), &routeRecorder);
     view.rootContext()->setContextProperty(QStringLiteral("daemonController"), &daemonController);
     view.rootContext()->setContextProperty(QStringLiteral("routeHistory"), &routeHistory);
     view.rootContext()->setContextProperty(QStringLiteral("favorites"), &favorites);
@@ -132,13 +129,6 @@ int main(int argc, char *argv[])
     view.rootContext()->setContextProperty(QStringLiteral("deviceInfo"), &deviceInfo);
     view.rootContext()->setContextProperty(QStringLiteral("paletteWatcher"), &paletteWatcher);
     QObject::connect(&app, &QGuiApplication::aboutToQuit, &displayKeeper, &DisplayKeeper::release);
-    // Dernier filet : si un enregistrement est en cours à la fermeture, le
-    // parcours est sauvé (sinon il serait perdu, l'auto-save n'a lieu que
-    // toutes les 60 s).
-    QObject::connect(&app, &QGuiApplication::aboutToQuit, &routeRecorder, [&routeRecorder]() {
-        if (routeRecorder.recording())
-            routeRecorder.saveGpx();
-    });
     // Arrêt batterie : le daemon a SIGTERM l'app après avoir écrit
     // recording.done — on importe le parcours dans l'historique ici (le QML
     // ne tourne plus à ce stade).

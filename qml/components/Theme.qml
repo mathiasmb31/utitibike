@@ -75,13 +75,11 @@ QtObject {
     readonly property real radiusCard: 12       // 1,5 gu
     readonly property real radiusChip: 16       // 2 gu
     readonly property real radiusButton: 6      // 0,8 gu
-    readonly property real radiusFab: 28        // 3,5 gu
 
     // Espacements (dp)
     // v0.99.1: separable sub-pixel (gu(0.05) ≈ 0,4 dp) -> 1 px device net.
     readonly property real dividerHeight: 1
     readonly property real padCard: 12          // 1,5 gu
-    readonly property real padSection: 8        // 1 gu
 
     // Hauteurs (px — les valeurs brutes QML sont en pixels, pas en dp)
     readonly property real chipHeight: 56       // pilules SegmentedControl (~2,7 gu)

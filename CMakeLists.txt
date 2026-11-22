@@ -28,8 +28,6 @@ set(SRC
     src/brouterclient.cpp
     src/gpstracker.h
     src/gpstracker.cpp
-    src/routerecorder.h
-    src/routerecorder.cpp
     src/routehistory.h
     src/routehistory.cpp
     src/favorites.h

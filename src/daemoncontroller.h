@@ -10,7 +10,7 @@
 class RouteHistory;
 
 // Contrôle le daemon GPS détaché (utitibike-gpsd) depuis l'app QML.
-// Remplace RouteRecorder pour le mode enregistrement : le daemon tourne
+// Pilote le daemon GPS détaché pour l'enregistrement : le daemon tourne
 // sans UI, l'app peut se fermer (le daemon reçoit SIGTERM via
 // PR_SET_PDEATHSIG, ou détecte la mort du parent via le PID dans
 // recording.control).
@@ -45,7 +45,6 @@ class DaemonController : public QObject
     // Bip de confirmation activé (persisté dans gpsd.conf, lu par le daemon)
     Q_PROPERTY(bool beepEnabled READ beepEnabled WRITE setBeepEnabled NOTIFY beepEnabledChanged)
     // Source GPS : "auto" | "satellite" | "network" (persisté dans gpsd.conf)
-    Q_PROPERTY(QString positioningMode READ positioningMode NOTIFY positioningModeChanged)
     // Raison du dernier arrêt : "user", "control", "parent", "battery", "maxduration"
     Q_PROPERTY(QString stopReason READ stopReason NOTIFY doneReceived)
     // Date de début de l'enregistrement (ISO UTC, lue dans recording.done)
@@ -73,7 +72,6 @@ public:
     bool awaitManualStart() const { return m_awaitManualStart; }
     bool beepEnabled() const { return m_beepEnabled; }
     void setBeepEnabled(bool v);
-    QString positioningMode() const { return m_positioningMode; }
     QString stopReason() const { return m_stopReason; }
     QString startTime() const { return m_startTime; }
     QString lastGpxPath() const { return m_lastGpxPath; }
@@ -110,19 +108,15 @@ signals:
     void statsChanged();
     void doneReceived();  // recording.done reçu (après stop)
     void beepEnabledChanged();
-    void positioningModeChanged();
     void daemonRestarted();  // le daemon a crashé et a été relancé (reprise depuis en-cours.part)
 
 private slots:
     void onPollTimer();
-    void onDaemonFinished(int exitCode, QProcess::ExitStatus status);
-    void onDaemonError(QProcess::ProcessError error);
     void onRestartTimer();
 
 private:
     void readStatsJson();
     void readDoneJson();
-    void updateFromJson(const QJsonObject &obj);
     void cleanupFiles();
     void writeConf();  // réécrit gpsd.conf (beep + positioning)
     bool launchDaemon();  // (re)lance le processus utitibike-gpsd
@@ -131,7 +125,6 @@ private:
 
     QTimer m_pollTimer;       // 5 s — lit recording.json
     QTimer m_restartTimer;    // 2 s (single shot) — relance après crash
-    QProcess *m_daemon = nullptr;  // processus lance (peut etre mort apres fermeture app)
     QString m_pidFile;             // v0.99.1: gpsd.pid ecrit par le daemon survivant
     int m_restartAttempts = 0;     // cap à 5 pour éviter une boucle infinie
     bool m_stopRequested = false;  // vrai quand l'utilisateur demande l'arrêt
@@ -151,7 +144,6 @@ private:
     bool m_writeError = false;
     bool m_awaitManualStart = false;
     bool m_beepEnabled = true;
-    QString m_positioningMode = QStringLiteral("auto");
     QString m_stopReason = QStringLiteral("user");
     QString m_startTime;
     QString m_lastGpxPath;

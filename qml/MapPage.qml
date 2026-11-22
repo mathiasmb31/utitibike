@@ -484,8 +484,6 @@ Page {
             }
         }
         function onRouteReady(points, distanceM, ascentM) {
-            console.log("[history] onRouteReady:", points.length, "points,",
-                        "loadingFromHistory=", brouter.loadingFromHistory)
             page.routePoints = points
             page.routeDistance = distanceM
             page.routeAscent = ascentM
@@ -2664,7 +2662,7 @@ Page {
         }
     }
 
-    // Tracé enregistré : ajout incrémental via pointAdded (O(1) par point GPS),
+    // Tracé enregistré : lu depuis le .part écrit par le daemon (JSONL),
     // v0.99.1: TRACE LIVE pendant l'enregistrement. Le daemon ecrit son
     // .part (JSONL) toutes les 10 s — on le relit toutes les 5 s via l'API
     // C++ dediee, et on l'efface du graphe quand l'enregistrement s'arrete.

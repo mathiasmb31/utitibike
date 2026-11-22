@@ -10,13 +10,7 @@ QtObject {
         var d = digits === undefined ? 1 : digits
         return Number(value).toLocaleString(Qt.locale(), 'f', d)
     }
-    function integer(value) {
-        return Number(value).toLocaleString(Qt.locale(), 'f', 0)
-    }
     function date(value) {
         return Qt.formatDate(new Date(value), Qt.DefaultLocaleShortDate)
-    }
-    function dateTime(value) {
-        return Qt.formatDateTime(new Date(value), "dd/MM HH:mm")
     }
 }

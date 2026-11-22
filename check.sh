@@ -11,18 +11,18 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
   exit 0
 fi
 
-echo "== 1/6 bash -n des scripts"
+echo "== 1/7 bash -n des scripts"
 for s in *.sh githooks/*; do
   [ -f "$s" ] && bash -n "$s" && echo "  OK $s"
 done
 
-echo "== 2/6 syntaxe C++/QML (presence des fichiers)"
+echo "== 2/7 syntaxe C++/QML (presence des fichiers)"
 for f in CMakeLists.txt manifest.json; do
   [ -f "$f" ] && echo "  OK $f" || { echo "  MANQUANT $f"; exit 1; }
 done
 python3 -c "import json; m=json.load(open('manifest.json')); print('  OK manifest', m['name'], m['version'])"
 
-echo "== 3/6 coherence version (CMake <-> manifest)"
+echo "== 3/7 coherence version (CMake <-> manifest)"
 CV=$(grep -oE 'project\(utitibike VERSION [^ )]+' CMakeLists.txt | awk '{print $3}')
 MV=$(python3 -c "import json;print(json.load(open('manifest.json'))['version'])")
 [ "$CV" = "$MV" ] && echo "  OK $CV" || { echo "  ERREUR CMake=$CV manifest=$MV"; exit 1; }

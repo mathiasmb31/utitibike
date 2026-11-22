@@ -335,7 +335,6 @@ void GpsDaemon::onPositionUpdated(const QGeoPositionInfo &info)
             } else if (m_ascentRefAlt - altEff >= kAltNoiseM) {
                 m_ascentRefAlt = altEff;  // descente : on repart de la bas
             }
-            m_lastAltEff = altEff;
         }
     }
 
@@ -538,7 +537,6 @@ bool GpsDaemon::loadPartFile()
     m_lastTime = lastTime;
     // D+ : on repart de la dernière altitude connue du tracé repris
     if (hasAlt) {
-        m_lastAltEff = lastAlt;
         m_hasAltEff = true;
     }
     m_lastMoveMs = elapsedMs();
@@ -864,12 +862,10 @@ void GpsDaemon::onControlTick()
         if (cf.open(QIODevice::ReadOnly)) {
             const QList<QByteArray> parts = cf.readAll().simplified().split(' ');
             cf.close();
-            m_parentPid = parts.value(0).toInt();
             if (parts.size() > 1)
                 m_sessionId = QString::fromLatin1(parts.at(1));
         }
-        qWarning() << "[gpsd] parent PID from control file:" << m_parentPid
-                   << "session" << m_sessionId;
+        qWarning() << "[gpsd] recording session" << m_sessionId;
 
         m_recording = true;
         m_distance = 0.0;
@@ -892,7 +888,6 @@ void GpsDaemon::onControlTick()
         m_altWinN = 0;
         m_hasAltEff = false;
         m_ascentRefAlt = 0.0;
-        m_lastAltEff = 0.0;
         m_partWritten = 0;
         m_awaitManualStart = false;
         m_alarmPlaying = false;
@@ -1188,9 +1183,8 @@ void GpsDaemon::cleanup()
     else if (m_stopReason == QLatin1String("maxduration"))
         sendNotification(tr("Durée max (12 h) atteinte — enregistrement arrêté, parcours sauvegardé"));
 
-    // v0.99.1: NE PLUS SIGKILL/SIGTERM l'app ici. L'app n'installe aucun
-    // handler SIGTERM : le tuer empechait aboutToQuit ET le QProcess::finished
-    // de s'executer -> le done n'etait jamais importe dans l'historique.
-    // Le signal finished du QProcess suffit (DaemonController::onDaemonFinished).
+    // v1.0: NE PLUS SIGKILL/SIGTERM l'app ici. Le daemon détaché n'a pas de
+    // QProcess parent : c'est le polling de recording.done côté app (5 s)
+    // qui importe le tracé final dans l'historique.
     QCoreApplication::quit();
 }

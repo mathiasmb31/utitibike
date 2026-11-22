@@ -41,14 +41,7 @@ DaemonController::DaemonController(QObject *parent)
         const QByteArray content = cf.readAll();
         cf.close();
         m_beepEnabled = !content.contains("beep=0");
-        const QList<QByteArray> lines = content.split('\n');
-        for (const QByteArray &line : lines) {
-            if (line.startsWith("positioning="))
-                m_positioningMode = QString::fromLatin1(line.mid(12).trimmed());
-        }
     }
-    // v1.0: un seul mode utile sur UT — migration des anciennes valeurs.
-    m_positioningMode = QStringLiteral("auto");
 
     // Poll toutes les 5 s pour lire recording.json (moins de réveils CPU
     // côté app pendant l'enregistrement)
@@ -159,24 +152,15 @@ void DaemonController::stopRecording()
     // Supprime le fichier de contrôle = signal d'arrêt pour le daemon
     QFile::remove(m_controlFile);
 
-    // Envoie aussi SIGTERM directement pour un arrêt immédiat
-    if (m_daemon && m_daemon->state() == QProcess::Running) {
-        m_daemon->terminate();  // SIGTERM
-        if (!m_daemon->waitForFinished(3000)) {
-            m_daemon->kill();   // SIGKILL en dernier recours
-            m_daemon->waitForFinished(1000);
-        }
-    } else {
-        // v0.99.1: apres un redemarrage de l'app, le daemon survivant n'a
-        // plus de QProcess parent — on le pilote via son gpsd.pid.
-        QFile pf(m_pidFile);
-        if (pf.open(QIODevice::ReadOnly)) {
-            const qint64 pid = pf.readAll().trimmed().toLongLong();
-            pf.close();
-            if (pid > 0 && ::kill(static_cast<pid_t>(pid), 0) == 0) {
-                qWarning() << "[daemonctl] SIGTERM to surviving daemon pid" << pid;
-                ::kill(static_cast<pid_t>(pid), SIGTERM);
-            }
+    // Envoie aussi SIGTERM directement au daemon survivant via son gpsd.pid
+    // (startDetached() ne laisse aucun QProcess parent à piloter).
+    QFile pf(m_pidFile);
+    if (pf.open(QIODevice::ReadOnly)) {
+        const qint64 pid = pf.readAll().trimmed().toLongLong();
+        pf.close();
+        if (pid > 0 && ::kill(static_cast<pid_t>(pid), 0) == 0) {
+            qWarning() << "[daemonctl] SIGTERM to surviving daemon pid" << pid;
+            ::kill(static_cast<pid_t>(pid), SIGTERM);
         }
     }
 
@@ -276,17 +260,14 @@ void DaemonController::onPollTimer()
     // Supervision : si le daemon est mort sans que l'arrêt ait été demandé
     // (ex. crash pendant que l'app était gelée par Lomiri), on le relance.
     // Le daemon reprendra le tracé depuis en-cours.part.
-    // v0.99.1: apres un redemarrage de l'app, m_daemon est null mais le
-    // daemon survivant tourne encore — on le detecte via gpsd.pid.
-    bool daemonAlive = m_daemon && m_daemon->state() == QProcess::Running;
-    if (!daemonAlive) {
-        QFile pf(m_pidFile);
-        if (pf.open(QIODevice::ReadOnly)) {
-            const qint64 pid = pf.readAll().trimmed().toLongLong();
-            pf.close();
-            if (pid > 0 && ::kill(static_cast<pid_t>(pid), 0) == 0)
-                daemonAlive = true;
-        }
+    // v1.0: le daemon est détaché — on le détecte uniquement via gpsd.pid.
+    bool daemonAlive = false;
+    QFile pf(m_pidFile);
+    if (pf.open(QIODevice::ReadOnly)) {
+        const qint64 pid = pf.readAll().trimmed().toLongLong();
+        pf.close();
+        if (pid > 0 && ::kill(static_cast<pid_t>(pid), 0) == 0)
+            daemonAlive = true;
     }
     if (m_recording && !m_stopRequested && QFile::exists(m_controlFile)
             && !daemonAlive
@@ -325,10 +306,8 @@ void DaemonController::onRestartTimer()
     if (!m_recording || m_stopRequested || !QFile::exists(m_controlFile))
         return;
     if (launchDaemon()) {
-        // v0.99.1: m_daemon est TOUJOURS nul depuis le passage a
-        // QProcess::startDetached() — m_daemon->processId() faisait crasher
-        // l'app precisement quand le daemon devait etre relance. Le pid est
-        // ecrit par le daemon dans gpsd.pid.
+        // v1.0: le pid du daemon relancé est lu dans gpsd.pid (il n'y a
+        // plus de QProcess parent depuis le passage à startDetached()).
         qint64 pid = 0;
         QFile pf(m_pidFile);
         if (pf.open(QIODevice::ReadOnly)) {
@@ -343,52 +322,6 @@ void DaemonController::onRestartTimer()
         m_restartTimer.start();
     } else {
         qWarning() << "[daemonctl] abandon des relances après 5 tentatives";
-    }
-}
-
-void DaemonController::onDaemonFinished(int exitCode, QProcess::ExitStatus status)
-{
-    qWarning() << "[daemonctl] daemon finished, exitCode=" << exitCode
-               << "status=" << status;
-
-    if (!m_recording)
-        return;
-
-    // Crash du daemon (arrêt non demandé) : relance avec reprise depuis
-    // en-cours.part. Cap à 5 tentatives pour éviter une boucle infinie.
-    if (!m_stopRequested && QFile::exists(m_controlFile)
-            && m_restartAttempts < 5 && !m_restartTimer.isActive()) {
-        ++m_restartAttempts;
-        qWarning() << "[daemonctl] daemon mort inattendue — relance, tentative"
-                   << m_restartAttempts;
-        emit daemonRestarted();
-        m_restartTimer.start();
-        return;
-    }
-
-    m_recording = false;
-    m_pollTimer.stop();
-    if (!QFile::exists(m_doneFile)) {
-        // Pas de recording.done (daemon mort sans sauver, relances épuisées) :
-        // on récupère le tracé partiel depuis en-cours.part tout de suite.
-        if (recoverOrphanPart())
-            qWarning() << "[daemonctl] partial track recovered from .part";
-    }
-    readDoneJson();
-    emit recordingChanged();
-    emit statsChanged();
-}
-
-void DaemonController::onDaemonError(QProcess::ProcessError error)
-{
-    // m_daemon reste nul avec startDetached() : ne pas le dereferencer ici
-    // non plus (slot aujourd'hui non connecte, mais garde-fou).
-    qWarning() << "[daemonctl] daemon error:" << error
-               << (m_daemon ? m_daemon->errorString() : QStringLiteral("detached"));
-    if (m_recording) {
-        m_recording = false;
-        m_pollTimer.stop();
-        emit recordingChanged();
     }
 }
 
@@ -444,7 +377,10 @@ void DaemonController::readDoneJson()
     m_lastGpxPath = obj.value(QStringLiteral("gpxPath")).toString();
     m_lastGpxContent = obj.value(QStringLiteral("gpxContent")).toString();
     m_startTime = obj.value(QStringLiteral("startTime")).toString();
-    m_stopReason = obj.value(QStringLiteral("stopReason")).toString("user");
+    // v1.0: toString(defaultValue) n'existe qu'en Qt 5.15+ ; la cible UT est
+    // Qt 5.12. Le garde-fou isEmpty() ci-dessous fournit déjà la valeur par
+    // défaut.
+    m_stopReason = obj.value(QStringLiteral("stopReason")).toString();
     if (m_stopReason.isEmpty())
         m_stopReason = QStringLiteral("user");
 
@@ -461,8 +397,8 @@ void DaemonController::readDoneJson()
                << m_distance << "m," << m_lastGpxPath
                << "gpxContent len=" << m_lastGpxContent.size();
 
-    // Fichier consommé : évite un second doneReceived (stopRecording et
-    // onDaemonFinished lisent tous deux le done) → doublon dans l'historique.
+    // Fichier consommé : évite un second import du done (m_doneHandled et
+    // la suppression du fichier protègent aussi contre le doublon).
     QFile::remove(m_doneFile);
 
     // Notification système (session bus) : « parcours sauvegardé » pour un
@@ -529,7 +465,6 @@ void DaemonController::writeConf()
     QSaveFile f(m_confFile);
     if (f.open(QIODevice::WriteOnly)) {
         f.write(QByteArray("beep=") + (m_beepEnabled ? "1" : "0") + "\n");
-        f.write(QByteArray("positioning=") + m_positioningMode.toLatin1() + "\n");
         f.commit();
     }
 }

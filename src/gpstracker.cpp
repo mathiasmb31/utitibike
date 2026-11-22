@@ -118,7 +118,6 @@ bool GpsTracker::ensureSource()
             qWarning() << "GpsTracker error:" << static_cast<int>(err);
             emit statusChanged();
         });
-        emit availableChanged();
     }
     return true;
 }
@@ -126,7 +125,7 @@ bool GpsTracker::ensureSource()
 void GpsTracker::warmUp()
 {
     // v1.0: source créée + dernière position connue, SANS startUpdates() —
-    // zéro coût batterie. Appelé 2 s après le lancement de l'app.
+    // zéro coût batterie. Appelé au lancement de l'app (Component.onCompleted).
     ensureSource();
 }
 

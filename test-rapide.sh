@@ -15,8 +15,7 @@ PROC="utitibike"
 echo "=== Version installée ==="
 adb -s $DEV shell "click info $APPID | grep version" 2>/dev/null || echo "adb non connecté"
 
-echo "=== Kill vieux process ==="
-echo "=== Zombies avant kill ==="
+echo "=== Zombies / process avant kill ==="
 adb -s $DEV shell "ps -eo pid,stat,comm | awk '\$2 ~ /Z/ {z++} END {print \"zombies: \" (z+0)}'; echo \"process avant kill: \$(ps aux | grep $PROC | grep -v grep | wc -l)\""
 
 # v0.99.1: $p et $(...) doivent etre evalues sur le DEVICE, pas par le

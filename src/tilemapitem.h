@@ -61,9 +61,6 @@ public:
     // pour être testée unitairement.
     static QPainterPath visiblePath(const QVariantList &points, double ox, double oy,
                                     double world, double w, double h, double margin = 32.0);
-    // Ajoute un point au tracé enregistré (incrémental, O(1)) : évite de
-    // re-binder la liste complète à chaque fix GPS (serait O(n) par point).
-    Q_INVOKABLE void appendTrackPoint(const QVariantMap &p);
 
 signals:
     void centerLatChanged();

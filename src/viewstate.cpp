@@ -26,7 +26,6 @@ ViewState::ViewState(QObject *parent)
         o.insert(QStringLiteral("centerLon"), m_lon);
         o.insert(QStringLiteral("zoom"), m_zoom);
         o.insert(QStringLiteral("themeMode"), m_themeMode);
-        o.insert(QStringLiteral("positioningMode"), m_positioningMode);
         o.insert(QStringLiteral("avoidUnpaved"), m_avoidUnpaved);
         o.insert(QStringLiteral("transportMode"), m_transportMode);
         o.insert(QStringLiteral("userWeightKg"), m_userWeightKg);
@@ -133,12 +132,6 @@ void ViewState::load()
         const QString v = theme.toString();
         m_themeMode = (v == QLatin1String("dark") || v == QLatin1String("light"))
                       ? v : QStringLiteral("auto");
-    }
-    const QJsonValue pos = o.value(QStringLiteral("positioningMode"));
-    if (pos.isString()) {
-        const QString v = pos.toString();
-        Q_UNUSED(v)
-        m_positioningMode = QStringLiteral("auto");  // v1.0: migration des anciens réglages
     }
     const QJsonValue au = o.value(QStringLiteral("avoidUnpaved"));
     if (au.isBool())

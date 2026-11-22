@@ -109,7 +109,7 @@ $FOOTER"
     ;;
 
   *)
-    echo "Commandes: commit|push|pr|newfix|status"
+    echo "Commandes: commit|push|pr|newfix|status|livraison"
     exit 1
     ;;
 esac

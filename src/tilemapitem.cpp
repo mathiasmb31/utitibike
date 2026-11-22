@@ -247,12 +247,6 @@ void TileMapItem::setTrackPoints(const QVariantList &t)
     update();
 }
 
-void TileMapItem::appendTrackPoint(const QVariantMap &p)
-{
-    m_trackPoints.append(p);
-    emit trackPointsChanged();
-    update();
-}
 
 void TileMapItem::setFavoritePoints(const QVariantList &f)
 {

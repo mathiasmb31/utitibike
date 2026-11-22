@@ -126,7 +126,6 @@ private:
     QSoundEffect m_alarm;       // sonnerie 5 s d'arrêt batterie (20 %)
 
     bool m_recording = false;
-    int m_parentPid = 0;       // PID de l'app QML (lu depuis recording.control)
     QVariantList m_points;
     double m_distance = 0.0;
     double m_ascent = 0.0;
@@ -161,7 +160,6 @@ private:
     int m_rejected = 0;        // points rejetés (précision > kMaxAccuracyM)
     double m_altWin[3] = {0.0, 0.0, 0.0};  // fenêtre glissante 3 altitudes (lissage D+)
     int m_altWinN = 0;
-    double m_lastAltEff = 0.0;
     // v0.99.1: reference D+ avec hysteresis 5 m — le bruit d'altitude GPS
     // (mediane sur 3 fixes a 3 Hz = 1 seconde seulement) gonflait le D+
     // et classait « Sportif » un parcours plat.

@@ -166,7 +166,7 @@ Page {
                             id: switchBeep
                             height: units.gu(6)
                             checked: daemonController.beepEnabled
-                            onCheckedChanged: daemonController.setBeepEnabled(checked)
+                            onCheckedChanged: daemonController.beepEnabled = checked
                         }
                     }
                 }
