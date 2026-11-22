@@ -3,6 +3,7 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
+#include <QDateTime>
 
 #include "routehistory.h"
 
@@ -54,6 +55,11 @@ void TstProfile::profileFromGpx()
     QCOMPARE(pts.at(3).toMap().value("ele").toDouble(), 120.0);
     QCOMPARE(pts.at(4).toMap().value("ele").toDouble(), 115.0);
     QCOMPARE(pts.at(2).toMap().value("lat").toDouble(), 43.6020);
+    // v0.99.1: horodatage extrait pour la vitesse moyenne du profil
+    const qint64 t1 = pts.at(1).toMap().value("t").toLongLong();
+    QVERIFY(t1 > 0);
+    const qint64 t0 = pts.at(0).toMap().value("t").toLongLong();
+    QCOMPARE(t1 - t0, 5000LL);
 }
 
 // Vrai GPX enregistré sur le téléphone (204 trkpt, ele 197.3–208.4)

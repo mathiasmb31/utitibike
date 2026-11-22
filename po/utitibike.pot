@@ -479,3 +479,6 @@ msgstr "Tile refresh started"
 
 msgid "Rafraîchir les tuiles visibles"
 msgstr "Refresh visible tiles"
+
+msgid "Vitesse moy. %1 km/h"
+msgstr "Avg. speed %1 km/h"

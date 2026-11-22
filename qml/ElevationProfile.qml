@@ -15,6 +15,14 @@ Item {
     property real distanceM: 0   // distance totale (pour l'échelle X)
     property real minEle: 0
     property real maxEle: 0
+    // v0.99.1: vitesse (GPX horodaté) — courbe verte au-dessus de la
+    // moyenne, ambre en dessous. hasSpeed=false pour les tracés BRouter.
+    property bool hasSpeed: false
+    property real avgSpeedKmh: 0
+    function speedAt(i) {
+        return (canvas.speeds && i >= 0 && i < canvas.speeds.length)
+               ? canvas.speeds[i] : -1
+    }
     // v0.99.1: scrubbing — index du point sous le doigt (-1 = aucun).
     property int scrubIndex: -1
     onScrubIndexChanged: canvas.requestPaint()
@@ -44,14 +52,20 @@ Item {
             root.distanceM = 0
             root.minEle = 0
             root.maxEle = 0
+            root.hasSpeed = false
+            root.avgSpeedKmh = 0
+            canvas.speeds = []
+            canvas.hasSpeed = false
             canvas.requestPaint()
             return
         }
-        // Distance cumulée et min/max altitude
+        // Distance cumulée, min/max altitude et vitesse par segment
         var cum = [0]
+        var speeds = [-1]
         var minE = Infinity
         var maxE = -Infinity
         var hasEle = false
+        var timeS = 0
         for (var i = 0; i < points.length; i++) {
             var p = points[i]
             if (p.ele !== undefined && p.ele !== null) {
@@ -61,7 +75,21 @@ Item {
             }
             if (i > 0) {
                 var prev = points[i - 1]
-                cum.push(cum[i - 1] + GeoUtils.haversine(prev.lat, prev.lon, p.lat, p.lon))
+                var dd = GeoUtils.haversine(prev.lat, prev.lon, p.lat, p.lon)
+                cum.push(cum[i - 1] + dd)
+                var v = -1
+                if (typeof p.t === "number" && typeof prev.t === "number") {
+                    var dt = (p.t - prev.t) / 1000
+                    if (dt > 0.1 && dd > 0) {
+                        v = dd / dt * 3.6
+                        // GPS 3 Hz : lissage leger pour eviter des pics
+                        // de vitesse aberrants (200 km/h) sur la courbe.
+                        var pv = speeds[i - 1]
+                        if (pv > 0) v = 0.7 * v + 0.3 * pv
+                        timeS += dt
+                    }
+                }
+                speeds.push(v)
             }
         }
         root.distanceM = cum[cum.length - 1]
@@ -72,8 +100,12 @@ Item {
             root.minEle = 0
             root.maxEle = 0
         }
+        root.hasSpeed = timeS > 0 && root.distanceM > 0
+        root.avgSpeedKmh = root.hasSpeed ? root.distanceM / timeS * 3.6 : 0
         canvas.distances = cum
         canvas.hasEle = hasEle
+        canvas.speeds = speeds
+        canvas.hasSpeed = root.hasSpeed
         canvas.requestPaint()
     }
 
@@ -83,7 +115,9 @@ Item {
         id: canvas
         anchors.fill: parent
         property var distances: []
+        property var speeds: []
         property bool hasEle: false
+        property bool hasSpeed: false
 
         onPaint: {
             var ctx = getContext("2d")
@@ -153,12 +187,28 @@ Item {
                 ctx.fillStyle = grad
                 ctx.fill()
 
-                // Ligne de contour : ambre (accentAmber #f7931e)
-                ctx.beginPath()
-                courbePath(false)
-                ctx.strokeStyle = "#f7931e"
-                ctx.lineWidth = 2
-                ctx.stroke()
+                if (canvas.hasSpeed && root.avgSpeedKmh > 0) {
+                    // v0.99.1: un trait par segment — vert au-dessus de la
+                    // vitesse moyenne, ambre en dessous (litteraux = couleurs
+                    // du theme : accentGreen / accentAmber).
+                    ctx.lineWidth = 2.5
+                    for (var s = 1; s < xs.length; s++) {
+                        var sp = canvas.speeds[s]
+                        ctx.beginPath()
+                        ctx.moveTo(xs[s - 1], ys[s - 1])
+                        ctx.lineTo(xs[s], ys[s])
+                        ctx.strokeStyle = (sp >= 0 && sp >= root.avgSpeedKmh)
+                                          ? "#4caf50" : "#f7931e"
+                        ctx.stroke()
+                    }
+                } else {
+                    // Pas d'horodatage (itineraire BRouter) : contour unique.
+                    ctx.beginPath()
+                    courbePath(false)
+                    ctx.strokeStyle = "#f7931e"
+                    ctx.lineWidth = 2
+                    ctx.stroke()
+                }
             } else {
                 // Pas d'altitude : ligne plate en pointillés au milieu
                 ctx.beginPath()
@@ -210,6 +260,19 @@ Item {
         }
     }
 
+    Label {
+        anchors {
+            right: parent.right
+            top: parent.top
+            topMargin: units.gu(0.2)
+            rightMargin: units.gu(1)
+        }
+        visible: root.hasSpeed
+        fontSize: "x-small"
+        color: Theme.textPrimary
+        text: i18n.tr("Vitesse moy. %1 km/h").arg(Format.num(root.avgSpeedKmh))
+    }
+
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
@@ -230,7 +293,11 @@ Item {
                && root.scrubIndex < root.points.length
                && root.points[root.scrubIndex] !== undefined)
               ? Format.num(canvas.distances[root.scrubIndex] / 1000)
-                + " km · " + Math.round(root.points[root.scrubIndex].ele) + " m"
+                + " km"
+                + (root.points[root.scrubIndex].ele !== undefined
+                   ? " · " + Math.round(root.points[root.scrubIndex].ele) + " m" : "")
+                + (root.speedAt(root.scrubIndex) >= 0
+                   ? " · " + Format.num(root.speedAt(root.scrubIndex)) + " km/h" : "")
               : ""
     }
     function xAtScreen(i) {

@@ -152,6 +152,7 @@ QVariantList RouteHistory::profileAt(int index) const
         return out;
     QXmlStreamReader r(gpx);
     double lat = 0.0, lon = 0.0, ele = 0.0;
+    qint64 timeMs = 0;
     bool inPt = false, hasEle = false;
     while (!r.atEnd()) {
         r.readNext();
@@ -162,9 +163,16 @@ QVariantList RouteHistory::profileAt(int index) const
                 inPt = true;
                 hasEle = false;
                 ele = 0.0;
+                timeMs = 0;
             } else if (inPt && r.name() == QLatin1String("ele")) {
                 ele = r.readElementText().toDouble();
                 hasEle = true;
+            } else if (inPt && r.name() == QLatin1String("time")) {
+                // v0.99.1: horodatage pour la vitesse moyenne et le profil
+                // colore par vitesse (les GPX enregistres ont <time>).
+                const QDateTime dt = QDateTime::fromString(r.readElementText(), Qt::ISODate);
+                if (dt.isValid())
+                    timeMs = dt.toMSecsSinceEpoch();
             }
         } else if (r.isEndElement() && r.name() == QLatin1String("trkpt")) {
             QVariantMap p;
@@ -172,6 +180,8 @@ QVariantList RouteHistory::profileAt(int index) const
             p.insert(QStringLiteral("lon"), lon);
             if (hasEle)
                 p.insert(QStringLiteral("ele"), ele);
+            if (timeMs > 0)
+                p.insert(QStringLiteral("t"), timeMs);
             out.append(p);
             inPt = false;
         }

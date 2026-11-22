@@ -353,6 +353,7 @@ void BrouterClient::parseGpx(const QString &gpxText)
                 continue;
             double ele = 0.0;
             bool eleOk = false;
+            qint64 timeMs = 0;
             while (!(xml.isEndElement() && xml.name() == QLatin1String("trkpt"))) {
                 xml.readNext();
                 if (xml.hasError())
@@ -360,6 +361,11 @@ void BrouterClient::parseGpx(const QString &gpxText)
                 if (xml.isStartElement() && xml.name() == QLatin1String("ele")) {
                     ele = xml.readElementText().toDouble();
                     eleOk = true;
+                } else if (xml.isStartElement() && xml.name() == QLatin1String("time")) {
+                    // GPX enregistres : horodatage pour le profil vitesse.
+                    const QDateTime dt = QDateTime::fromString(xml.readElementText(), Qt::ISODate);
+                    if (dt.isValid())
+                        timeMs = dt.toMSecsSinceEpoch();
                 }
             }
             if (xml.hasError()) {
@@ -373,6 +379,8 @@ void BrouterClient::parseGpx(const QString &gpxText)
             p.insert(QStringLiteral("lon"), lon);
             if (eleOk)
                 p.insert(QStringLiteral("ele"), ele);
+            if (timeMs > 0)
+                p.insert(QStringLiteral("t"), timeMs);
             points.append(p);
             if (havePrev)
                 dist += haversine(prevLat, prevLon, lat, lon);
