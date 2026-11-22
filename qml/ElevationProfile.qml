@@ -18,6 +18,9 @@ Item {
     // v0.99.1: vitesse (GPX horodaté) — courbe verte au-dessus de la
     // moyenne, ambre en dessous. hasSpeed=false pour les tracés BRouter.
     property bool hasSpeed: false
+    // Fenêtre de moyennage glissante (secondes) — le nombre de points dans
+    // la fenêtre s'adapte à la fréquence réelle du GPS.
+    property int speedWindowSec: 30
     property real avgSpeedKmh: 0
     property real ascentM: 0
     property real descentM: 0
@@ -65,9 +68,12 @@ Item {
             canvas.requestPaint()
             return
         }
-        // Distance cumulée, min/max altitude et vitesse par segment
+        // Distance cumulée + horodatages : la vitesse est calculée ensuite
+        // sur une FENÊTRE DE TEMPS glissante (pas un nombre de points), pour
+        // que le résultat ne dépende pas de la fréquence du GPS.
         var cum = [0]
-        var speeds = [-1]
+        var times = []
+        var speeds = []
         var minE = Infinity
         var maxE = -Infinity
         var hasEle = false
@@ -98,20 +104,32 @@ Item {
                 cum.push(cum[i - 1] + dd)
                 if (dd > 0.5 && p.ele !== undefined && prev.ele !== undefined)
                     maxSlope = Math.max(maxSlope, Math.abs(p.ele - prev.ele) / dd * 100)
-                var v = -1
                 if (typeof p.t === "number" && typeof prev.t === "number") {
                     var dt = (p.t - prev.t) / 1000
-                    if (dt > 0.1 && dd > 0) {
-                        v = dd / dt * 3.6
-                        // GPS 3 Hz : lissage leger pour eviter des pics
-                        // de vitesse aberrants (200 km/h) sur la courbe.
-                        var pv = speeds[i - 1]
-                        if (pv > 0) v = 0.85 * v + 0.15 * pv
+                    if (dt > 0.1 && dd > 0)
                         timeS += dt
-                    }
                 }
-                speeds.push(v)
             }
+            times.push(typeof p.t === "number" ? p.t : -1)
+        }
+        // Moyenne glissante sur speedWindowSec secondes (30 s par défaut).
+        // Deux pointeurs : la fenêtre contient autant de points que nécessaire
+        // (3 Hz, 1 Hz ou irrégulier — le temps reste la référence).
+        var windowMs = root.speedWindowSec * 1000
+        var j = 0
+        for (var k = 0; k < points.length; k++) {
+            var v = -1
+            if (times[k] > 0) {
+                if (k > 0 && times[k] < times[k - 1]) j = k - 1  // horloge non monotone
+                while (j < k && times[j] < times[k] - windowMs) j++
+                if (j < k && times[k] > times[j]) {
+                    var ddw = cum[k] - cum[j]
+                    var dtw = (times[k] - times[j]) / 1000
+                    if (ddw > 0 && dtw > 0)
+                        v = ddw / dtw * 3.6
+                }
+            }
+            speeds.push(v)
         }
         root.distanceM = cum[cum.length - 1]
         root.ascentM = ascent
@@ -173,14 +191,17 @@ Item {
             // v0.99.1: 3 niveaux contrastés (vert rapide / ambre moyen /
             // rouge lent) pour que les écarts de vitesse se VOIENT sur un
             // profil de quelques dizaines de pixels de haut.
-            function speedColor(v, alpha) {
-                if (!(v >= 0) || !(root.avgSpeedKmh > 0))
-                    return "rgba(255,107,53," + alpha + ")"        // orange par défaut
-                if (v >= root.avgSpeedKmh * 1.15)
-                    return "rgba(76,175,80," + alpha + ")"         // vert
-                if (v < root.avgSpeedKmh * 0.85)
-                    return "rgba(229,57,53," + alpha + ")"         // rouge
-                return "rgba(247,147,30," + alpha + ")"            // ambre
+            function colorByLevel(lv, alpha) {
+                if (lv === 0) return "rgba(76,175,80," + alpha + ")"    // vert
+                if (lv === 2) return "rgba(229,57,53," + alpha + ")"    // rouge
+                if (lv === 1) return "rgba(247,147,30," + alpha + ")"   // ambre
+                return "rgba(255,107,53," + alpha + ")"                // orange
+            }
+            function speedLevel(v) {
+                if (!(v >= 0) || !(root.avgSpeedKmh > 0)) return 3
+                if (v >= root.avgSpeedKmh * 1.15) return 0
+                if (v < root.avgSpeedKmh * 0.85) return 2
+                return 1
             }
 
             if (hasEle) {
@@ -190,7 +211,7 @@ Item {
                 var xs = []
                 var ys = []
                 var ss = []
-                var step = Math.max(1, Math.floor(root.points.length / 700))
+                var step = Math.max(1, Math.floor(root.points.length / 400))
                 for (var i = 0; i < root.points.length; i += step) {
                     var p = root.points[i]
                     var ele = (p.ele !== undefined && p.ele !== null) ? p.ele : eleMin
@@ -226,28 +247,33 @@ Item {
                 }
 
                 if (canvas.hasSpeed && root.avgSpeedKmh > 0) {
-                    // v0.99.1: TOUTE l'aire sous la courbe est coloree par
-                    // vitesse (bandes verticales), pas seulement un trait
-                    // fin — sinon les ecarts etaient invisibles a cette
-                    // echelle. Opacite 0.55 pour laisser lire les axes.
-                    for (var s = 1; s < xs.length; s++) {
-                        var sp = ss[s]
-                        ctx.beginPath()
-                        ctx.moveTo(xs[s - 1], padT + h)
-                        ctx.lineTo(xs[s - 1], ys[s - 1])
-                        ctx.lineTo(xs[s], ys[s])
-                        ctx.lineTo(xs[s], padT + h)
-                        ctx.closePath()
-                        ctx.fillStyle = speedColor(sp, 0.55)
-                        ctx.fill()
-                    }
+                    // v0.99.1: on regroupe les segments consecutifs de meme
+                    // niveau de vitesse en UN SEUL polygone — des bandes
+                    // larges et continues au lieu d'un motif de traits.
                     ctx.lineWidth = 3.5
-                    for (var t = 1; t < xs.length; t++) {
+                    var runStart = 1
+                    var runLevel = xs.length > 1 ? speedLevel(ss[1]) : 3
+                    for (var s = 2; s <= xs.length; s++) {
+                        var lv = (s < xs.length) ? speedLevel(ss[s]) : -1
+                        if (lv === runLevel)
+                            continue
                         ctx.beginPath()
-                        ctx.moveTo(xs[t - 1], ys[t - 1])
-                        ctx.lineTo(xs[t], ys[t])
-                        ctx.strokeStyle = speedColor(ss[t], 1.0)
+                        ctx.moveTo(xs[runStart - 1], padT + h)
+                        for (var q = runStart - 1; q < s; q++)
+                            ctx.lineTo(xs[q], ys[q])
+                        ctx.lineTo(xs[s - 1], padT + h)
+                        ctx.closePath()
+                        ctx.fillStyle = colorByLevel(runLevel, 0.6)
+                        ctx.fill()
+                        ctx.beginPath()
+                        for (var r = runStart - 1; r < s; r++) {
+                            if (r === runStart - 1) ctx.moveTo(xs[r], ys[r])
+                            else ctx.lineTo(xs[r], ys[r])
+                        }
+                        ctx.strokeStyle = colorByLevel(runLevel, 1.0)
                         ctx.stroke()
+                        runStart = s
+                        runLevel = lv
                     }
                 } else {
                     // Remplissage : dégradé vertical orange (accentOrange) → transparent
