@@ -24,13 +24,24 @@ Item {
     // autoSpeedWindow à false permet de fixer speedWindowSec manuellement.
     property bool autoSpeedWindow: true
     property int speedWindowSec: 30
+    // v0.99.1: comparer la vitesse à la moyenne des segments de même pente
+    // (sinon toute montée est rouge, même bien négociée).
+    property bool gradeAdjusted: true
+    onGradeAdjustedChanged: {
+        if (canvas.adjustedSpeeds && canvas.adjustedSpeeds.length) {
+            canvas.speeds = root.gradeAdjusted ? canvas.adjustedSpeeds : canvas.rawSpeeds
+            canvas.requestPaint()
+        }
+    }
     property real avgSpeedKmh: 0
     property real ascentM: 0
     property real descentM: 0
     property real maxSlopePct: 0
     function speedAt(i) {
-        return (canvas.speeds && i >= 0 && i < canvas.speeds.length)
-               ? canvas.speeds[i] : -1
+        // Infobulle : vitesse REELLE, même si la couleur est normalisée.
+        var src = canvas.rawSpeeds && canvas.rawSpeeds.length
+                  ? canvas.rawSpeeds : canvas.speeds
+        return (src && i >= 0 && i < src.length) ? src[i] : -1
     }
     // v0.99.1: scrubbing — index du point sous le doigt (-1 = aucun).
     property int scrubIndex: -1
@@ -67,6 +78,8 @@ Item {
             root.descentM = 0
             root.maxSlopePct = 0
             canvas.speeds = []
+            canvas.rawSpeeds = []
+            canvas.adjustedSpeeds = []
             canvas.hasSpeed = false
             canvas.requestPaint()
             return
@@ -132,19 +145,27 @@ Item {
         // (3 Hz, 1 Hz ou irrégulier — le temps reste la référence).
         var windowMs = root.speedWindowSec * 1000
         var j = 0
+        var grades = []
         for (var k = 0; k < points.length; k++) {
             var v = -1
+            var ddw = 0
+            var gr = null
             if (times[k] > 0) {
                 if (k > 0 && times[k] < times[k - 1]) j = k - 1  // horloge non monotone
                 while (j < k && times[j] < times[k] - windowMs) j++
                 if (j < k && times[k] > times[j]) {
-                    var ddw = cum[k] - cum[j]
+                    ddw = cum[k] - cum[j]
                     var dtw = (times[k] - times[j]) / 1000
-                    if (ddw > 0 && dtw > 0)
+                    if (ddw > 0 && dtw > 0) {
                         v = ddw / dtw * 3.6
+                        var ek = points[k].ele, ej = points[j].ele
+                        if (ek !== undefined && ej !== undefined)
+                            gr = (ek - ej) / ddw * 100   // pente % sur la fenêtre
+                    }
                 }
             }
             speeds.push(v)
+            grades.push(gr)
         }
         root.distanceM = cum[cum.length - 1]
         root.ascentM = ascent
@@ -158,10 +179,49 @@ Item {
             root.maxEle = 0
         }
         root.hasSpeed = timeS > 0 && root.distanceM > 0
-        root.avgSpeedKmh = root.hasSpeed ? root.distanceM / timeS * 3.6 : 0
+        var globalAvg = root.hasSpeed ? root.distanceM / timeS * 3.6 : 0
+        root.avgSpeedKmh = globalAvg
+
+        // v0.99.1: normalisation par la pente. Une montée ralentit
+        // physiquement : la comparer a la moyenne GLOBALE la peint
+        // systematiquement en rouge. On calcule la vitesse moyenne de chaque
+        // palier de pente, puis on compare chaque segment a son palier.
+        function slopeBucket(g) {
+            if (g < -2) return 0
+            if (g < 2)  return 1
+            if (g < 5)  return 2
+            if (g < 8)  return 3
+            if (g < 12) return 4
+            return 5
+        }
+        var sums = [0, 0, 0, 0, 0, 0]
+        var counts = [0, 0, 0, 0, 0, 0]
+        for (var n = 0; n < speeds.length; n++) {
+            if (speeds[n] > 0 && grades[n] !== null) {
+                var bi = slopeBucket(grades[n])
+                sums[bi] += speeds[n]
+                counts[bi]++
+            }
+        }
+        var avgs = []
+        for (var b = 0; b < 6; b++)
+            avgs[b] = counts[b] > 0 ? sums[b] / counts[b] : globalAvg
+        var adjusted = []
+        for (var n2 = 0; n2 < speeds.length; n2++) {
+            var a = speeds[n2]
+            if (a > 0 && grades[n2] !== null) {
+                var ref = avgs[slopeBucket(grades[n2])]
+                if (ref > 0)
+                    a = a * globalAvg / ref
+            }
+            if (globalAvg > 0 && a > globalAvg * 3) a = globalAvg * 3
+            adjusted.push(a)
+        }
         canvas.distances = cum
         canvas.hasEle = hasEle
-        canvas.speeds = speeds
+        canvas.rawSpeeds = speeds          // valeurs réelles pour l'infobulle
+        canvas.adjustedSpeeds = adjusted
+        canvas.speeds = root.gradeAdjusted ? adjusted : speeds
         canvas.hasSpeed = root.hasSpeed
         canvas.requestPaint()
     }
@@ -173,6 +233,8 @@ Item {
         anchors.fill: parent
         property var distances: []
         property var speeds: []
+        property var rawSpeeds: []
+        property var adjustedSpeeds: []
         property bool hasEle: false
         property bool hasSpeed: false
 
@@ -359,6 +421,35 @@ Item {
         }
     }
 
+    // v0.99.1: bascule « Pente » — compare vitesse brute / normalisée par
+    // la pente sans rebuild (utile pour valider le rendu sur le device).
+    Rectangle {
+        anchors {
+            left: parent.left
+            top: parent.top
+            leftMargin: units.gu(0.2)
+            topMargin: units.gu(0.2)
+        }
+        width: units.gu(4)
+        height: units.gu(2.4)
+        radius: units.gu(0.4)
+        visible: root.hasSpeed
+        color: root.gradeAdjusted ? Theme.accentGreen : Theme.bgSection
+        border.color: Theme.textSecondary
+        border.width: 1
+        Label {
+            anchors.centerIn: parent
+            text: i18n.tr("Pente")
+            fontSize: "x-small"
+            font.bold: true
+            color: root.gradeAdjusted ? Theme.textOnAccent : Theme.textSecondary
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: root.gradeAdjusted = !root.gradeAdjusted
+        }
+    }
+
     Label {
         anchors {
             right: parent.right
@@ -389,7 +480,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
         }
         Label {
-            text: i18n.tr("> moyenne")
+            text: root.gradeAdjusted ? i18n.tr("> moy. à pente égale")
+                                     : i18n.tr("> moyenne")
             fontSize: "x-small"
             color: Theme.textSecondary
             anchors.verticalCenter: parent.verticalCenter
@@ -402,7 +494,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
         }
         Label {
-            text: i18n.tr("< moyenne")
+            text: root.gradeAdjusted ? i18n.tr("< moy. à pente égale")
+                                     : i18n.tr("< moyenne")
             fontSize: "x-small"
             color: Theme.textSecondary
             anchors.verticalCenter: parent.verticalCenter

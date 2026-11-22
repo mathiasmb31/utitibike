@@ -554,3 +554,12 @@ msgstr "Above average"
 
 msgid "< moyenne"
 msgstr "Below average"
+
+msgid "> moy. à pente égale"
+msgstr "> avg at same slope"
+
+msgid "< moy. à pente égale"
+msgstr "< avg at same slope"
+
+msgid "Pente"
+msgstr "Slope"
