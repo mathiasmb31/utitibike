@@ -20,6 +20,21 @@ jobs:
       - name: Validate manifest.json (JSON valide)
         run: python3 -c "import json; m=json.load(open('manifest.json')); print('OK:', m['name'], m['version'])"
 
+      - name: QML syntax (qmllint)
+        run: |
+          sudo apt-get install -y -qq qttools5-dev-tools
+          qmllint $(find qml -name '*.qml' | sort)
+
+      - name: No stray CJK/Cyrillic characters (règle Mathias 2026-11-20)
+        run: |
+          if grep -rnP '[\x{4e00}-\x{9fff}\x{0400}-\x{04ff}]' . \
+              --include='*.qml' --include='*.cpp' --include='*.h' \
+              --include='*.md' --include='*.sh' \
+              --exclude-dir=.git --exclude-dir=build --exclude-dir=po; then
+            echo "ERREUR: caractère parasite CJK/Cyrillique"; exit 1
+          fi
+          echo "OK: aucun caractère parasite"
+
       - name: Check version coherence (CMake ↔ manifest ↔ manifest.in)
         run: |
           cmake_ver=$(grep -oP 'project\(utitibike VERSION \K[0-9.]+' CMakeLists.txt)

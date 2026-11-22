@@ -326,7 +326,17 @@ void DaemonController::onRestartTimer()
     if (!m_recording || m_stopRequested || !QFile::exists(m_controlFile))
         return;
     if (launchDaemon()) {
-        qWarning() << "[daemonctl] daemon relancé, pid=" << m_daemon->processId();
+        // v0.99.1: m_daemon est TOUJOURS nul depuis le passage a
+        // QProcess::startDetached() — m_daemon->processId() faisait crasher
+        // l'app precisement quand le daemon devait etre relance. Le pid est
+        // ecrit par le daemon dans gpsd.pid.
+        qint64 pid = 0;
+        QFile pf(m_pidFile);
+        if (pf.open(QIODevice::ReadOnly)) {
+            pid = pf.readAll().trimmed().toLongLong();
+            pf.close();
+        }
+        qWarning() << "[daemonctl] daemon relancé, pid=" << pid;
     } else if (m_restartAttempts < 5) {
         ++m_restartAttempts;
         qWarning() << "[daemonctl] relance échouée, nouvelle tentative"
@@ -372,7 +382,10 @@ void DaemonController::onDaemonFinished(int exitCode, QProcess::ExitStatus statu
 
 void DaemonController::onDaemonError(QProcess::ProcessError error)
 {
-    qWarning() << "[daemonctl] daemon error:" << error << m_daemon->errorString();
+    // m_daemon reste nul avec startDetached() : ne pas le dereferencer ici
+    // non plus (slot aujourd'hui non connecte, mais garde-fou).
+    qWarning() << "[daemonctl] daemon error:" << error
+               << (m_daemon ? m_daemon->errorString() : QStringLiteral("detached"));
     if (m_recording) {
         m_recording = false;
         m_pollTimer.stop();

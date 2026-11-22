@@ -83,6 +83,7 @@ Page {
                             haptics.vibrate(10)
                             viewState.positioningMode = value
                             gpsTracker.setPositioningMode(value)
+                            daemonController.positioningMode = value
                         }
                     }
                     Label { text: i18n.tr("Mode de déplacement"); fontSize: "small"; color: Theme.textPrimary }

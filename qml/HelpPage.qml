@@ -95,7 +95,7 @@ Page {
                             + "• Note votre position toutes les 5 secondes\n"
                             + "• Fait un bip toutes les 10 secondes\n"
                             + "• Continue même si vous éteignez l'écran\n"
-                            + "• S'arrête automatiquement si vous quittez l'application\n\n"
+                            + "• Continue même si vous quittez l'application\n\n"
                             + "Vous pouvez donc rouler longtemps sans vous soucier "
                             + "de la batterie. Le parcours est sauvegardé quand vous "
                             + "appuyez sur « Arrêter ».")
@@ -137,7 +137,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: "│ UT WheelTrek │────▶│  Daemon GPS          │"
+                        text: i18n.tr("│ UT WheelTrek │────▶│  Daemon GPS          │")
                     }
                     Label {
                         width: parent.width
@@ -146,7 +146,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: "│  (l'appli)   │     │  (en arrière-plan)   │"
+                        text: i18n.tr("│  (l'appli)   │     │  (en arrière-plan)   │")
                     }
                     Label {
                         width: parent.width
@@ -155,7 +155,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: "│              │     │                      │"
+                        text: i18n.tr("│              │     │                      │")
                     }
                     Label {
                         width: parent.width
@@ -164,7 +164,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: "│ Bouton       │     │ • note la position   │"
+                        text: i18n.tr("│ Bouton       │     │ • note la position   │")
                     }
                     Label {
                         width: parent.width
@@ -173,7 +173,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: "│ Enregistrer  │     │ • bip toutes les 10s │"
+                        text: i18n.tr("│ Enregistrer  │     │ • bip toutes les 10s │")
                     }
                     Label {
                         width: parent.width
@@ -182,7 +182,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: "│ Bouton       │     │ • sauvegarde le      │"
+                        text: i18n.tr("│ Bouton       │     │ • sauvegarde le      │")
                     }
                     Label {
                         width: parent.width
@@ -191,7 +191,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: "│ Arrêter      │     │ • s'arrête tout seul  │"
+                        text: i18n.tr("│ Arrêter      │     │ • s'arrête tout seul  │")
                     }
                     Label {
                         width: parent.width
@@ -200,7 +200,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: "└──────────────┘     └──────────────────────┘"
+                        text: i18n.tr("└──────────────┘     └──────────────────────┘")
                     }
                 }
             }
@@ -246,11 +246,11 @@ Page {
             // ── Sécurité ─────────────────────────────────────────
             HelpSection {
                 title: i18n.tr("Sécurité")
-                body: i18n.tr("Le daemon s'arrête automatiquement si :\n"
-                            + "• L'application plante ou est fermée\n"
-                            + "• Vous appuyez sur « Arrêter »\n"
-                            + "• Le téléphone redémarre\n\n"
-                            + "Il ne reste jamais bloqué en arrière-plan.")
+                body: i18n.tr("Le daemon continue d'enregistrer même si vous quittez "
+                            + "l'application ou si l'écran s'éteint.\n\n"
+                            + "Il s'arrête automatiquement si vous appuyez sur « Arrêter », "
+                            + "si la batterie descend à 20 %, après 1 h sans signal GPS "
+                            + "ou sans mouvement, ou si le téléphone redémarre.")
             }
 
             // ── Export ───────────────────────────────────────────

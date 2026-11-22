@@ -472,6 +472,10 @@ bool GpsDaemon::loadPartFile()
 
     QVariantList points;
     double distance = 0.0, ascent = 0.0;
+    // v0.99.1: même hystérésis 5 m que l'enregistrement direct — sinon le
+    // D+ d'un trajet repris après crash était très supérieur au D+ normal.
+    double eleRef = 0.0;
+    bool eleRefInit = false;
     bool hasLast = false;
     double lastLat = 0.0, lastLon = 0.0, lastAlt = 0.0;
     bool hasAlt = false;
@@ -495,8 +499,17 @@ bool GpsDaemon::loadPartFile()
             const double d = haversine(lastLat, lastLon, lat, lon);
             if (d <= 200.0) {
                 distance += d;
-                if (eleOk && hasAlt && ele > lastAlt)
-                    ascent += ele - lastAlt;
+            }
+        }
+        if (eleOk) {
+            if (!eleRefInit) {
+                eleRef = ele;
+                eleRefInit = true;
+            } else if (ele - eleRef >= 5.0) {
+                ascent += ele - eleRef;
+                eleRef = ele;
+            } else if (eleRef - ele >= 5.0) {
+                eleRef = ele;
             }
         }
         QVariantMap p;
@@ -1158,7 +1171,10 @@ void GpsDaemon::cleanup()
     m_beepTimer.stop();
     m_controlTimer.stop();
     m_safetyTimer.stop();
-    m_gps->stopUpdates();
+    // v0.99.1: si la recreateation de la source a echoue, m_gps est nul —
+    // arreter proprement au lieu de crasher a la fin de l'enregistrement.
+    if (m_gps)
+        m_gps->stopUpdates();
 
     // Sauvegarde finale
     const QString name = QStringLiteral("parcours-")

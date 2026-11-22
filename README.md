@@ -55,7 +55,7 @@ qml/
   AboutPage.qml     à propos
   ExportPage.qml    export GPX via le Content Hub
   ElevationProfile.qml  profil d'altitude (Canvas)
-po/                 catalogues gettext (QML) + Qt (C++), 10 langues
+po/                 catalogues gettext (QML) + Qt (C++), 14 langues
 ```
 
 ## Internationalisation

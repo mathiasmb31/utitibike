@@ -7,7 +7,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-  echo "Usage: ./check.sh   — syntaxe, tests C++ (ctest), confidentialite, i18n"
+  echo "Usage: ./check.sh   — syntaxe, coherence version, tests C++ (ctest), confidentialite, i18n, caracteres parasites"
   exit 0
 fi
 
@@ -27,22 +27,23 @@ CV=$(grep -oE 'project\(utitibike VERSION [^ )]+' CMakeLists.txt | awk '{print $
 MV=$(python3 -c "import json;print(json.load(open('manifest.json'))['version'])")
 [ "$CV" = "$MV" ] && echo "  OK $CV" || { echo "  ERREUR CMake=$CV manifest=$MV"; exit 1; }
 
-echo "== 4/6 tests C++ (ctest)"
-if [ -f build-host/CMakeCache.txt ]; then
-  # L'ancien cache peut pointer vers un chemin disparu (/mnt/five) : on
-  # n'ecrase rien, on avertit et on sacrifice ce controle si la reconfigure
-  # est impossible localement (la CI GitHub le fait, elle).
-  if (cd build-host && cmake .. >/dev/null 2>&1); then
-    (cd build-host && cmake --build . -j4 >/dev/null 2>&1)
-    (cd build-host && QT_QPA_PLATFORM=offscreen ctest --output-on-failure --timeout 60 2>&1 | tail -12)
-  else
-    echo "  ATTENTION: cache CMake local perime — tests non lances (CI GitHub les lance)"
-  fi
-else
-  echo "  build-host absent — cmake -DBUILD_TESTING=ON + build requis pour les tests"
+echo "== 4/7 tests C++ (ctest) — BLOQUANT"
+# v0.99.1: l'ancienne version affichait "check termine" avec un code 0 meme
+# quand aucun test n'avait tourne. Un check vert doit TOUJOURS signifier que
+# la suite C++ a ete executee.
+if [ ! -f build-host/CMakeCache.txt ]; then
+  echo "  ERREUR: build-host absent — lancer cmake -DBUILD_TESTING=ON + build"; exit 1
 fi
+if ! (cd build-host && cmake .. >/dev/null 2>&1); then
+  echo "  ERREUR: cache CMake local perime"; exit 1
+fi
+(cd build-host && cmake --build . -j4 >/dev/null 2>&1) || { echo "  ERREUR build des tests"; exit 1; }
+NT=$(cd build-host && ctest -N 2>/dev/null | grep -c 'Test #' || true)
+[ "$NT" -ge 6 ] || { echo "  ERREUR: seulement $NT test(s) declare(s)"; exit 1; }
+(cd build-host && QT_QPA_PLATFORM=offscreen ctest --output-on-failure --timeout 60 2>&1 | tail -12) \
+  || { echo "  ERREUR: ctest a echoue"; exit 1; }
 
-echo "== 5/6 confidentialite"
+echo "== 5/7 confidentialite"
 if git log --all --format='%ae %ce %B' | grep -qi 'brethous'; then
   echo "  ERREUR: identite proscrite dans l'historique"; exit 1
 else echo "  OK historique"; fi
@@ -52,9 +53,21 @@ if grep -ri 'brethous' --exclude-dir=.git --exclude-dir=build --exclude-dir=buil
   echo "  ERREUR: identite proscrite dans le working tree"; exit 1
 else echo "  OK working tree"; fi
 
-echo "== 6/6 i18n (chaines accentuees hors catalogue)"
+echo "== 6/7 i18n (chaines accentuees hors catalogue) — BLOQUANT"
 HITS=$(grep -rnP '[\x{00C0}-\x{00FF}]' --include='*.cpp' --include='*.qml' --include='*.h' \
-       src/ qml/ 2>/dev/null | grep -viE 'tr\(|qsTr\(|i18n|//|comment' | head -10 || true)
-if [ -n "$HITS" ]; then echo "  A VERIFIER (hors catalogue i18n):"; echo "$HITS"; else echo "  OK aucun"; fi
+       src/ qml/ 2>/dev/null | grep -viE 'tr\(|qsTr\(|i18n|//|comment|qWarning|qDebug|qInfo|qCritical|:[[:space:]]*\+ "|:[[:space:]]*<< "' | head -10 || true)
+if [ -n "$HITS" ]; then
+  echo "  ERREUR: texte utilisateur hors catalogue i18n:"; echo "$HITS"; exit 1
+else echo "  OK aucun"; fi
+
+echo "== 7/7 caracteres parasites CJK/Cyrillique (regle 2026-11-20)"
+CJK=$(grep -rnP '[\x{4e00}-\x{9fff}\x{0400}-\x{04ff}]' . \
+      --include='*.md' --include='*.sh' --include='*.mjs' --include='*.js' \
+      --include='*.qml' --include='*.cpp' --include='*.h' \
+      --exclude-dir=.git --exclude-dir=build --exclude-dir=build-host \
+      --exclude-dir=build-ninja --exclude-dir=po 2>/dev/null | head -10 || true)
+if [ -n "$CJK" ]; then
+  echo "  ERREUR: caractere parasite:"; echo "$CJK"; exit 1
+else echo "  OK aucun"; fi
 
 echo "== check termine"
