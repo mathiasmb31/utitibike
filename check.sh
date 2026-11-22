@@ -55,7 +55,7 @@ if grep -ri "$BLOCKED_NAME" --exclude-dir=.git --exclude-dir=build --exclude-dir
 else echo "  OK working tree"; fi
 # Règle Mathias (tous projets) : jamais d'ID device dans un contenu publié.
 # Le motif est construit à l'exécution pour que ce script ne contienne pas l'ID.
-DEV_ID="$(printf '5760%s579' 65)"; OLD_ID="$(printf '71b90%s' fee)"
+DEV_ID="$(printf '57606%s79' 5)"; OLD_ID="$(printf '71b90%s' fee)"
 if grep -rInE "$DEV_ID|$OLD_ID" --exclude-dir=.git --exclude-dir=build \
      --exclude-dir=build-host --exclude-dir=build-ninja --exclude=check.sh \
      --exclude=pre-commit --exclude=pre-push . 2>/dev/null | grep -q .; then

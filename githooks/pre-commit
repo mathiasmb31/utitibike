@@ -1,6 +1,6 @@
 #!/bin/bash
 # Règle Mathias (tous projets) : JAMAIS d'ID device dans un contenu publié.
-BLOCK_ID="$(printf '5760%s579' 65)"
+BLOCK_ID="$(printf '57606%s79' 5)"
 OLD_ID="$(printf '71b90%s' fee)"
 if git diff --cached --text | grep -aE '^\+[^+]' | grep -aqE "$BLOCK_ID|$OLD_ID"; then
     echo "ERREUR (confidentialité) : ID device interdit dans le commit." >&2
