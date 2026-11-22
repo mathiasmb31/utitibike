@@ -50,6 +50,12 @@ void GpsTracker::start()
             emit statusChanged();
             return;
         }
+        // v1.0: diagnostic — quelles méthodes le plugin UT expose-t-il ?
+        // (les valeurs utiles : Satellite=0xff, NonSatellite=0xffffff00,
+        //  All=0xffffffff — 0 = aucune source utilisable).
+        qWarning() << "GpsTracker: source" << m_source->sourceName()
+                   << "supported methods"
+                   << static_cast<int>(m_source->supportedPositioningMethods());
         m_source->setUpdateInterval(1000);
         // Applique le mode choisi (auto = satellite + réseau WiFi/cell)
         setPositioningMode(m_positioningMode);

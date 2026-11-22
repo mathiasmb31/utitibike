@@ -83,7 +83,9 @@ GpsDaemon::GpsDaemon(QObject *parent)
         QCoreApplication::quit();
         return;
     }
-    qWarning() << "[gpsd] position source OK:" << m_gps->sourceName();
+    qWarning() << "[gpsd] position source OK:" << m_gps->sourceName()
+               << "supported methods"
+               << static_cast<int>(m_gps->supportedPositioningMethods());
     // Source de position selon gpsd.conf (défaut auto = satellite + réseau)
     applyPositioningMode();
     // 1 fix toutes les 5 s en roulant : à 20 km/h = un point tous les 28 m,
