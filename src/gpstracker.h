@@ -59,6 +59,8 @@ signals:
     void availableChanged();
     void positionUpdated();
     void statusChanged();
+    // v1.0: le mode « réseau » n'a pas donné de fix, bascule vers GPS.
+    void positioningFallback();
 
 private:
     QGeoPositionInfoSource *m_source = nullptr;

@@ -597,3 +597,6 @@ msgstr "Remove waypoint"
 
 msgid "Supprimer le favori"
 msgstr "Remove favourite"
+
+msgid "Réseau indisponible — GPS activé"
+msgstr "Network unavailable — GPS enabled"

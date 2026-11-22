@@ -2640,6 +2640,11 @@ Page {
     // Centrage auto sur le GPS + mise à jour navigation
     Connections {
         target: gpsTracker
+        // v1.0: le réseau ne donne rien sur UT/SFR — informer l'utilisateur
+        // que le GPS a pris le relais (sinon c'était seulement dans les logs).
+        function onPositioningFallback() {
+            showToast(i18n.tr("Réseau indisponible — GPS activé"))
+        }
         function onPositionUpdated() {
             // Pendant un enregistrement daemon, la position vient du daemon
             // (voir Connections ci-dessous) : on ne centre pas depuis les 2 sources.

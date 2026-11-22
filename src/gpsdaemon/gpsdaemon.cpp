@@ -677,12 +677,22 @@ void GpsDaemon::applyPositioningMode()
         // (le provider réseau de UT peut être indisponible), on retombe sur
         // toutes les méthodes (satellite inclus) — sinon aucune position
         // n'est jamais trouvée en mode « réseau ».
-        QTimer::singleShot(15000, this, [this]() {
+        // v1.0: annule un éventuel timer de secours précédent pour ne pas
+        // basculer/logger deux fois la même chose.
+        if (m_networkFallbackTimer) {
+            m_networkFallbackTimer->stop();
+            m_networkFallbackTimer->deleteLater();
+            m_networkFallbackTimer = nullptr;
+        }
+        m_networkFallbackTimer = new QTimer(this);
+        m_networkFallbackTimer->setSingleShot(true);
+        connect(m_networkFallbackTimer, &QTimer::timeout, this, [this]() {
             if (!m_everHadFix) {
                 qWarning() << "[gpsd] mode réseau sans fix après 15 s — secours satellite (AllPositioningMethods)";
                 m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
             }
         });
+        m_networkFallbackTimer->start(15000);
     } else
         m_gps->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
     qWarning() << "[gpsd] positioning mode:" << mode;

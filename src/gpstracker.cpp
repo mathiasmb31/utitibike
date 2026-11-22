@@ -176,6 +176,7 @@ void GpsTracker::setPositioningMode(const QString &mode)
             if (m_positioningMode == scheduledMode && !m_hasFix) {
                 qWarning() << "GpsTracker: mode réseau sans fix après 15 s — secours satellite";
                 m_source->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
+                emit positioningFallback();
             }
         });
     } else
