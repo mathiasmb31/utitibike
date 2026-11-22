@@ -67,6 +67,8 @@ private:
     void fetch(int z, int x, int y, bool batch);
     void drain();
     void retryLater(const QString &key);
+    // Ramène une tuile déjà en attente (file de préchargement) en tête.
+    void promoteVisible(const QString &key);
     void emitProgress();
     void purgeDiskCache();
     void updateOnlineState(int error, bool ok);

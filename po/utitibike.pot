@@ -581,3 +581,18 @@ msgstr "max %1 %"
 
 msgid "Chargement des tuiles"
 msgstr "Loading tiles"
+
+msgid "Poids (kg)"
+msgstr "Weight (kg)"
+
+msgid "Ajouter aux favoris"
+msgstr "Add to favourites"
+
+msgid "Fermer les suggestions"
+msgstr "Close suggestions"
+
+msgid "Supprimer le point"
+msgstr "Remove waypoint"
+
+msgid "Supprimer le favori"
+msgstr "Remove favourite"

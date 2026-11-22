@@ -193,8 +193,13 @@ QImage TileCache::tile(int z, int x, int y)
         QMutexLocker locker(&m_mutex);
         if (QImage *img = m_mem.object(key))
             return *img;
-        if (m_pending.contains(key))
+        if (m_pending.contains(key)) {
+            // v0.99.1: la tuile est peut-être en attente dans le gros file
+            // d'itinéraire — on la remonte en tête (sur le thread principal).
+            QMetaObject::invokeMethod(this, [this, key]() { promoteVisible(key); },
+                                      Qt::QueuedConnection);
             return QImage();
+        }
         tileServer = m_tileServer;
         dir = m_dir;
         online = m_online;    // v0.99.1: lire sous mutex (ecrit par setOnline)
@@ -349,6 +354,29 @@ void TileCache::drain()
             drain();
         });
     }
+}
+
+void TileCache::promoteVisible(const QString &key)
+{
+    // m_queue est principal-thread only : cette méthode est toujours
+    // appellée via invokeMethod() depuis le thread de rendu.
+    if (m_queue.isEmpty() || m_queue.head() == key)
+        return;
+    QQueue<QString> others;
+    bool found = false;
+    while (!m_queue.isEmpty()) {
+        const QString k = m_queue.dequeue();
+        if (k == key) {
+            found = true;
+            continue;
+        }
+        others.enqueue(k);
+    }
+    if (!found)
+        return;
+    m_queue.enqueue(key);
+    while (!others.isEmpty())
+        m_queue.enqueue(others.dequeue());
 }
 
 void TileCache::retryLater(const QString &key)

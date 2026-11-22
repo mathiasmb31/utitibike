@@ -696,6 +696,7 @@ Page {
                 Label {
                     anchors.centerIn: parent
                     text: i18n.tr("Étapes")
+                    Accessible.name: text
                     fontSize: "x-small"
                     font.bold: true
                     color: Theme.textOnAccent
@@ -922,6 +923,7 @@ Page {
                     width: parent.width - units.gu(6) - (page.searchBusy ? units.gu(5) : 0)
                     height: units.gu(5)
                     placeholderText: i18n.tr("Rechercher un lieu…")
+                    Accessible.name: placeholderText
                     inputMethodHints: Qt.ImhNoPredictiveText
                     onAccepted: page.doSearch(text)
                     Keys.onReturnPressed: page.doSearch(text)
@@ -931,6 +933,7 @@ Page {
                     width: units.gu(5)
                     height: units.gu(5)
                     text: page.searchBusy ? "" : "→"
+                    Accessible.name: text
                     color: Theme.accentBlue
                     enabled: searchField.text.length > 2 && !page.searchBusy
                     onClicked: page.doSearch(searchField.text)
@@ -992,6 +995,7 @@ Page {
                         height: units.gu(5)
                         color: favorites.isFavorite(modelData.lat, modelData.lon)
                                ? Theme.accentOrange : Theme.bgSection
+                        Accessible.name: i18n.tr("Ajouter aux favoris")
                         onClicked: {
                             haptics.vibrate(10)
                             favorites.add(modelData.display_name, modelData.lat,
@@ -1084,6 +1088,7 @@ Page {
                     width: units.gu(5)
                     height: units.gu(4)
                     iconName: "close"
+                    Accessible.name: i18n.tr("Fermer les suggestions")
                     color: Theme.bgSection
                     anchors.verticalCenter: parent.verticalCenter
                     onClicked: {
@@ -1825,6 +1830,7 @@ Page {
                                 height: units.gu(5)
                                 anchors.verticalCenter: parent.verticalCenter
                                 color: Theme.accentRed
+                                Accessible.name: i18n.tr("Supprimer le point")
                                 onClicked: page.removeWaypoint(index)
                                 Icon {
                                     anchors.centerIn: parent
@@ -2015,6 +2021,7 @@ Page {
                         width: units.gu(8)
                         inputMethodHints: Qt.ImhDigitsOnly
                         text: page.userWeightKg
+                    Accessible.name: i18n.tr("Poids (kg)")
                         onTextChanged: {
                             var w = parseFloat(text)
                             if (!isNaN(w) && w >= 30 && w <= 250) {
@@ -2108,6 +2115,7 @@ Page {
                         width: (parent.width - units.gu(1.5)) / 3
                         height: units.gu(6)
                         text: gpsTracker.active ? i18n.tr("GPS actif") : i18n.tr("Activer GPS")
+                        Accessible.name: text
                         iconName: "location"
                         color: gpsTracker.active ? Theme.accentGreen : Theme.bgSection
                         onClicked: {
@@ -2122,6 +2130,7 @@ Page {
                         width: (parent.width - units.gu(1.5)) / 3
                         height: units.gu(6)
                         text: page.followGps ? i18n.tr("Suivi GPS") : i18n.tr("Centrer GPS")
+                        Accessible.name: text
                         iconName: "edit-find"
                         enabled: page.liveHasPos
                         color: page.followGps ? Theme.accentBlue : Theme.bgSection
@@ -2137,6 +2146,7 @@ Page {
                         width: (parent.width - units.gu(1.5)) / 3
                         height: units.gu(6)
                         text: brouter.navigation ? i18n.tr("Arrêter nav.") : i18n.tr("Naviguer")
+                        Accessible.name: text
                         iconName: "go-next"
                         enabled: page.routePoints.length > 1
                         color: brouter.navigation ? Theme.accentRed : Theme.accentBlue
@@ -2173,6 +2183,7 @@ Page {
                         width: (parent.width - units.gu(0.5)) / 2
                         height: units.gu(6)
                         text: daemonController.recording ? i18n.tr("Arrêter") : i18n.tr("Enregistrer")
+                        Accessible.name: text
                         iconName: daemonController.recording ? "media-playback-stop" : "media-record"
                         color: daemonController.recording ? Theme.accentRed : Theme.accentGreen
                         onClicked: {
@@ -2296,6 +2307,7 @@ Page {
                     width: parent.width
                     height: units.gu(6)
                     text: i18n.tr("Ajouter ma position aux favoris")
+                    Accessible.name: text
                     iconName: "starred"
                     color: Theme.bgSection
                     enabled: page.liveHasPos
@@ -2327,6 +2339,7 @@ Page {
                                 width: units.gu(5)
                                 height: units.gu(5)
                                 text: "→"
+                                Accessible.name: text
                                 color: Theme.accentBlue
                                 onClicked: {
                                     map.centerLat = modelData.lat
@@ -2338,6 +2351,7 @@ Page {
                                 width: units.gu(5)
                                 height: units.gu(5)
                                 color: Theme.accentRed
+                                Accessible.name: i18n.tr("Supprimer le favori")
                                 onClicked: favorites.remove(index)
                                 Icon {
                                     anchors.centerIn: parent
@@ -2375,6 +2389,7 @@ Page {
                     width: parent.width
                     height: units.gu(6)
                     text: i18n.tr("Ouvrir Garmin Connect dans le navigateur")
+                    Accessible.name: text
                     color: Theme.bgSection
                     onClicked: {
                         if (!urlOpener.openUrl("https://connect.garmin.com/"))
@@ -2447,6 +2462,7 @@ Page {
                         width: (parent.width - units.gu(1)) / 2
                         height: units.gu(6)
                         text: i18n.tr("Annuler")
+                        Accessible.name: text
                         iconName: "edit-undo"
                         color: Theme.bgSection
                         enabled: page.dlTotal > 0 && page.dlDone < page.dlTotal
@@ -2741,6 +2757,7 @@ Page {
         Button {
             height: units.gu(6)
             text: i18n.tr("Arrêter et enregistrer")
+            Accessible.name: text
             color: Theme.accentOrange
             onClicked: {
                 if (daemonController.recording)
@@ -2751,6 +2768,7 @@ Page {
         Button {
             height: units.gu(6)
             text: i18n.tr("Annuler")
+            Accessible.name: text
             onClicked: PopupUtils.close(stopRecordDialog)
         }
     }

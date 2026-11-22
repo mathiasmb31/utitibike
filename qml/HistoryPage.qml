@@ -105,6 +105,7 @@ Page {
         Button {
             height: units.gu(6)
             text: i18n.tr("Annuler")
+            Accessible.name: text
             onClicked: PopupUtils.close(clearDialog)
         }
     }
@@ -138,6 +139,7 @@ Page {
                     id: historyFilter
                     width: parent.width
                     placeholderText: i18n.tr("Filtrer les parcours…")
+                    Accessible.name: placeholderText
                     onTextChanged: {
                         historyPage.filterText = text
                         historyListView.forceLayout()
@@ -187,6 +189,7 @@ Page {
                     Button {
                         height: units.gu(6)
                         text: i18n.tr("Tout effacer")
+                        Accessible.name: text
                         iconName: "delete"
                         color: Theme.accentRed
                         visible: routeHistory.entries.length > 0

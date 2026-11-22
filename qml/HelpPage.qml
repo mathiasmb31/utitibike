@@ -281,6 +281,7 @@ Page {
                 width: parent.width
                 height: units.gu(6)
                 text: i18n.tr("À propos d'UT WheelTrek")
+                Accessible.name: text
                 color: Theme.bgSection
                 onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
             }

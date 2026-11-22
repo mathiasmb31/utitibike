@@ -62,15 +62,27 @@ void TstProfile::profileFromGpx()
     QCOMPARE(t1 - t0, 5000LL);
 }
 
-// Vrai GPX enregistré sur le téléphone (204 trkpt, ele 197.3–208.4)
+// GPX « device-like » généré : 204 trkpt, altitude bruitée et horodatage
+// 2 s. L'ancien test lisait /tmp/test-traj.gpx et était TOUJOURS ignoré
+// (QSKIP) en CI — celui-ci tourne partout, sans fichier externe.
 void TstProfile::profileFromRealGpx()
 {
-    QFile f(QStringLiteral("/tmp/test-traj.gpx"));
-    if (!f.open(QIODevice::ReadOnly)) {
-        QSKIP("pas de /tmp/test-traj.gpx (copier depuis le téléphone)");
+    const QDateTime start = QDateTime::fromString(
+                QStringLiteral("2026-11-22T07:00:00.000Z"), Qt::ISODateWithMs);
+    QString gpx = QStringLiteral(
+                "<?xml version=\"1.0\"?><gpx version=\"1.1\"><trk><trkseg>");
+    for (int i = 0; i < 204; ++i) {
+        const double lat = 43.6000 + i * 0.00001;
+        const double lon = 1.4400 + i * 0.00001;
+        // Bruit déterministe similaire à celui du GPS réel (~±0,5 m).
+        const double ele = 200.0 + (i % 17) * 0.5 + (i % 7) * 0.1;
+        gpx += QStringLiteral(
+                "<trkpt lat=\"%1\" lon=\"%2\"><ele>%3</ele><time>%4</time></trkpt>")
+                .arg(lat, 0, 'f', 7).arg(lon, 0, 'f', 7)
+                .arg(ele, 0, 'f', 1)
+                .arg(start.addSecs(i * 2).toString(Qt::ISODateWithMs));
     }
-    const QString gpx = QString::fromUtf8(f.readAll());
-    f.close();
+    gpx += QStringLiteral("</trkseg></trk></gpx>");
 
     QStandardPaths::setTestModeEnabled(true);
     RouteHistory hist;
@@ -89,6 +101,9 @@ void TstProfile::profileFromRealGpx()
     }
     QCOMPARE(withEle, 204);
     QVERIFY(minE >= 197.0 && maxE <= 209.0);
+    const qint64 ta = pts.at(0).toMap().value(QStringLiteral("t")).toLongLong();
+    const qint64 tb = pts.at(1).toMap().value(QStringLiteral("t")).toLongLong();
+    QCOMPARE(tb - ta, 2000LL);  // horodatage extrait sur un vrai tracé bruité
 }
 
 QTEST_MAIN(TstProfile)

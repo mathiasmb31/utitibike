@@ -152,6 +152,7 @@ Page {
                             width: units.gu(8)
                             inputMethodHints: Qt.ImhDigitsOnly
                             text: viewState.userWeightKg
+                            Accessible.name: i18n.tr("Poids (kg)")
                             onTextChanged: {
                                 var w = parseFloat(text)
                                 if (!isNaN(w) && w >= 30 && w <= 250)
@@ -190,6 +191,7 @@ Page {
                 width: parent.width
                 height: units.gu(6)
                 text: i18n.tr("Aide")
+                Accessible.name: text
                 color: Theme.bgSection
                 onClicked: pageStack.push(Qt.resolvedUrl("HelpPage.qml"))
             }
@@ -197,6 +199,7 @@ Page {
                 width: parent.width
                 height: units.gu(6)
                 text: i18n.tr("À propos")
+                Accessible.name: text
                 color: Theme.bgSection
                 onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
             }
