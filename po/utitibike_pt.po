@@ -564,3 +564,21 @@ msgstr "< avg at same slope"
 
 msgid "Pente"
 msgstr "Slope"
+
+msgid "┌──────────────┐     ┌──────────────────────┐"
+msgstr "┌──────────────┐     ┌──────────────────────┐"
+
+msgid "≈ %1 kcal"
+msgstr "≈ %1 kcal"
+
+msgid "D+ %1 m"
+msgstr "Ascent %1 m"
+
+msgid "D- %1 m"
+msgstr "Descent %1 m"
+
+msgid "max %1 %"
+msgstr "max %1 %"
+
+msgid "Chargement des tuiles"
+msgstr "Loading tiles"

@@ -230,7 +230,18 @@ void TileCache::fetch(int z, int x, int y, bool batch)
             if (batch)
                 m_batchKeys.insert(key);
         }
-        m_queue.enqueue(key);
+        // v0.99.1: les tuiles VISIBLES passent devant le gros file de
+        // prechargement d'itineraire (jusqu'a 1500 tuiles pour une sortie
+        // de 97 km). Sinon deplacer la carte restait blanc pendant que la
+        // corridor se telechargeait.
+        if (!batch) {
+            m_interactiveKeys.insert(key);
+            if (!m_tilesLoading) {
+                m_tilesLoading = true;
+                emit tilesLoadingChanged();
+            }
+        }
+        m_queue.prepend(key);
         drain();
     }, Qt::QueuedConnection);
 }
@@ -276,6 +287,11 @@ void TileCache::drain()
 
         connect(reply, &QNetworkReply::finished, this, [this, reply, key, server, generation]() {
             m_active.remove(key);
+            const bool wasInteractive = m_interactiveKeys.remove(key) > 0;
+            if (wasInteractive && m_interactiveKeys.isEmpty() && m_tilesLoading) {
+                m_tilesLoading = false;
+                emit tilesLoadingChanged();
+            }
             // Génération obsolète (changement de couche entre-temps) : la
             // tuile appartient à l'ancienne couche, on l'ignore totalement.
             const bool current = (generation == m_serverGeneration);
@@ -529,6 +545,11 @@ void TileCache::cancelAll()
         m_active.value(key)->abort();
     m_queue.clear();
     m_batchKeys.clear();
+    if (!m_interactiveKeys.isEmpty() || m_tilesLoading) {
+        m_interactiveKeys.clear();
+        m_tilesLoading = false;
+        emit tilesLoadingChanged();
+    }
     m_batchTotal = 0;
     m_batchDone = 0;
     // v0.99.1: les cles deja enfilees par fetch() restaient dans m_pending

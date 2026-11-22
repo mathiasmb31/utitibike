@@ -21,6 +21,9 @@ class TileCache : public QObject
     Q_PROPERTY(bool online READ online WRITE setOnline NOTIFY onlineChanged)
     Q_PROPERTY(bool paused READ paused WRITE setPaused NOTIFY pausedChanged)
     Q_PROPERTY(QString tileServer READ tileServer WRITE setTileServer NOTIFY tileServerChanged)
+    // v0.99.1: vrai pendant le chargement des tuiles VISIBLES (pas le
+    // préchargement d'itinéraire), pour l'indicateur stylisé de la carte.
+    Q_PROPERTY(bool tilesLoading READ tilesLoading NOTIFY tilesLoadingChanged)
 
 public:
     explicit TileCache(QObject *parent = nullptr);
@@ -32,6 +35,7 @@ public:
     void setPaused(bool v);
     QString tileServer() const { return m_tileServer; }
     void setTileServer(const QString &s);
+    bool tilesLoading() const { return m_tilesLoading; }
 
     QImage tile(int z, int x, int y);
 
@@ -56,6 +60,7 @@ signals:
     void onlineChanged();
     void pausedChanged();
     void tileServerChanged();
+    void tilesLoadingChanged();
     void progress(int done, int total);
 
 private:
@@ -83,6 +88,9 @@ private:
     // (TileMapItem::paint -> tile()); everything else is main-thread only.
     QMutex m_mutex;
     QSet<QString> m_batchKeys;
+    // Tuiles demandées par le rendu (fetch batch=false) — pour l'indicateur.
+    QSet<QString> m_interactiveKeys;
+    bool m_tilesLoading = false;
     QHash<QString, QNetworkReply *> m_active;
     // v0.99.1: nombre de tentatives deja faites pour une tuile en echec
     // (2 retries max, pour ne pas boucler sur un serveur en panne).

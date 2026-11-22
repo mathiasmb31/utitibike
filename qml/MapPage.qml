@@ -1445,7 +1445,7 @@ Page {
             }
             Label {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "≈ " + page.estimatedCalories(page.routeDistance, page.routeAscent) + " kcal"
+                text: i18n.tr("≈ %1 kcal").arg(page.estimatedCalories(page.routeDistance, page.routeAscent))
                 color: Theme.textPrimary
                 fontSize: "small"
             }
@@ -1625,6 +1625,81 @@ Page {
         id: toastTimer
         interval: 2800
         onTriggered: page.showNextToast()
+    }
+
+    // v0.99.1: indicateur « dalle en chargement » — une petite horloge
+    // stylisée avec le logo, DANS la fenêtre principale (jamais de 2e
+    // fenêtre QML : règle icône jaune). Uniquement pendant le chargement
+    // des tuiles visibles, pas pendant le préchargement d'itinéraire.
+    Rectangle {
+        id: tileLoadingBadge
+        z: 19
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: page.yAfterNav + units.gu(0.5)
+        width: units.gu(9)
+        height: units.gu(4.5)
+        radius: height / 2
+        color: Theme.bgCard
+        border.color: Theme.bgCardBorder
+        border.width: 1
+        visible: cache.tilesLoading
+        Accessible.name: i18n.tr("Chargement des tuiles")
+        property real angle: 0
+        Timer {
+            interval: 60
+            repeat: true
+            running: parent.visible
+            onTriggered: {
+                parent.angle = (parent.angle + 8) % 360
+                dial.requestPaint()
+            }
+        }
+        Canvas {
+            id: dial
+            width: units.gu(3.4)
+            height: width
+            anchors {
+                left: parent.left
+                leftMargin: units.gu(0.5)
+                verticalCenter: parent.verticalCenter
+            }
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.clearRect(0, 0, width, height)
+                var cx = width / 2, cy = height / 2, r = width / 2 - 2
+                ctx.strokeStyle = Theme.textSecondary
+                ctx.lineWidth = 1.5
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke()
+                for (var i = 0; i < 12; i++) {
+                    var a = i * Math.PI / 6
+                    ctx.beginPath()
+                    ctx.moveTo(cx + Math.cos(a) * (r - 3), cy + Math.sin(a) * (r - 3))
+                    ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r)
+                    ctx.stroke()
+                }
+                var hand = (parent.angle - 90) * Math.PI / 180
+                ctx.strokeStyle = Theme.accentOrange
+                ctx.lineWidth = 3
+                ctx.lineCap = "round"
+                ctx.beginPath()
+                ctx.moveTo(cx, cy)
+                ctx.lineTo(cx + Math.cos(hand) * r * 0.72,
+                           cy + Math.sin(hand) * r * 0.72)
+                ctx.stroke()
+            }
+        }
+        Image {
+            source: "qrc:/logo.png"
+            width: units.gu(2.4)
+            height: width
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            anchors {
+                right: parent.right
+                rightMargin: units.gu(0.6)
+                verticalCenter: parent.verticalCenter
+            }
+        }
     }
 
     Rectangle {

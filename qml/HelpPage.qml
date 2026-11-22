@@ -128,7 +128,7 @@ Page {
                         font.family: "monospace"
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textPrimary
-                        text: "┌──────────────┐     ┌──────────────────────┐"
+                        text: i18n.tr("┌──────────────┐     ┌──────────────────────┐")
                     }
                     Label {
                         width: parent.width

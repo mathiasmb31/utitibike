@@ -416,9 +416,9 @@ Item {
                 // D+ / D- / pente max au centre en haut — Theme.textPrimary #e8e8e8
                 ctx.fillStyle = "#e8e8e8"
                 ctx.textAlign = "center"
-                ctx.fillText("D+ " + Math.round(root.ascentM) + " · D- "
-                             + Math.round(root.descentM) + " m · "
-                             + Math.round(root.maxSlopePct) + "%",
+                ctx.fillText(i18n.tr("D+ %1 m").arg(Math.round(root.ascentM))
+                             + " · " + i18n.tr("D- %1 m").arg(Math.round(root.descentM))
+                             + " · " + i18n.tr("max %1 %").arg(Math.round(root.maxSlopePct)),
                              padL + w / 2, padT + units.gu(1.2))
             }
         }
