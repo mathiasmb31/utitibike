@@ -47,7 +47,7 @@ Page {
     property bool liveHasFix: liveRecording ? daemonController.hasFix
                                             : (gpsTracker.active && gpsTracker.hasFix)
     property bool liveHasApprox: liveRecording ? daemonController.approx
-                                               : (gpsTracker.active && gpsTracker.hasApprox)
+                                               : gpsTracker.hasApprox
     // v0.99.1: chaine de positionnement des overlays du haut — avant, chacun
     // calculait son y independamment et ils se chevauchaient des que deux
     // etats etaient actifs (nav + recherche, recherche + profil, etc.).
@@ -416,6 +416,10 @@ Page {
         }
     }
     Component.onCompleted: {
+        // v1.0: warm-up différé (2 s) — crée la source GPS et lit la dernière
+        // position connue sans allumer le GPS. Différé pour ne pas bloquer
+        // le premier affichage (createDefaultSource peut être lent sur UT).
+        QTimer.singleShot(2000, function() { gpsTracker.warmUp() })
         // v0.99.1: restauration des preferences persistees dans view.json.
         // Ici et pas dans Main.qml : `cache` est un objet de MapPage.
         cache.tileServer = viewState.transportMode === "foot" ? "osm" : "cyclosm"

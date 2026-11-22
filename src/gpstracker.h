@@ -45,6 +45,9 @@ public:
     bool hasApprox() const { return m_hasApprox; }
     QString statusText() const;
 
+    // v1.0: crée la source et lit la dernière position connue SANS démarrer
+    // les mises à jour (zéro coût batterie) — appelé au lancement de l'app.
+    Q_INVOKABLE void warmUp();
     Q_INVOKABLE void start();
     Q_INVOKABLE void stop();
     // "auto" (satellite + réseau WiFi/cell), "satellite" (GPS seul),
@@ -73,6 +76,7 @@ private:
     // (le service de localisation Lomiri coupe parfois la session).
     QTimer m_watchdogTimer;
     qint64 m_lastUpdateMs = 0;
+    bool ensureSource();
 };
 
 #endif // GPSTRACKER_H

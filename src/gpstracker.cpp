@@ -38,17 +38,17 @@ QString GpsTracker::statusText() const
     return tr("GPS actif");
 }
 
-void GpsTracker::start()
+bool GpsTracker::ensureSource()
 {
-    if (m_active)
-        return;
+    if (m_source)
+        return true;
     // Création lazy de la source GPS (peut prendre du temps)
-    if (!m_source) {
+    {
         m_source = QGeoPositionInfoSource::createDefaultSource(this);
         if (!m_source) {
             qWarning() << "GpsTracker: no position source available";
             emit statusChanged();
-            return;
+            return false;
         }
         // v1.0: diagnostic — quelles méthodes le plugin UT expose-t-il ?
         // (les valeurs utiles : Satellite=0xff, NonSatellite=0xffffff00,
@@ -120,6 +120,22 @@ void GpsTracker::start()
         });
         emit availableChanged();
     }
+    return true;
+}
+
+void GpsTracker::warmUp()
+{
+    // v1.0: source créée + dernière position connue, SANS startUpdates() —
+    // zéro coût batterie. Appelé 2 s après le lancement de l'app.
+    ensureSource();
+}
+
+void GpsTracker::start()
+{
+    if (m_active)
+        return;
+    if (!ensureSource())
+        return;
     m_source->startUpdates();
     m_active = true;
     m_lastUpdateMs = QDateTime::currentMSecsSinceEpoch();
