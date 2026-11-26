@@ -220,11 +220,18 @@ void TileMapItem::setCache(TileCache *c)
 {
     if (m_cache == c)
         return;
-    if (m_cache)
+    if (m_cache) {
         disconnect(m_cache, &TileCache::tileReady, this, nullptr);
+        disconnect(m_cache, &TileCache::onlineChanged, this, nullptr);
+    }
     m_cache = c;
-    if (m_cache)
+    if (m_cache) {
         connect(m_cache, &TileCache::tileReady, this, [this]() { update(); });
+        // Retour réseau : les tuiles en attente repartent (drain) et celles
+        // affichées en gris doivent être redemandées — sans ce repaint la
+        // carte restait vide jusqu'à un pan/zoom manuel.
+        connect(m_cache, &TileCache::onlineChanged, this, [this]() { update(); });
+    }
     emit cacheChanged();
     update();
 }

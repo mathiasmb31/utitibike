@@ -54,6 +54,10 @@ public:
     Q_INVOKABLE void downloadRoute(const QVariantList &points, double widthM,
                                    int zMin, int zMax);
     Q_INVOKABLE void cancelAll();
+    // Sonde de connectivité. Ne passe PAS par fetch()/drain() (bloqués quand
+    // m_online est faux) : c'est précisément le seul moyen de détecter le
+    // retour du réseau. Ne touche ni à l'indicateur ni à la file de tuiles.
+    void probeNetwork();
 
 signals:
     void tileReady(int z, int x, int y);
@@ -64,7 +68,11 @@ signals:
     void progress(int done, int total);
 
 private:
+    // Test de non-régression : accès à la file interne (voir tst_tilecache).
+    friend class TstTileCache;
+
     void fetch(int z, int x, int y, bool batch);
+    QNetworkReply *startTileRequest(int z, int x, int y);
     void drain();
     void retryLater(const QString &key, int generation);
     // Ramène une tuile déjà en attente (file de préchargement) en tête.
@@ -117,6 +125,8 @@ private:
     // détecter le retour en ligne.
     int m_consecutiveFailures = 0;
     QTimer m_probeTimer;
+    // Évite deux sondes concurrentes (timer + appel manuel).
+    bool m_probeInFlight = false;
 
     static const int MaxActive = 6;
     // Plafond de tuiles pour un préchargement d'itinéraire (corridor)

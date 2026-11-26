@@ -14,6 +14,7 @@
 #include <QFileInfoList>
 #include <QDateTime>
 #include <QCoreApplication>
+#include <QtGlobal>
 #include <algorithm>
 
 namespace {
@@ -47,6 +48,10 @@ QString tileFilePath(const QDir &dir, const QString &server, int z, int x, int y
 
 QString tileUrl(const QString &server, int z, int x, int y)
 {
+    // Surcharge de test (serveur HTTP local) — la prod garde les URL ci-dessous.
+    const QByteArray testUrl = qgetenv("UTITIBIKE_TILE_URL");
+    if (!testUrl.isEmpty())
+        return QString::fromUtf8(testUrl).arg(z).arg(x).arg(y);
     if (server == QLatin1String("cyclosm"))
         return QStringLiteral("https://a.tile-cyclosm.openstreetmap.fr/cyclosm/%1/%2/%3.png").arg(z).arg(x).arg(y);
     if (server == QLatin1String("dark"))
@@ -75,7 +80,7 @@ TileCache::TileCache(QObject *parent)
     m_probeTimer.setInterval(30000);
     connect(&m_probeTimer, &QTimer::timeout, this, [this]() {
         if (!m_online)
-            fetch(0, 0, 0, false);   // tuile monde : sonde de retour en ligne
+            probeNetwork();   // sonde de retour en ligne (voir le commentaire)
     });
     purgeDiskCache();
     purgeOldDarkTiles();
@@ -114,6 +119,14 @@ void TileCache::setOnline(bool v)
         m_probeTimer.start();
     qWarning() << "tilecache online=" << v;
     emit onlineChanged();
+    if (!v && (!m_interactiveKeys.isEmpty() || m_tilesLoading)) {
+        // Hors ligne, les tuiles en file ne partiront pas : éteindre
+        // l'indicateur au lieu de le laisser tourner indéfiniment. Les clés
+        // restent dans m_queue et repartiront au retour réseau via drain().
+        m_interactiveKeys.clear();
+        m_tilesLoading = false;
+        emit tilesLoadingChanged();
+    }
     // v0.99.1: le retour reseau doit relancer la file laisseee en attente.
     if (v)
         drain();
@@ -209,16 +222,20 @@ QImage TileCache::tile(int z, int x, int y)
     QDir dir;
     bool online = false;
     bool paused = false;
+    bool pending = false;
     {
         QMutexLocker locker(&m_mutex);
         if (QImage *img = m_mem.object(key))
             return *img;
-        if (m_pending.contains(key)) {
-            // v0.99.1: la tuile est peut-être en attente dans le gros file
-            // d'itinéraire — on la remonte en tête (sur le thread principal).
+        // v1.0: une tuile en attente (refresh ou préchargement d'itinéraire)
+        // peut avoir une ANCIENNE version valide sur disque. On la remonte
+        // en tête, mais on continue chercher le fichier au lieu de retourner
+        // une image nulle — sinon la carte reste grise pendant tout le
+        // téléchargement, même quand l'ancienne tuile existe toujours.
+        pending = m_pending.contains(key);
+        if (pending) {
             QMetaObject::invokeMethod(this, [this, key]() { promoteVisible(key); },
                                       Qt::QueuedConnection);
-            return QImage();
         }
         tileServer = m_tileServer;
         dir = m_dir;
@@ -236,7 +253,8 @@ QImage TileCache::tile(int z, int x, int y)
         }
     }
 
-    if (online && !paused)
+    // Une tuile déjà en file ne doit pas être enfilée une seconde fois.
+    if (!pending && online && !paused)
         fetch(z, x, y, false);
     return QImage();
 }
@@ -271,6 +289,52 @@ void TileCache::fetch(int z, int x, int y, bool batch)
     }, Qt::QueuedConnection);
 }
 
+QNetworkReply *TileCache::startTileRequest(int z, int x, int y)
+{
+    QNetworkRequest req{ QUrl{ tileUrl(m_tileServer, z, x, y) } };
+    // OSM redirige vers des CDN : suivre les redirections (le mode manuel
+    // par défaut les bloquerait).
+    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
+                     QNetworkRequest::NoLessSafeRedirectPolicy);
+    req.setHeader(QNetworkRequest::UserAgentHeader,
+                  QStringLiteral("utitibike/" UTITIBIKE_VERSION " (Ubuntu Touch; tiles OpenStreetMap)"));
+    QNetworkReply *reply = m_nam->get(req);
+    // Timeout : une requête tuile bloquée ne doit pas occuper un slot
+    // indéfiniment.
+    QTimer *timeout = new QTimer(reply);
+    timeout->setSingleShot(true);
+    timeout->setInterval(15000);
+    connect(timeout, &QTimer::timeout, reply, [reply]() {
+        qWarning() << "tilecache timeout, abort" << reply->url().toString();
+        reply->abort();
+    });
+    timeout->start();
+    return reply;
+}
+
+void TileCache::probeNetwork()
+{
+    // Sonde de retour réseau. Elle ne passe PAS par fetch()/drain() : drain()
+    // refuse de télécharger quand m_online est faux, donc une sonde envoyée
+    // par cette voie ne partait jamais et l'app restait bloquée hors ligne
+    // (tuiles absentes + indicateur allumé). Elle ne touche pas non plus à
+    // m_pending / m_interactiveKeys : ce n'est pas une tuile à afficher.
+    if (m_probeInFlight)
+        return;
+    m_probeInFlight = true;
+    QNetworkReply *reply = startTileRequest(0, 0, 0);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        m_probeInFlight = false;
+        const int error = static_cast<int>(reply->error());
+        const bool ok = reply->error() == QNetworkReply::NoError
+                        && !QImage::fromData(reply->readAll()).isNull();
+        reply->deleteLater();
+        qWarning() << "tilecache probe" << (ok ? "OK" : "failed") << "error" << error;
+        if (ok)
+            updateOnlineState(0, true);   // remet à zéro les échecs et setOnline(true)
+    });
+}
+
 void TileCache::drain()
 {
     // v0.99.1: ne pas lancer de salves de telechargement quand le reseau est
@@ -290,24 +354,7 @@ void TileCache::drain()
         // est ignorée (pas d'écriture disque dans le mauvais répertoire).
         const QString server = m_tileServer;
         const int generation = m_serverGeneration;
-        QNetworkRequest req{ QUrl{ tileUrl(server, z, x, y) } };
-        // OSM redirige vers des CDN : suivre les redirections (le mode manuel
-        // par défaut les bloquerait).
-        req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
-                         QNetworkRequest::NoLessSafeRedirectPolicy);
-        req.setHeader(QNetworkRequest::UserAgentHeader,
-                      QStringLiteral("utitibike/" UTITIBIKE_VERSION " (Ubuntu Touch; tiles OpenStreetMap)"));
-        QNetworkReply *reply = m_nam->get(req);
-        // Timeout : une requête tuile bloquée ne doit pas occuper un des 6
-        // slots actifs indéfiniment.
-        QTimer *timeout = new QTimer(reply);
-        timeout->setSingleShot(true);
-        timeout->setInterval(15000);
-        connect(timeout, &QTimer::timeout, reply, [reply]() {
-            qWarning() << "tilecache timeout, abort" << reply->url().toString();
-            reply->abort();
-        });
-        timeout->start();
+        QNetworkReply *reply = startTileRequest(z, x, y);
         m_active.insert(key, reply);
 
         connect(reply, &QNetworkReply::finished, this, [this, reply, key, server, generation]() {
@@ -392,9 +439,13 @@ void TileCache::promoteVisible(const QString &key)
         }
         others.enqueue(k);
     }
-    if (!found)
-        return;
-    m_queue.enqueue(key);
+    // v1.0: la clé peut ne plus être dans la file parce qu'elle est déjà
+    // EN VOL (m_active) — m_pending la contient encore. Dans ce cas il faut
+    // remettre toutes les autres clés : un `return` ici vidait la file et
+    // laissait ces tuiles à jamais en m_pending (carte vide + horloge qui
+    // tourne, l'indicateur n'étant jamais éteint).
+    if (found)
+        m_queue.enqueue(key);
     while (!others.isEmpty())
         m_queue.enqueue(others.dequeue());
 }
@@ -440,11 +491,13 @@ bool TileCache::enqueueKey(int z, int x, int y, bool force)
     const int wx = ((x % n) + n) % n;
     const QString key = keyOf(z, wx, y);
     if (force) {
-        // Rafraîchissement : la tuile sur disque et en mémoire est considérée
-        // comme périmée, on la supprime avant de la remettre en file.
-        QFile::remove(tileFilePath(m_dir, m_tileServer, z, wx, y));
+        // v1.0: refresh NON destructif. On garde l'ancienne tuile (disque +
+        // memoire) affichee jusqu'a ce que la nouvelle soit telechargee :
+        // QSaveFile ecrasera le fichier et m_mem sera remplace au succes.
+        // Supprimer l'ancienne image avant le telechargement laissait la
+        // carte grise des que le serveur timeout (observe le 25/11 sur
+        // CyclOSM : 15 s par tuile, anciennes tuiles definitivement perdues).
         QMutexLocker locker(&m_mutex);
-        m_mem.remove(key);
         m_pending.remove(key);
         m_retries.remove(key);
     }
@@ -453,7 +506,9 @@ bool TileCache::enqueueKey(int z, int x, int y, bool force)
         if (m_pending.contains(key))
             return false;
     }
-    if (QFile::exists(tileFilePath(m_dir, m_tileServer, z, wx, y))) {
+    // En force, une tuile deja sur disque est tout de meme retelechargee,
+    // mais on ne la supprime pas : elle reste affichée en attendant.
+    if (!force && QFile::exists(tileFilePath(m_dir, m_tileServer, z, wx, y))) {
         // Tuile déjà sur disque : compte dans le total ET le fait
         // (progression cohérente, ex. 42/42 si tout est en cache).
         m_batchDone++;

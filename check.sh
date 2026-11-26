@@ -41,8 +41,11 @@ fi
 (cd build-host && cmake --build . -j4 >/dev/null 2>&1) || { echo "  ERREUR build des tests"; exit 1; }
 NT=$(cd build-host && ctest -N 2>/dev/null | grep -c 'Test #' || true)
 [ "$NT" -ge 6 ] || { echo "  ERREUR: seulement $NT test(s) declare(s)"; exit 1; }
-(cd build-host && QT_QPA_PLATFORM=offscreen ctest --output-on-failure --timeout 60 2>&1 | tail -12) \
-  || { echo "  ERREUR: ctest a echoue"; exit 1; }
+# Pas de pipe direct dans le test : sans pipefail, le code etait celui de
+# tail (0) et un ctest rouge affichait quand meme "check termine".
+CTEST_OUT=$(cd build-host && QT_QPA_PLATFORM=offscreen ctest --output-on-failure --timeout 60 2>&1) \
+  || { echo "$CTEST_OUT" | tail -20; echo "  ERREUR: ctest a echoue"; exit 1; }
+echo "$CTEST_OUT" | tail -12
 
 echo "== 5/7 confidentialite"
 if git log --all --format='%ae %ce %B' | grep -qi "$BLOCKED_NAME"; then
