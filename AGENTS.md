@@ -1,5 +1,7 @@
 # AGENTS.md — Règles de travail
 
+> **Référence transverse (tous projets Ubuntu Touch)** : avant tout travail, lire `vibeworkspace/base-de-connaissances/guide-developpeur-ubtouch.md` (création d’app, i18n, cycle de vie Lomiri, build, diagnostic device, batterie de tests obligatoire, livraison). Ce guide complète les présentes règles ; en cas de conflit, les interdictions et la confidentialité priment.
+
 ## Livraison / release (OBLIGATOIRE — règle de Mathias, 2026-11-02, par défaut pour TOUT nouveau projet)
 
 Toute release publique d'une app est livrée dans `vibeworkspace/livraison/<app>-<version>/` :
